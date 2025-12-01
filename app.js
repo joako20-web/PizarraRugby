@@ -2,12 +2,10 @@
 // CONFIG
 // ==========================
 const NUM_PLAYERS = 15;
-const INTERP_DURATION = 800; // ms
-const INTERP_STEPS = 24;     // pasos de interpolación
+const INTERP_DURATION = 800;
+const INTERP_STEPS = 24;
 
-// move | draw | kick | text | scrum
 let mode = "move";
-
 let frames = [];
 let currentFrameIndex = 0;
 let isPlaying = false;
@@ -17,8 +15,8 @@ let dragTarget = null;
 let dragOffsetX = 0;
 let dragOffsetY = 0;
 
-let arrowStart = null;        // para flechas
-let previewArrow = null;      // flecha en previsualización
+let arrowStart = null;
+let previewArrow = null;
 
 let selectedPlayers = new Set();
 
@@ -29,7 +27,6 @@ let selectBoxEnd = null;
 const canvas = document.getElementById("pitch");
 const ctx = canvas.getContext("2d");
 
-// márgenes del campo
 const marginX = 60;
 const marginY = 50;
 
@@ -63,17 +60,17 @@ function createFrame() {
             ry: 16,
             visible: true
         },
-        arrows: [], // {x1,y1,x2,y2,type:'normal'|'kick'}
-        texts: []   // {x,y,text}
+        arrows: [],
+        texts: []
     };
 }
 
-function cloneFrame(frame) {
+function cloneFrame(f) {
     return {
-        players: frame.players.map(p => ({ ...p })),
-        ball: { ...frame.ball },
-        arrows: frame.arrows.map(a => ({ ...a })),
-        texts: frame.texts.map(t => ({ ...t }))
+        players: f.players.map(p => ({ ...p })),
+        ball: { ...f.ball },
+        arrows: f.arrows.map(a => ({ ...a })),
+        texts: f.texts.map(t => ({ ...t }))
     };
 }
 
@@ -88,49 +85,46 @@ function fieldDims() {
 }
 
 // ==========================
-// DRAW FIELD (según especificación)
+// DRAW FIELD (REAL RUGBY FIELD)
 // ==========================
 function drawPitch() {
     const w = canvas.width;
     const h = canvas.height;
     const { fieldWidth, fieldHeight } = fieldDims();
 
-    // Césped
-    const grad = ctx.createLinearGradient(0, 0, 0, h);
-    grad.addColorStop(0, "#18a34a");
-    grad.addColorStop(1, "#0b6b31");
-    ctx.fillStyle = grad;
+    // Césped general
+    const baseGrass = ctx.createLinearGradient(0, 0, 0, h);
+    baseGrass.addColorStop(0, "#0b7c39");
+    baseGrass.addColorStop(1, "#0a6d33");
+    ctx.fillStyle = baseGrass;
     ctx.fillRect(0, 0, w, h);
 
-    // Rectángulo exterior
-    ctx.strokeStyle = "#ffffff";
+    // Cálculo zonas de ensayo
+    const inGoal = fieldWidth * 0.07;
+    const xTryLeft = marginX + inGoal;
+    const xTryRight = marginX + fieldWidth - inGoal;
+
+    // Zonas de ensayo → verde más oscuro
+    ctx.fillStyle = "#064d24";
+    ctx.fillRect(marginX, marginY, inGoal, fieldHeight);
+    ctx.fillRect(xTryRight, marginY, inGoal, fieldHeight);
+
+    // Rectángulo del área de juego
+    ctx.setLineDash([]);
+    ctx.strokeStyle = "white";
     ctx.lineWidth = 3;
     ctx.strokeRect(marginX, marginY, fieldWidth, fieldHeight);
 
-    // Geometría longitudinal
-    const inGoal = fieldWidth * 0.07;              // zona de ensayo
-    const mainField = fieldWidth - 2 * inGoal;
+    // Líneas verticales
+    const mainField = fieldWidth - inGoal * 2;
+    const x5Left  = xTryLeft  + mainField * 0.05;
+    const x22Left = xTryLeft  + mainField * 0.22;
+    const xMid    = xTryLeft  + mainField * 0.50;
+    const x10Left = xMid - mainField * 0.10;
+    const x10Right= xMid + mainField * 0.10;
+    const x22Right= xTryLeft + mainField * (1 - 0.22);
+    const x5Right = xTryLeft + mainField * (1 - 0.05);
 
-    const xBackLeft  = marginX;                    // fondo ensayo izq
-    const xTryLeft   = marginX + inGoal;           // inicio ensayo izq
-    const xBackRight = marginX + fieldWidth;       // fondo derecho
-    const xTryRight  = marginX + fieldWidth - inGoal;
-
-    const x5Left  = xTryLeft + mainField * (5 / 100);
-    const x22Left = xTryLeft + mainField * (22 / 100);
-
-    const xMainStart = xTryLeft;
-    const xMainEnd   = xTryRight;
-    const xMid       = (xMainStart + xMainEnd) / 2;
-    const d10        = mainField * (10 / 100);
-
-    const x10Left  = xMid - d10;
-    const x10Right = xMid + d10;
-
-    const x22Right = xMainEnd - mainField * (22 / 100);
-    const x5Right  = xMainEnd - mainField * (5 / 100);
-
-    // verticales: fondo, try, 5m, 22m, 10m antes del medio, medio, simétricas
     function vline(x, dash = [], width = 2) {
         ctx.setLineDash(dash);
         ctx.lineWidth = width;
@@ -140,111 +134,58 @@ function drawPitch() {
         ctx.stroke();
     }
 
-    // márgenes
-    vline(xBackLeft, [], 3);
-    vline(xBackRight, [], 3);
+    // Líneas verticales reales
+    vline(xTryLeft, [], 3);
+    vline(xTryRight, [], 3);
 
-    // try
-    vline(xTryLeft, [], 2.5);
-    vline(xTryRight, [], 2.5);
-
-    // 5m (discontinuas)
     vline(x5Left, [20, 14], 2);
     vline(x5Right, [20, 14], 2);
 
-    // 22m (continuas)
     vline(x22Left, [], 2);
     vline(x22Right, [], 2);
 
-    // 10m antes del medio (discontinuas)
     vline(x10Left, [14, 10], 2);
     vline(x10Right, [14, 10], 2);
 
-    // medio campo
     vline(xMid, [], 3);
 
-    // horizontales: margen, 5m, 15m, 15m opuesta, 5m opuesta, margen
+    // Líneas horizontales (NO entran en el ensayo)
     const y5Top  = marginY + fieldHeight * 0.05;
-    const y15Top = marginY + fieldHeight * 0.15;
-    const y15Bot = marginY + fieldHeight * 0.85;
+    const y15Top = marginY + fieldHeight * 0.25;
+    const y15Bot = marginY + fieldHeight * 0.75;
     const y5Bot  = marginY + fieldHeight * 0.95;
 
-    ctx.setLineDash([20, 14]);
+    ctx.setLineDash([20,14]);
     ctx.lineWidth = 2;
 
-    [y5Top, y15Top, y15Bot, y5Bot].forEach(y => {
+    for (let y of [y5Top, y15Top, y15Bot, y5Bot]) {
         ctx.beginPath();
-        ctx.moveTo(marginX, y);
-        ctx.lineTo(marginX + fieldWidth, y);
+        ctx.moveTo(xTryLeft, y);
+        ctx.lineTo(xTryRight, y);
         ctx.stroke();
-    });
-
-    // poste tipo H a cada lado
-    const goalHeight = fieldHeight * 0.2;
-    const postWidth = 18;
-
-function drawPosts(xBase) {
-    const yTop = marginY;
-    const yBottom = marginY + fieldHeight;
-    const yCrossbar = marginY + fieldHeight * 0.50;     // travesaño a media altura
-    const postHeight = fieldHeight * 0.35;              // altura realista de los postes
-    const lineWidth = 3;
-    const separation = 24;                              // separación entre palos
-
-    ctx.setLineDash([]);
-    ctx.strokeStyle = "#ffffff";
-    ctx.lineWidth = lineWidth;
-
-    ctx.beginPath();
-
-    // Poste izquierdo
-    ctx.moveTo(xBase, yCrossbar - postHeight / 2);      // arriba
-    ctx.lineTo(xBase, yCrossbar + postHeight / 2);      // abajo
-
-    // Poste derecho
-    ctx.moveTo(xBase + separation, yCrossbar - postHeight / 2);
-    ctx.lineTo(xBase + separation, yCrossbar + postHeight / 2);
-
-    // Traversa
-    ctx.moveTo(xBase, yCrossbar);
-    ctx.lineTo(xBase + separation, yCrossbar);
-
-    ctx.stroke();
-}
-
-
-    drawPosts(xBackLeft + 10);
-    drawPosts(xBackRight - postWidth - 10);
+    }
 }
 
 // ==========================
-// DIBUJAR BALÓN (ovalado)
+// DRAW BALL
 // ==========================
-function drawRugbyBall(ball) {
-    if (!ball.visible) return;
+function drawRugbyBall(b) {
+    if (!b.visible) return;
     ctx.save();
-    ctx.translate(ball.x, ball.y);
+    ctx.translate(b.x, b.y);
     ctx.rotate(-0.4);
     ctx.beginPath();
-    ctx.ellipse(0, 0, ball.rx, ball.ry, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 0, b.rx, b.ry, 0, 0, Math.PI * 2);
     ctx.fillStyle = "#f5e1c0";
     ctx.fill();
     ctx.lineWidth = 2;
     ctx.strokeStyle = "#b37a42";
     ctx.stroke();
-
-    // banda interior
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = "#b37a42";
-    ctx.beginPath();
-    ctx.ellipse(0, 0, ball.rx * 0.8, ball.ry * 0.6, 0, 0, Math.PI * 2);
-    ctx.stroke();
-
     ctx.restore();
 }
 
 // ==========================
-// DIBUJAR FLECHAS
+// ARROWS
 // ==========================
 function drawNormalArrow(a) {
     ctx.strokeStyle = "white";
@@ -254,126 +195,95 @@ function drawNormalArrow(a) {
     ctx.lineTo(a.x2, a.y2);
     ctx.stroke();
 
-    const headlen = 14;
-    const angle = Math.atan2(a.y2 - a.y1, a.x2 - a.x1);
+    const head = 14;
+    const ang = Math.atan2(a.y2 - a.y1, a.x2 - a.x1);
     ctx.beginPath();
     ctx.moveTo(a.x2, a.y2);
-    ctx.lineTo(
-        a.x2 - headlen * Math.cos(angle - Math.PI / 6),
-        a.x2 === a.x2 ? a.y2 - headlen * Math.sin(angle - Math.PI / 6) : a.y2
-    );
-    ctx.lineTo(
-        a.x2 - headlen * Math.cos(angle + Math.PI / 6),
-        a.y2 - headlen * Math.sin(angle + Math.PI / 6)
-    );
-    ctx.closePath();
+    ctx.lineTo(a.x2 - head*Math.cos(ang - Math.PI/6), a.y2 - head*Math.sin(ang - Math.PI/6));
+    ctx.lineTo(a.x2 - head*Math.cos(ang + Math.PI/6), a.y2 - head*Math.sin(ang + Math.PI/6));
     ctx.fillStyle = "white";
     ctx.fill();
 }
 
 function drawKickArrow(a) {
-    const midX = (a.x1 + a.x2) / 2;
-    const midY = (a.y1 + a.y2) / 2 - 60;
+    const mx = (a.x1 + a.x2)/2;
+    const my = (a.y1 + a.y2)/2 - 60;
 
     ctx.strokeStyle = "yellow";
     ctx.lineWidth = 3;
 
     ctx.beginPath();
     ctx.moveTo(a.x1, a.y1);
-    ctx.quadraticCurveTo(midX, midY, a.x2, a.y2);
+    ctx.quadraticCurveTo(mx, my, a.x2, a.y2);
     ctx.stroke();
 
     const t = 0.9;
-    const qx1 =
-        (1 - t) * (1 - t) * a.x1 + 2 * (1 - t) * t * midX + t * t * a.x2;
-    const qy1 =
-        (1 - t) * (1 - t) * a.y1 + 2 * (1 - t) * t * midY + t * t * a.y2;
-    const angle = Math.atan2(a.y2 - qy1, a.x2 - qx1);
-    const headlen = 14;
+    const qx = (1-t)*(1-t)*a.x1 + 2*(1-t)*t*mx + t*t*a.x2;
+    const qy = (1-t)*(1-t)*a.y1 + 2*(1-t)*t*my + t*t*a.y2;
+
+    const ang = Math.atan2(a.y2 - qy, a.x2 - qx);
+    const head = 14;
 
     ctx.beginPath();
     ctx.moveTo(a.x2, a.y2);
-    ctx.lineTo(
-        a.x2 - headlen * Math.cos(angle - Math.PI / 6),
-        a.y2 - headlen * Math.sin(angle - Math.PI / 6)
-    );
-    ctx.lineTo(
-        a.x2 - headlen * Math.cos(angle + Math.PI / 6),
-        a.y2 - headlen * Math.sin(angle + Math.PI / 6)
-    );
-    ctx.closePath();
+    ctx.lineTo(a.x2 - head*Math.cos(ang - Math.PI/6), a.y2 - head*Math.sin(ang - Math.PI/6));
+    ctx.lineTo(a.x2 - head*Math.cos(ang + Math.PI/6), a.y2 - head*Math.sin(ang + Math.PI/6));
     ctx.fillStyle = "yellow";
     ctx.fill();
 }
 
 // ==========================
-// TEXTOS (cajas)
+// TEXT BOXES
 // ==========================
 function drawTexts(frame) {
     frame.texts.forEach(t => {
-        const paddingX = 6;
-        const paddingY = 4;
-
         ctx.font = "16px Arial";
-        const metrics = ctx.measureText(t.text);
-        const textWidth = metrics.width;
-        const textHeight = 18;
 
-        const x = t.x;
-        const y = t.y;
+        const textWidth = ctx.measureText(t.text).width;
+        const padX = 6;
+        const padY = 4;
+        const height = 18;
 
-        ctx.fillStyle = "rgba(0,0,0,0.7)";
-        ctx.fillRect(
-            x - textWidth / 2 - paddingX,
-            y - paddingY,
-            textWidth + paddingX * 2,
-            textHeight + paddingY * 2
-        );
+        ctx.fillStyle = "rgba(0,0,0,0.65)";
+        ctx.fillRect(t.x - textWidth/2 - padX, t.y - padY, textWidth + padX*2, height + padY*2);
 
         ctx.strokeStyle = "white";
-        ctx.strokeRect(
-            x - textWidth / 2 - paddingX,
-            y - paddingY,
-            textWidth + paddingX * 2,
-            textHeight + paddingY * 2
-        );
+        ctx.strokeRect(t.x - textWidth/2 - padX, t.y - padY, textWidth + padX*2, height + padY*2);
 
         ctx.fillStyle = "white";
         ctx.textAlign = "center";
         ctx.textBaseline = "top";
-        ctx.fillText(t.text, x, y);
+        ctx.fillText(t.text, t.x, t.y);
     });
 }
 
 function findTextAt(x, y) {
-    const frame = getCurrentFrame();
-    for (let t of frame.texts) {
+    const f = getCurrentFrame();
+    for (let t of f.texts) {
         ctx.font = "16px Arial";
-        const metrics = ctx.measureText(t.text);
-        const w = metrics.width;
+        const padX = 6, padY = 4;
+        const w = ctx.measureText(t.text).width;
         const h = 18;
-        const paddingX = 6;
-        const paddingY = 4;
-        const left = t.x - w / 2 - paddingX;
-        const top = t.y - paddingY;
-        const right = left + w + paddingX * 2;
-        const bottom = top + h + paddingY * 2;
-        if (x >= left && x <= right && y >= top && y <= bottom) {
-            return t;
-        }
+
+        const x1 = t.x - w/2 - padX;
+        const y1 = t.y - padY;
+        const x2 = x1 + w + padX*2;
+        const y2 = y1 + h + padY*2;
+
+        if (x>=x1 && x<=x2 && y>=y1 && y<=y2) return t;
     }
     return null;
 }
 
 // ==========================
-// DIBUJAR FRAME COMPLETO
+// DRAW FRAME
 // ==========================
 function drawFrame() {
     drawPitch();
-    const frame = getCurrentFrame();
+    const f = getCurrentFrame();
 
     // Flechas definitivas
-    frame.arrows.forEach(a => {
+    f.arrows.forEach(a => {
         if (a.type === "kick") drawKickArrow(a);
         else drawNormalArrow(a);
     });
@@ -385,34 +295,32 @@ function drawFrame() {
     }
 
     // Textos
-    drawTexts(frame);
+    drawTexts(f);
 
-    // RASTROS durante arrastre de grupo
+    // Rastro de arrastre múltiple
     if (dragTarget && dragTarget.type === "players") {
-        const playersArr = dragTarget.players;
-        const startPositions = dragTarget.startPositions;
         ctx.lineWidth = 2;
-        playersArr.forEach((pl, idx) => {
-            const start = startPositions[idx];
+        dragTarget.players.forEach((pl, i) => {
+            const st = dragTarget.startPositions[i];
             ctx.strokeStyle = pl.team === "A" ? "#7fb9ff" : "#ff7a7a";
             ctx.beginPath();
-            ctx.moveTo(start.x, start.y);
+            ctx.moveTo(st.x, st.y);
             ctx.lineTo(pl.x, pl.y);
             ctx.stroke();
         });
     }
 
     // Jugadores
-    frame.players.forEach(p => {
-        if (!p.visible || p.x == null || p.y == null) return;
+    f.players.forEach(p => {
+        if (!p.visible) return;
         ctx.beginPath();
         ctx.fillStyle = p.team === "A" ? "#1e88ff" : "#ff3333";
-        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI*2);
         ctx.fill();
 
         if (selectedPlayers.has(p)) {
             ctx.lineWidth = 3;
-            ctx.strokeStyle = "#ffffff";
+            ctx.strokeStyle = "white";
             ctx.stroke();
         }
 
@@ -424,18 +332,18 @@ function drawFrame() {
     });
 
     // Balón
-    drawRugbyBall(frame.ball);
+    drawRugbyBall(f.ball);
 
-    // Rectángulo de selección
+    // Rectángulo selección
     if (selectingBox && selectBoxStart && selectBoxEnd) {
-        ctx.setLineDash([6, 4]);
+        ctx.setLineDash([6,4]);
         ctx.lineWidth = 1.5;
-        ctx.strokeStyle = "#ffffff";
+        ctx.strokeStyle = "white";
         const x = Math.min(selectBoxStart.x, selectBoxEnd.x);
         const y = Math.min(selectBoxStart.y, selectBoxEnd.y);
-        const wBox = Math.abs(selectBoxEnd.x - selectBoxStart.x);
-        const hBox = Math.abs(selectBoxEnd.y - selectBoxStart.y);
-        ctx.strokeRect(x, y, wBox, hBox);
+        const w = Math.abs(selectBoxEnd.x - selectBoxStart.x);
+        const h = Math.abs(selectBoxEnd.y - selectBoxStart.y);
+        ctx.strokeRect(x, y, w, h);
         ctx.setLineDash([]);
     }
 }
@@ -443,31 +351,28 @@ function drawFrame() {
 // ==========================
 // INTERPOLATED FRAME
 // ==========================
-function drawInterpolatedFrame(from, to, t) {
+function drawInterpolatedFrame(a, b, t) {
     drawPitch();
 
     // Jugadores
-    for (let i = 0; i < from.players.length; i++) {
-        const p1 = from.players[i];
-        const p2 = to.players[i];
-        const visible = p1.visible || p2.visible;
-        if (!visible) continue;
+    for (let i = 0; i < a.players.length; i++) {
+        const p1 = a.players[i];
+        const p2 = b.players[i];
+        if (!(p1.visible || p2.visible)) continue;
 
         let x, y;
         if (p1.visible && p2.visible) {
-            x = p1.x + (p2.x - p1.x) * t;
-            y = p1.y + (p2.y - p1.y) * t;
+            x = p1.x + (p2.x - p1.x)*t;
+            y = p1.y + (p2.y - p1.y)*t;
         } else if (p1.visible) {
-            x = p1.x;
-            y = p1.y;
+            x = p1.x; y = p1.y;
         } else {
-            x = p2.x;
-            y = p2.y;
+            x = p2.x; y = p2.y;
         }
 
         ctx.beginPath();
         ctx.fillStyle = p1.team === "A" ? "#1e88ff" : "#ff3333";
-        ctx.arc(x, y, p1.radius, 0, Math.PI * 2);
+        ctx.arc(x, y, p1.radius, 0, Math.PI*2);
         ctx.fill();
 
         ctx.fillStyle = "white";
@@ -477,33 +382,28 @@ function drawInterpolatedFrame(from, to, t) {
         ctx.fillText(p1.number, x, y);
     }
 
-    // Flechas + textos del frame destino
-    to.arrows.forEach(a => {
-        if (a.type === "kick") drawKickArrow(a);
-        else drawNormalArrow(a);
+    // Flechas y textos finales
+    b.arrows.forEach(a=>{
+        if(a.type==="kick") drawKickArrow(a); else drawNormalArrow(a);
     });
-    drawTexts(to);
+    drawTexts(b);
 
     // Balón
-    const b1 = from.ball;
-    const b2 = to.ball;
+    const bl1 = a.ball, bl2 = b.ball;
     let bx, by;
-    if (b1.visible && b2.visible) {
-        bx = b1.x + (b2.x - b1.x) * t;
-        by = b1.y + (b2.y - b1.y) * t;
-    } else if (b1.visible) {
-        bx = b1.x;
-        by = b1.y;
+    if (bl1.visible && bl2.visible){
+        bx = bl1.x + (bl2.x - bl1.x)*t;
+        by = bl1.y + (bl2.y - bl1.y)*t;
+    } else if (bl1.visible) {
+        bx = bl1.x; by = bl1.y;
     } else {
-        bx = b2.x;
-        by = b2.y;
+        bx = bl2.x; by = bl2.y;
     }
-
-    drawRugbyBall({ x: bx, y: by, rx: b1.rx, ry: b1.ry, visible: true });
+    drawRugbyBall({x:bx,y:by,rx:bl1.rx,ry:bl1.ry,visible:true});
 }
 
 // ==========================
-// PLAYER PANELS + SELECTORES
+// PLAYER PANELS + SELECTOR
 // ==========================
 function loadPlayerPanels() {
     const blueGrid = document.getElementById("players-blue");
@@ -511,179 +411,161 @@ function loadPlayerPanels() {
     const blueSelect = document.getElementById("blue-select");
     const redSelect = document.getElementById("red-select");
 
-    for (let i = 1; i <= NUM_PLAYERS; i++) {
-        let optB = document.createElement("option");
-        optB.value = i;
-        optB.textContent = "Dorsal " + i;
-        blueSelect.appendChild(optB);
+    for (let i=1; i<=NUM_PLAYERS; i++){
+        const optA=document.createElement("option");
+        optA.value=i; optA.textContent="Dorsal "+i;
+        blueSelect.appendChild(optA);
 
-        let optR = document.createElement("option");
-        optR.value = i;
-        optR.textContent = "Dorsal " + i;
-        redSelect.appendChild(optR);
+        const optB=document.createElement("option");
+        optB.value=i; optB.textContent="Dorsal "+i;
+        redSelect.appendChild(optB);
 
-        const b = document.createElement("div");
-        b.className = "player-toggle";
-        b.textContent = i;
-        b.dataset.team = "A";
-        b.dataset.number = i;
-        b.onclick = togglePlayer;
-        blueGrid.appendChild(b);
+        const divA=document.createElement("div");
+        divA.className="player-toggle";
+        divA.textContent=i;
+        divA.dataset.team="A";
+        divA.dataset.number=i;
+        divA.onclick=togglePlayer;
+        blueGrid.appendChild(divA);
 
-        const r = document.createElement("div");
-        r.className = "player-toggle red";
-        r.textContent = i;
-        r.dataset.team = "B";
-        r.dataset.number = i;
-        r.onclick = togglePlayer;
-        redGrid.appendChild(r);
+        const divB=document.createElement("div");
+        divB.className="player-toggle red";
+        divB.textContent=i;
+        divB.dataset.team="B";
+        divB.dataset.number=i;
+        divB.onclick=togglePlayer;
+        redGrid.appendChild(divB);
     }
 
-    document.getElementById("blue-add").onclick = () => {
-        const n = parseInt(blueSelect.value);
-        togglePlayerByTeamNumber("A", n);
+    document.getElementById("blue-add").onclick=()=>{
+        togglePlayerByTeamNumber("A", parseInt(blueSelect.value));
     };
-    document.getElementById("red-add").onclick = () => {
-        const n = parseInt(redSelect.value);
-        togglePlayerByTeamNumber("B", n);
+    document.getElementById("red-add").onclick=()=>{
+        togglePlayerByTeamNumber("B", parseInt(redSelect.value));
     };
 }
 
-function togglePlayerByTeamNumber(team, number) {
-    const frame = getCurrentFrame();
-    const p = frame.players.find(pl => pl.team === team && pl.number === number);
+function togglePlayer(e){
+    const team=e.target.dataset.team;
+    const number=parseInt(e.target.dataset.number);
+    togglePlayerByTeamNumber(team,number);
+}
+
+function togglePlayerByTeamNumber(team, number){
+    const f = getCurrentFrame();
+    const p = f.players.find(x=>x.team===team && x.number===number);
     p.visible = !p.visible;
 
-    if (p.visible && p.x === null) {
-        const { fieldWidth, fieldHeight } = fieldDims();
-        const baseX = team === "A"
-            ? marginX + fieldWidth * 0.25
-            : marginX + fieldWidth * 0.75;
-        const baseY = marginY + fieldHeight * 0.25;
-        const row = Math.floor((number - 1) / 5);
-        const col = (number - 1) % 5;
-        p.x = baseX + col * 40;
-        p.y = baseY + row * 50;
+    if (p.visible && p.x===null){
+        const {fieldWidth,fieldHeight}=fieldDims();
+        const bx = team==="A" ? marginX+fieldWidth*0.25 : marginX+fieldWidth*0.75;
+        const by = marginY+fieldHeight*0.25;
+        const row = Math.floor((number-1)/5);
+        const col = (number-1)%5;
+        p.x = bx + col*40;
+        p.y = by + row*50;
     }
 
-    const selector = `.player-toggle[data-team="${team}"][data-number="${number}"]`;
-    const div = document.querySelector(selector);
+    const sel = `.player-toggle[data-team="${team}"][data-number="${number}"]`;
+    const div=document.querySelector(sel);
     if (div) div.classList.toggle("active", p.visible);
 
     drawFrame();
 }
 
-function togglePlayer(e) {
-    const div = e.target;
-    const team = div.dataset.team;
-    const number = parseInt(div.dataset.number);
-    togglePlayerByTeamNumber(team, number);
-}
-
 function syncPlayerToggles() {
-    const frame = getCurrentFrame();
-    document.querySelectorAll(".player-toggle").forEach(div => {
-        const team = div.dataset.team;
-        const number = parseInt(div.dataset.number);
-        const p = frame.players.find(pl => pl.team === team && pl.number === number);
-        div.classList.toggle("active", !!(p && p.visible));
+    const f=getCurrentFrame();
+    document.querySelectorAll(".player-toggle").forEach(div=>{
+        const team=div.dataset.team;
+        const num=parseInt(div.dataset.number);
+        const p=f.players.find(x=>x.team===team && x.number===num);
+        div.classList.toggle("active", p.visible);
     });
 }
 
 // ==========================
 // MODOS
 // ==========================
-function setMode(newMode) {
-    mode = newMode;
-    arrowStart = null;
-    previewArrow = null;
-    document.querySelectorAll("#sidebar button").forEach(btn =>
-        btn.classList.remove("active")
-    );
-    if (mode === "move")  document.getElementById("mode-move").classList.add("active");
-    if (mode === "draw")  document.getElementById("mode-draw").classList.add("active");
-    if (mode === "kick")  document.getElementById("mode-kick").classList.add("active");
-    if (mode === "text")  document.getElementById("mode-text").classList.add("active");
-    if (mode === "scrum") document.getElementById("mode-scrum").classList.add("active");
+function setMode(m){
+    mode=m;
+    arrowStart=null;
+    previewArrow=null;
+
+    document.querySelectorAll("#sidebar button").forEach(b=>b.classList.remove("active"));
+    if(m==="move") document.getElementById("mode-move").classList.add("active");
+    if(m==="draw") document.getElementById("mode-draw").classList.add("active");
+    if(m==="kick") document.getElementById("mode-kick").classList.add("active");
+    if(m==="text") document.getElementById("mode-text").classList.add("active");
+    if(m==="scrum") document.getElementById("mode-scrum").classList.add("active");
+
     drawFrame();
 }
 
 // ==========================
 // MOUSE HELPERS
 // ==========================
-function canvasPos(e) {
-    const rect = canvas.getBoundingClientRect();
-    return {
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top
-    };
+function canvasPos(e){
+    const r=canvas.getBoundingClientRect();
+    return {x:e.clientX-r.left, y:e.clientY-r.top};
 }
 
-function findPlayerAt(pos) {
-    const frame = getCurrentFrame();
-    for (let p of frame.players) {
-        if (!p.visible) continue;
-        if (Math.hypot(pos.x - p.x, pos.y - p.y) < p.radius) return p;
+function findPlayerAt(pos){
+    const f=getCurrentFrame();
+    for (let p of f.players){
+        if(!p.visible) continue;
+        if(Math.hypot(pos.x-p.x,pos.y-p.y)<p.radius) return p;
     }
     return null;
 }
 
-function ballHitTest(pos) {
-    const b = getCurrentFrame().ball;
-    if (!b.visible) return false;
-    const dx = pos.x - b.x;
-    const dy = pos.y - b.y;
-    const r = Math.max(b.rx, b.ry);
-    return dx * dx + dy * dy <= r * r;
+function ballHitTest(pos){
+    const b=getCurrentFrame().ball;
+    if(!b.visible) return false;
+    const dx=pos.x-b.x, dy=pos.y-b.y;
+    const r=Math.max(b.rx,b.ry);
+    return dx*dx+dy*dy<=r*r;
 }
 
 // ==========================
-// MELÉ HORIZONTAL (Azul izq, Rojo dcha)
+// SCRUM (horizontal packs opuestos)
 // ==========================
-function placeScrumWithPrompt(x, y) {
-    const choice = (prompt("Equipo para melé: A (azul), B (rojo), AB (ambos)", "AB") || "")
-        .toUpperCase();
-    const frame = getCurrentFrame();
+function placeScrumWithPrompt(x,y){
+    const choice=(prompt("Equipo para melé: A (azul), B (rojo), AB (ambos)","AB")||"").toUpperCase();
+    const f=getCurrentFrame();
 
-    // más separación interna, packs más juntos
-    const spacingY = 34;
-    const rowSpacingX = 32;
-    const packOffset = 45;
+    const spacingY=34;
+    const rowSpacingX=32;
+    const packOffset=45;
 
-    function setPlayer(team, number, px, py) {
-        const p = frame.players.find(pl => pl.team === team && pl.number === number);
-        if (!p) return;
-        p.visible = true;
-        p.x = px;
-        p.y = py;
+    function setP(team,num,px,py){
+        const p=f.players.find(pl=>pl.team===team && pl.number===num);
+        if(!p) return;
+        p.visible=true;
+        p.x=px; p.y=py;
     }
 
-    // Azul izquierda
-    if (choice === "A" || choice === "AB") {
-        const baseX = x - packOffset;
-        const centerY = y;
-        setPlayer("A", 1, baseX, centerY - spacingY);
-        setPlayer("A", 2, baseX, centerY);
-        setPlayer("A", 3, baseX, centerY + spacingY);
-        setPlayer("A", 4, baseX - rowSpacingX, centerY - spacingY * 1.5);
-        setPlayer("A", 5, baseX - rowSpacingX, centerY - spacingY * 0.5);
-        setPlayer("A", 6, baseX - rowSpacingX, centerY + spacingY * 0.5);
-        setPlayer("A", 7, baseX - rowSpacingX, centerY + spacingY * 1.5);
-        setPlayer("A", 8, baseX - rowSpacingX * 2, centerY);
+    if(choice==="A"||choice==="AB"){
+        const bx=x-packOffset, cy=y;
+        setP("A",1,bx,cy-spacingY);
+        setP("A",2,bx,cy);
+        setP("A",3,bx,cy+spacingY);
+        setP("A",4,bx-rowSpacingX,cy-spacingY*1.5);
+        setP("A",5,bx-rowSpacingX,cy-spacingY*0.5);
+        setP("A",6,bx-rowSpacingX,cy+spacingY*0.5);
+        setP("A",7,bx-rowSpacingX,cy+spacingY*1.5);
+        setP("A",8,bx-rowSpacingX*2,cy);
     }
 
-    // Rojo derecha
-    if (choice === "B" || choice === "AB") {
-        const baseX = x + packOffset;
-        const centerY = y;
-        setPlayer("B", 1, baseX, centerY - spacingY);
-        setPlayer("B", 2, baseX, centerY);
-        setPlayer("B", 3, baseX, centerY + spacingY);
-        setPlayer("B", 4, baseX + rowSpacingX, centerY - spacingY * 1.5);
-        setPlayer("B", 5, baseX + rowSpacingX, centerY - spacingY * 0.5);
-        setPlayer("B", 6, baseX + rowSpacingX, centerY + spacingY * 0.5);
-        setPlayer("B", 7, baseX + rowSpacingX, centerY + spacingY * 1.5);
-        setPlayer("B", 8, baseX + rowSpacingX * 2, centerY);
+    if(choice==="B"||choice==="AB"){
+        const bx=x+packOffset, cy=y;
+        setP("B",1,bx,cy-spacingY);
+        setP("B",2,bx,cy);
+        setP("B",3,bx,cy+spacingY);
+        setP("B",4,bx+rowSpacingX,cy-spacingY*1.5);
+        setP("B",5,bx+rowSpacingX,cy-spacingY*0.5);
+        setP("B",6,bx+rowSpacingX,cy+spacingY*0.5);
+        setP("B",7,bx+rowSpacingX,cy+spacingY*1.5);
+        setP("B",8,bx+rowSpacingX*2,cy);
     }
 
     syncPlayerToggles();
@@ -691,216 +573,202 @@ function placeScrumWithPrompt(x, y) {
 }
 
 // ==========================
-// MOUSE EVENTS (selección múltiple + rastro + preview flechas)
+// MOUSE EVENTS
 // ==========================
-canvas.addEventListener("mousedown", e => {
-    const pos = canvasPos(e);
-    const frame = getCurrentFrame();
+canvas.addEventListener("mousedown",e=>{
+    const pos=canvasPos(e);
+    const f=getCurrentFrame();
 
-    if (mode === "move") {
-        // Texto primero
-        const t = findTextAt(pos.x, pos.y);
-        if (t) {
-            dragTarget = { type: "text", obj: t };
-            dragOffsetX = pos.x - t.x;
-            dragOffsetY = pos.y - t.y;
+    if(mode==="move"){
+        const t=findTextAt(pos.x,pos.y);
+        if(t){
+            dragTarget={type:"text",obj:t};
+            dragOffsetX=pos.x-t.x;
+            dragOffsetY=pos.y-t.y;
             return;
         }
 
-        // Jugadores
-        const p = findPlayerAt(pos);
-        if (p) {
-            if (e.ctrlKey) {
-                // Ctrl solo añade (no quita) para no perder selección
-                if (!selectedPlayers.has(p)) selectedPlayers.add(p);
+        const p=findPlayerAt(pos);
+        if(p){
+            if(e.ctrlKey){
+                if(!selectedPlayers.has(p)) selectedPlayers.add(p);
             } else {
-                if (!selectedPlayers.has(p) || selectedPlayers.size > 1) {
+                if(!selectedPlayers.has(p)||selectedPlayers.size>1){
                     selectedPlayers.clear();
                     selectedPlayers.add(p);
                 }
             }
-            // arrastre conjunto
-            const playersArr = Array.from(selectedPlayers);
-            const startPositions = playersArr.map(pl => ({ x: pl.x, y: pl.y }));
-            dragTarget = {
-                type: "players",
-                players: playersArr,
-                startPositions,
-                startMouse: pos
+            const arr=Array.from(selectedPlayers);
+            dragTarget={
+                type:"players",
+                players:arr,
+                startPositions:arr.map(pl=>({x:pl.x,y:pl.y})),
+                startMouse:pos
             };
             drawFrame();
             return;
         }
 
-        // Balón
-        if (ballHitTest(pos)) {
-            const b = frame.ball;
-            dragTarget = { type: "ball", obj: b };
-            dragOffsetX = pos.x - b.x;
-            dragOffsetY = pos.y - b.y;
+        if(ballHitTest(pos)){
+            const b=f.ball;
+            dragTarget={type:"ball",obj:b};
+            dragOffsetX=pos.x-b.x;
+            dragOffsetY=pos.y-b.y;
             return;
         }
 
-        // Nada: iniciar selección por rectángulo
-        if (!e.ctrlKey) selectedPlayers.clear();
-        selectingBox = true;
-        selectBoxStart = pos;
-        selectBoxEnd = pos;
+        if(!e.ctrlKey) selectedPlayers.clear();
+        selectingBox=true;
+        selectBoxStart=pos;
+        selectBoxEnd=pos;
         drawFrame();
         return;
     }
 
-    if (mode === "draw" || mode === "kick") {
-        if (!arrowStart) {
-            arrowStart = pos;
+    if(mode==="draw"||mode==="kick"){
+        if(!arrowStart){
+            arrowStart=pos;
         } else {
-            frame.arrows.push({
-                x1: arrowStart.x,
-                y1: arrowStart.y,
-                x2: pos.x,
-                y2: pos.y,
-                type: mode === "kick" ? "kick" : "normal"
+            f.arrows.push({
+                x1:arrowStart.x,
+                y1:arrowStart.y,
+                x2:pos.x,
+                y2:pos.y,
+                type: mode==="kick"?"kick":"normal"
             });
-            arrowStart = null;
-            previewArrow = null;
+            arrowStart=null;
+            previewArrow=null;
             drawFrame();
         }
         return;
     }
 
-    if (mode === "text") {
-        const txt = prompt("Texto a mostrar:", "");
-        if (txt && txt.trim() !== "") {
-            frame.texts.push({ x: pos.x, y: pos.y, text: txt.trim() });
+    if(mode==="text"){
+        const txt=prompt("Texto:","");
+        if(txt && txt.trim()!==""){
+            f.texts.push({x:pos.x,y:pos.y,text:txt.trim()});
             drawFrame();
         }
         return;
     }
 
-    if (mode === "scrum") {
-        placeScrumWithPrompt(pos.x, pos.y);
+    if(mode==="scrum"){
+        placeScrumWithPrompt(pos.x,pos.y);
         return;
     }
 });
 
-canvas.addEventListener("mousemove", e => {
-    const pos = canvasPos(e);
+canvas.addEventListener("mousemove",e=>{
+    const pos=canvasPos(e);
 
-    // Preview flecha
-    if ((mode === "draw" || mode === "kick") && arrowStart) {
-        previewArrow = {
-            x1: arrowStart.x,
-            y1: arrowStart.y,
-            x2: pos.x,
-            y2: pos.y,
-            type: mode === "kick" ? "kick" : "normal"
+    if((mode==="draw"||mode==="kick")&&arrowStart){
+        previewArrow={
+            x1:arrowStart.x,
+            y1:arrowStart.y,
+            x2:pos.x,
+            y2:pos.y,
+            type: mode==="kick"?"kick":"normal"
         };
         drawFrame();
         return;
     }
 
-    if (dragTarget && mode === "move") {
-        if (dragTarget.type === "text") {
-            dragTarget.obj.x = pos.x - dragOffsetX;
-            dragTarget.obj.y = pos.y - dragOffsetY;
-        } else if (dragTarget.type === "ball") {
-            dragTarget.obj.x = pos.x - dragOffsetX;
-            dragTarget.obj.y = pos.y - dragOffsetY;
-        } else if (dragTarget.type === "players") {
-            const dx = pos.x - dragTarget.startMouse.x;
-            const dy = pos.y - dragTarget.startMouse.y;
-            dragTarget.players.forEach((pl, idx) => {
-                pl.x = dragTarget.startPositions[idx].x + dx;
-                pl.y = dragTarget.startPositions[idx].y + dy;
+    if(dragTarget && mode==="move"){
+        if(dragTarget.type==="text"){
+            dragTarget.obj.x=pos.x-dragOffsetX;
+            dragTarget.obj.y=pos.y-dragOffsetY;
+        } else if(dragTarget.type==="ball"){
+            dragTarget.obj.x=pos.x-dragOffsetX;
+            dragTarget.obj.y=pos.y-dragOffsetY;
+        } else if(dragTarget.type==="players"){
+            const dx=pos.x-dragTarget.startMouse.x;
+            const dy=pos.y-dragTarget.startMouse.y;
+            dragTarget.players.forEach((pl,i)=>{
+                pl.x=dragTarget.startPositions[i].x+dx;
+                pl.y=dragTarget.startPositions[i].y+dy;
             });
         }
         drawFrame();
         return;
     }
 
-    if (selectingBox && mode === "move") {
-        selectBoxEnd = pos;
-
-        // actualizar selección
-        const x1 = Math.min(selectBoxStart.x, selectBoxEnd.x);
-        const y1 = Math.min(selectBoxStart.y, selectBoxEnd.y);
-        const x2 = Math.max(selectBoxStart.x, selectBoxEnd.x);
-        const y2 = Math.max(selectBoxStart.y, selectBoxEnd.y);
-
+    if(selectingBox && mode==="move"){
+        selectBoxEnd=pos;
         selectedPlayers.clear();
-        const frame = getCurrentFrame();
-        frame.players.forEach(p => {
-            if (!p.visible) return;
-            if (p.x >= x1 && p.x <= x2 && p.y >= y1 && p.y <= y2) {
+        const x1=Math.min(selectBoxStart.x,selectBoxEnd.x);
+        const y1=Math.min(selectBoxStart.y,selectBoxEnd.y);
+        const x2=Math.max(selectBoxStart.x,selectBoxEnd.x);
+        const y2=Math.max(selectBoxStart.y,selectBoxEnd.y);
+        getCurrentFrame().players.forEach(p=>{
+            if(!p.visible) return;
+            if(p.x>=x1 && p.x<=x2 && p.y>=y1 && p.y<=y2){
                 selectedPlayers.add(p);
             }
         });
-
         drawFrame();
     }
 });
 
-canvas.addEventListener("mouseup", () => {
-    dragTarget = null;
-    if (selectingBox) {
-        selectingBox = false;
-        selectBoxStart = null;
-        selectBoxEnd = null;
+canvas.addEventListener("mouseup",()=>{
+    dragTarget=null;
+    if(selectingBox){
+        selectingBox=false;
+        selectBoxStart=null;
+        selectBoxEnd=null;
         drawFrame();
     }
 });
 
-canvas.addEventListener("dblclick", e => {
-    const pos = canvasPos(e);
-    const t = findTextAt(pos.x, pos.y);
-    if (!t) return;
-    const nuevo = prompt("Editar texto (vacío para borrar):", t.text);
-    if (nuevo === null) return;
-    const frame = getCurrentFrame();
-    if (nuevo.trim() === "") {
-        frame.texts = frame.texts.filter(x => x !== t);
+canvas.addEventListener("dblclick",e=>{
+    const pos=canvasPos(e);
+    const t=findTextAt(pos.x,pos.y);
+    if(!t) return;
+    const n=prompt("Editar texto (vacío para borrar):",t.text);
+    if(n===null) return;
+    const f=getCurrentFrame();
+    if(n.trim()===""){
+        f.texts=f.texts.filter(x=>x!==t);
     } else {
-        t.text = nuevo.trim();
+        t.text=n.trim();
     }
     drawFrame();
 });
 
-// ESC limpia selección
-window.addEventListener("keydown", e => {
-    if (e.key === "Escape") {
+window.addEventListener("keydown",e=>{
+    if(e.key==="Escape"){
         selectedPlayers.clear();
         drawFrame();
     }
 });
 
 // ==========================
-// FRAMES
+// FRAME CONTROLS
 // ==========================
-function updateFrameUI() {
-    document.getElementById("current-frame-index").textContent = currentFrameIndex + 1;
+function updateFrameUI(){
+    document.getElementById("current-frame-index").textContent = currentFrameIndex+1;
     document.getElementById("total-frames").textContent = frames.length;
 }
 
-document.getElementById("add-frame").onclick = () => {
-    const newFrame = cloneFrame(getCurrentFrame());
-    frames.splice(currentFrameIndex + 1, 0, newFrame);
+document.getElementById("add-frame").onclick=()=>{
+    const nf = cloneFrame(getCurrentFrame());
+    frames.splice(currentFrameIndex+1,0,nf);
     currentFrameIndex++;
     updateFrameUI();
     drawFrame();
 };
 
-document.getElementById("delete-frame").onclick = () => {
-    if (frames.length > 1) {
-        frames.splice(currentFrameIndex, 1);
-        currentFrameIndex = Math.max(0, currentFrameIndex - 1);
+document.getElementById("delete-frame").onclick=()=>{
+    if(frames.length>1){
+        frames.splice(currentFrameIndex,1);
+        currentFrameIndex=Math.max(0,currentFrameIndex-1);
         updateFrameUI();
         drawFrame();
         syncPlayerToggles();
     }
 };
 
-document.getElementById("next-frame").onclick = () => {
-    if (currentFrameIndex < frames.length - 1) {
+document.getElementById("next-frame").onclick=()=>{
+    if(currentFrameIndex<frames.length-1){
         currentFrameIndex++;
         updateFrameUI();
         drawFrame();
@@ -908,8 +776,8 @@ document.getElementById("next-frame").onclick = () => {
     }
 };
 
-document.getElementById("prev-frame").onclick = () => {
-    if (currentFrameIndex > 0) {
+document.getElementById("prev-frame").onclick=()=>{
+    if(currentFrameIndex>0){
         currentFrameIndex--;
         updateFrameUI();
         drawFrame();
@@ -918,120 +786,112 @@ document.getElementById("prev-frame").onclick = () => {
 };
 
 // ==========================
-// PLAYBACK SUAVE
+// PLAYBACK
 // ==========================
-async function playSmooth() {
-    if (isPlaying || frames.length < 2) return;
-    isPlaying = true;
-    cancelPlay = false;
+async function playSmooth(){
+    if(isPlaying || frames.length<2) return;
+    isPlaying=true;
+    cancelPlay=false;
 
-    for (let i = 0; i < frames.length - 1; i++) {
-        if (cancelPlay) break;
-        const from = frames[i];
-        const to = frames[i + 1];
+    for(let i=0;i<frames.length-1;i++){
+        if(cancelPlay) break;
+        const a=frames[i], b=frames[i+1];
 
-        for (let step = 0; step <= INTERP_STEPS; step++) {
-            if (cancelPlay) break;
-            const t = step / INTERP_STEPS;
-            drawInterpolatedFrame(from, to, t);
-            await new Promise(r => setTimeout(r, INTERP_DURATION / INTERP_STEPS));
+        for(let step=0;step<=INTERP_STEPS;step++){
+            if(cancelPlay) break;
+            drawInterpolatedFrame(a,b,step/INTERP_STEPS);
+            await new Promise(r=>setTimeout(r,INTERP_DURATION/INTERP_STEPS));
         }
-        currentFrameIndex = i + 1;
+        currentFrameIndex=i+1;
         updateFrameUI();
     }
 
     drawFrame();
-    isPlaying = false;
-    cancelPlay = false;
+    isPlaying=false;
+    cancelPlay=false;
 }
 
-document.getElementById("play-animation").onclick = () => {
+document.getElementById("play-animation").onclick=()=>{
     playSmooth();
 };
 
-document.getElementById("stop-animation").onclick = () => {
-    cancelPlay = true;
+document.getElementById("stop-animation").onclick=()=>{
+    cancelPlay=true;
 };
 
 // ==========================
 // CLEAR ARROWS
 // ==========================
-document.getElementById("clear-arrows").onclick = () => {
-    getCurrentFrame().arrows = [];
+document.getElementById("clear-arrows").onclick=()=>{
+    getCurrentFrame().arrows=[];
     drawFrame();
 };
 
 // ==========================
 // TOGGLE BALL
 // ==========================
-document.getElementById("toggle-ball").onclick = () => {
-    const frame = getCurrentFrame();
-    frame.ball.visible = !frame.ball.visible;
+document.getElementById("toggle-ball").onclick=()=>{
+    const f=getCurrentFrame();
+    f.ball.visible=!f.ball.visible;
     drawFrame();
 };
 
 // ==========================
-// EXPORT WEBM (alta calidad)
+// EXPORT WEBM (HIGH QUALITY)
 // ==========================
-document.getElementById("export-webm").onclick = async () => {
-    if (frames.length < 2) return;
+document.getElementById("export-webm").onclick=async()=>{
+    if(frames.length<2) return;
 
-    const stream = canvas.captureStream(30);
-    const chunks = [];
-    const rec = new MediaRecorder(stream, {
-        mimeType: "video/webm;codecs=vp9",
-        videoBitsPerSecond: 8000000  // 8 Mbps
+    const stream=canvas.captureStream(30);
+    const chunks=[];
+    const rec=new MediaRecorder(stream,{
+        mimeType:"video/webm;codecs=vp9",
+        videoBitsPerSecond:8000000
     });
 
-    rec.ondataavailable = e => chunks.push(e.data);
-    rec.onstop = () => {
-        const blob = new Blob(chunks, { type: "video/webm" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "animacion_rugby.webm";
+    rec.ondataavailable=e=>chunks.push(e.data);
+    rec.onstop=()=>{
+        const blob=new Blob(chunks,{type:"video/webm"});
+        const url=URL.createObjectURL(blob);
+        const a=document.createElement("a");
+        a.href=url;
+        a.download="animacion_rugby.webm";
         a.click();
         URL.revokeObjectURL(url);
     };
 
     rec.start();
 
-    // misma lógica que playSmooth, pero sin tocar isPlaying/cancelPlay
-    for (let i = 0; i < frames.length - 1; i++) {
-        const from = frames[i];
-        const to = frames[i + 1];
-
-        for (let step = 0; step <= INTERP_STEPS; step++) {
-            const t = step / INTERP_STEPS;
-            drawInterpolatedFrame(from, to, t);
-            await new Promise(r => setTimeout(r, INTERP_DURATION / INTERP_STEPS));
+    for(let i=0;i<frames.length-1;i++){
+        const a=frames[i], b=frames[i+1];
+        for(let step=0;step<=INTERP_STEPS;step++){
+            drawInterpolatedFrame(a,b,step/INTERP_STEPS);
+            await new Promise(r=>setTimeout(r,INTERP_DURATION/INTERP_STEPS));
         }
     }
 
-    // último frame quieto un poco
-    currentFrameIndex = frames.length - 1;
+    currentFrameIndex=frames.length-1;
     updateFrameUI();
     drawFrame();
-    await new Promise(r => setTimeout(r, 500));
+    await new Promise(r=>setTimeout(r,500));
 
     rec.stop();
 };
 
 // ==========================
-// BOTONES MODO
+// MODE BUTTONS
 // ==========================
-document.getElementById("mode-move").onclick  = () => setMode("move");
-document.getElementById("mode-draw").onclick  = () => setMode("draw");
-document.getElementById("mode-kick").onclick  = () => setMode("kick");
-document.getElementById("mode-text").onclick  = () => setMode("text");
-document.getElementById("mode-scrum").onclick = () => setMode("scrum");
+document.getElementById("mode-move").onclick=()=>setMode("move");
+document.getElementById("mode-draw").onclick=()=>setMode("draw");
+document.getElementById("mode-kick").onclick=()=>setMode("kick");
+document.getElementById("mode-text").onclick=()=>setMode("text");
+document.getElementById("mode-scrum").onclick=()=>setMode("scrum");
 
 // ==========================
-// START
+// INIT
 // ==========================
 frames.push(createFrame());
 loadPlayerPanels();
 updateFrameUI();
 drawFrame();
 syncPlayerToggles();
-
