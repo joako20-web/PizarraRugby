@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Pizarra Rugby</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div id="sidebar">
+        <div class="panel">
+            <h2>Jugadores AZUL</h2>
+
+            <div class="player-selector">
+                <select id="blue-select"></select>
+                <button id="blue-add">Añadir / Mostrar</button>
+            </div>
+
+            <div id="players-blue" class="players-grid"></div>
+        </div>
+
+        <div class="panel">
+            <h2>Jugadores ROJO</h2>
+
+            <div class="player-selector">
+                <select id="red-select"></select>
+                <button id="red-add">Añadir / Mostrar</button>
+            </div>
+
+            <div id="players-red" class="players-grid"></div>
+        </div>
+
+<div class="panel">
+    <h3>Modos</h3>
+    <button id="mode-move" class="active">Mover fichas</button>
+    <button id="mode-draw">Flecha normal</button>
+    <button id="mode-kick">Flecha de patada</button>
+    <button id="mode-text">Texto</button>
+    <button id="mode-scrum">Melé</button>
+    <button id="clear-arrows">Borrar flechas</button>
+    <button id="toggle-ball">Mostrar / ocultar balón</button>
+</div>
+
+
+
+        <div class="panel">
+            <h3>Animación</h3>
+            <button id="add-frame">Añadir frame</button>
+            <button id="delete-frame">Borrar frame</button>
+            <button id="prev-frame">◀ Anterior</button>
+            <button id="next-frame">Siguiente ▶</button>
+            <button id="play-animation">▶ Reproducir (suave)</button>
+            <button id="stop-animation">■ Parar</button>
+
+            <div id="timeline-info">
+                Frame: <span id="current-frame-index">1</span> /
+                <span id="total-frames">1</span>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3>Exportar</h3>
+            <button id="export-webm">Exportar WebM</button>
+        </div>
+    </div>
+
+    <div id="main">
+        <canvas id="pitch" width="1400" height="800"></canvas>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
