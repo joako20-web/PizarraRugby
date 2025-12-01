@@ -183,22 +183,35 @@ function drawPitch() {
     const goalHeight = fieldHeight * 0.2;
     const postWidth = 18;
 
-    function drawPosts(xBase) {
-        const yMid = marginY + fieldHeight / 2;
-        ctx.setLineDash([]);
-        ctx.lineWidth = 4;
-        ctx.strokeStyle = "#ffffff";
-        ctx.beginPath();
-        // verticales
-        ctx.moveTo(xBase, yMid - goalHeight / 2);
-        ctx.lineTo(xBase, yMid + goalHeight / 2);
-        ctx.moveTo(xBase + postWidth, yMid - goalHeight / 2);
-        ctx.lineTo(xBase + postWidth, yMid + goalHeight / 2);
-        // travesaño
-        ctx.moveTo(xBase, yMid);
-        ctx.lineTo(xBase + postWidth, yMid);
-        ctx.stroke();
-    }
+function drawPosts(xBase) {
+    const yTop = marginY;
+    const yBottom = marginY + fieldHeight;
+    const yCrossbar = marginY + fieldHeight * 0.50;     // travesaño a media altura
+    const postHeight = fieldHeight * 0.35;              // altura realista de los postes
+    const lineWidth = 3;
+    const separation = 24;                              // separación entre palos
+
+    ctx.setLineDash([]);
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = lineWidth;
+
+    ctx.beginPath();
+
+    // Poste izquierdo
+    ctx.moveTo(xBase, yCrossbar - postHeight / 2);      // arriba
+    ctx.lineTo(xBase, yCrossbar + postHeight / 2);      // abajo
+
+    // Poste derecho
+    ctx.moveTo(xBase + separation, yCrossbar - postHeight / 2);
+    ctx.lineTo(xBase + separation, yCrossbar + postHeight / 2);
+
+    // Traversa
+    ctx.moveTo(xBase, yCrossbar);
+    ctx.lineTo(xBase + separation, yCrossbar);
+
+    ctx.stroke();
+}
+
 
     drawPosts(xBackLeft + 10);
     drawPosts(xBackRight - postWidth - 10);
@@ -1021,3 +1034,4 @@ loadPlayerPanels();
 updateFrameUI();
 drawFrame();
 syncPlayerToggles();
+
