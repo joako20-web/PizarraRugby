@@ -719,21 +719,20 @@ function togglePlayerByTeamNumber(team, num){
     p.visible=!p.visible;
     if(p.visible && p.x===null){
         const {fieldWidth,fieldHeight}=fieldDims();
-// Colocación lateral idéntica pero simétrica
+
 const xSide = team === "A"
-    ? marginX + fieldWidth * 0.30
-    : marginX + fieldWidth * 0.70;
+    ? marginX + fieldWidth * 0.15    // lado izquierdo
+    : marginX + fieldWidth * 0.85;   // lado derecho
 
-// Colocación vertical centrada
-const yTop = marginY + fieldHeight * 0.35;
+// Espaciado vertical
+const spacing = 45;
 
-// Rejilla 5x3, igual para ambos equipos
-const row = Math.floor((num - 1) / 5);
-const col = (num - 1) % 5;
+// Posición arriba del todo
+const yTop = marginY + 60;
 
-// Espaciado más uniforme
-p.x = xSide + col * 45;
-p.y = yTop + row * 55;
+// CADA jugador ocupa una posición vertical según su dorsal
+p.x = xSide;
+p.y = yTop + (num - 1) * spacing;
 
     }
 
