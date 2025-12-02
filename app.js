@@ -479,6 +479,7 @@ function placeScrumWithPrompt(x,y){
 
     syncPlayerToggles();
     drawFrame();
+    setMode("move");
 }
 
 
