@@ -2,7 +2,7 @@
 // CONFIGURACIÓN GENERAL
 // ==============================
 const NUM_PLAYERS = 15;
-const INTERP_DURATION = 800;
+const INTERP_DURATION = 950;
 const INTERP_STEPS = 24;
 
 let mode = "move";
@@ -23,6 +23,7 @@ let selectedPlayers = new Set();
 let selectingBox = false;
 let selectBoxStart = null;
 let selectBoxEnd = null;
+let kickArcHeight = 60;  // altura inicial del arco de la patada
 
 const canvas = document.getElementById("pitch");
 const ctx = canvas.getContext("2d");
@@ -200,30 +201,44 @@ function drawNormalArrow(a){
 }
 
 function drawKickArrow(a){
-    const mx=(a.x1+a.x2)/2;
-    const my=(a.y1+a.y2)/2 - 60;
+    // Crear el punto de control del arco
+    const mx = (a.x1 + a.x2) / 2;
+    const my = (a.y1 + a.y2) / 2 - kickArcHeight;
 
-    ctx.strokeStyle="yellow";
-    ctx.lineWidth=3;
+    ctx.strokeStyle = "yellow";
+    ctx.lineWidth = 3;
 
+    // Curva del arco
     ctx.beginPath();
-    ctx.moveTo(a.x1,a.y1);
-    ctx.quadraticCurveTo(mx,my,a.x2,a.y2);
+    ctx.moveTo(a.x1, a.y1);
+    ctx.quadraticCurveTo(mx, my, a.x2, a.y2);
     ctx.stroke();
 
-    const t=0.9;
-    const qx = (1-t)*(1-t)*a.x1 + 2*(1-t)*t*mx + t*t*a.x2;
-    const qy = (1-t)*(1-t)*a.y1 + 2*(1-t)*t*my + t*t*a.y2;
-    const ang=Math.atan2(a.y2-qy,a.x2-qx);
-    const head=14;
+    // Calcular punto de orientación para la punta
+    const t = 0.9;
+    const qx = (1 - t)*(1 - t)*a.x1 + 2*(1 - t)*t*mx + t*t*a.x2;
+    const qy = (1 - t)*(1 - t)*a.y1 + 2*(1 - t)*t*my + t*t*a.y2;
 
+    const ang = Math.atan2(a.y2 - qy, a.x2 - qx);
+    const head = 14;
+
+    // PUNTA DE LA FLECHA
     ctx.beginPath();
-    ctx.moveTo(a.x2,a.y2);
-    ctx.lineTo(a.x2-head*Math.cos(ang-Math.PI/6), a.y2-head*Math.sin(ang-M_PI/6));
-    ctx.lineTo(a.x2-head*Math.cos(ang+Math.PI/6), a.y2-head*Math.sin(ang+Math.PI/6));
-    ctx.fillStyle="yellow";
+    ctx.moveTo(a.x2, a.y2);
+    ctx.lineTo(
+        a.x2 - head * Math.cos(ang - Math.PI/6),
+        a.y2 - head * Math.sin(ang - Math.PI/6)
+    );
+    ctx.lineTo(
+        a.x2 - head * Math.cos(ang + Math.PI/6),
+        a.y2 - head * Math.sin(ang + Math.PI/6)
+    );
+    ctx.closePath();
+    ctx.fillStyle = "yellow";
     ctx.fill();
 }
+
+
 
 
 // ==============================
@@ -427,9 +442,9 @@ function placeScrumWithPrompt(x,y){
     const choice=(prompt("Equipo para melé: A, B, AB","AB")||"AB").toUpperCase();
     const f=getCurrentFrame();
 
-    const spacingY=34;
+    const spacingY=40;
     const rowX=32;
-    const pack=45;
+    const pack=35;
 
     function set(team,num,px,py){
         const p=f.players.find(a=>a.team===team && a.number===num);
@@ -443,22 +458,22 @@ function placeScrumWithPrompt(x,y){
         set("A",1,bx,cy-spacingY);
         set("A",2,bx,cy);
         set("A",3,bx,cy+spacingY);
-        set("A",4,bx-rowX,cy-spacingY*1.5);
-        set("A",5,bx-rowX,cy-spacingY*0.5);
-        set("A",6,bx-rowX,cy+spacingY*0.5);
+        set("A",6,bx-rowX,cy-spacingY*1.5);
+        set("A",4,bx-rowX,cy-spacingY*0.5);
+        set("A",5,bx-rowX,cy+spacingY*0.5);
         set("A",7,bx-rowX,cy+spacingY*1.5);
         set("A",8,bx-rowX*2,cy);
     }
 
     if(choice==="B"||choice==="AB"){
         const bx=x+pack, cy=y;
-        set("B",1,bx,cy-spacingY);
+        set("B",3,bx,cy-spacingY);
         set("B",2,bx,cy);
-        set("B",3,bx,cy+spacingY);
-        set("B",4,bx+rowX,cy-spacingY*1.5);
+        set("B",1,bx,cy+spacingY);
+        set("B",7,bx+rowX,cy-spacingY*1.5);
         set("B",5,bx+rowX,cy-spacingY*0.5);
-        set("B",6,bx+rowX,cy+spacingY*0.5);
-        set("B",7,bx+rowX,cy+spacingY*1.5);
+        set("B",4,bx+rowX,cy+spacingY*0.5);
+        set("B",6,bx+rowX,cy+spacingY*1.5);
         set("B",8,bx+rowX*2,cy);
     }
 
@@ -555,17 +570,25 @@ canvas.addEventListener("mousedown",e=>{
 canvas.addEventListener("mousemove",e=>{
     const pos=canvasPos(e);
 
-    if((mode==="draw"||mode==="kick") && arrowStart){
-        previewArrow={
-            x1:arrowStart.x,
-            y1:arrowStart.y,
-            x2:pos.x,
-            y2:pos.y,
-            type: mode==="kick"?"kick":"normal"
-        };
-        drawFrame();
-        return;
+if ((mode === "draw" || mode === "kick") && arrowStart) {
+
+    // ALTURA AJUSTABLE — SHIFT pulsado
+    if (e.shiftKey && mode === "kick") {
+        kickArcHeight += (arrowStart.y - pos.y) * 0.1;
+        kickArcHeight = Math.max(10, Math.min(200, kickArcHeight)); 
     }
+
+    previewArrow = {
+        x1: arrowStart.x,
+        y1: arrowStart.y,
+        x2: pos.x,
+        y2: pos.y,
+        type: mode === "kick" ? "kick" : "normal"
+    };
+
+    drawFrame();
+    return;
+}
 
     if(dragTarget && mode==="move"){
         if(dragTarget.type==="text"){
@@ -838,6 +861,39 @@ document.getElementById("stop-animation").onclick=()=>{cancelPlay=true;};
 // ==============================
 document.getElementById("clear-arrows").onclick=()=>{
     getCurrentFrame().arrows=[];
+    drawFrame();
+};
+document.getElementById("clear-board").onclick = () => {
+    const f = getCurrentFrame();
+
+    // Reset jugadores
+    f.players.forEach(p => {
+        p.visible = false;
+        p.x = null;
+        p.y = null;
+    });
+
+    // Reset flechas
+    f.arrows = [];
+    // Reset textos
+    f.texts = [];
+    // Reset trails
+    f.trailLines = [];
+    // Reset balón
+    f.ball = {
+        x: canvas.width / 2,
+        y: canvas.height / 2,
+        rx: 24,
+        ry: 16,
+        visible: true
+    };
+
+    selectedPlayers.clear();
+    dragTarget = null;
+    previewArrow = null;
+    arrowStart = null;
+
+    syncPlayerToggles();
     drawFrame();
 };
 
