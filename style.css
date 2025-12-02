@@ -110,3 +110,6 @@ button.active {
 .player-selector button {
     flex: 1;
 }
+.sep{
+    margin:8px 0;
+}

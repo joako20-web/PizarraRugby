@@ -717,15 +717,24 @@ function togglePlayerByTeamNumber(team, num){
     const f=getCurrentFrame();
     const p=f.players.find(x=>x.team===team && x.number===num);
     p.visible=!p.visible;
-
     if(p.visible && p.x===null){
         const {fieldWidth,fieldHeight}=fieldDims();
-        const bx=team==="A"? marginX+fieldWidth*0.25 : marginX+fieldWidth*0.75;
-        const by=marginY+fieldHeight*0.25;
-        const row=Math.floor((num-1)/5);
-        const col=(num-1)%5;
-        p.x=bx+col*40;
-        p.y=by+row*50;
+// Colocación lateral idéntica pero simétrica
+const xSide = team === "A"
+    ? marginX + fieldWidth * 0.30
+    : marginX + fieldWidth * 0.70;
+
+// Colocación vertical centrada
+const yTop = marginY + fieldHeight * 0.35;
+
+// Rejilla 5x3, igual para ambos equipos
+const row = Math.floor((num - 1) / 5);
+const col = (num - 1) % 5;
+
+// Espaciado más uniforme
+p.x = xSide + col * 45;
+p.y = yTop + row * 55;
+
     }
 
     const selector=`.player-toggle[data-team="${team}"][data-number="${num}"]`;
