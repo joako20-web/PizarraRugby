@@ -30,8 +30,13 @@
 <div class="panel">
     <h3>Modos</h3>
     <button id="mode-move" class="active">Mover fichas</button>
-    <button id="mode-draw">Flecha normal</button>
-    <button id="mode-kick">Flecha de patada</button>
+    <div id="arrow-menu-container">
+        <button id="mode-arrow">Flecha ▼</button>
+        <div id="arrow-menu" class="hidden">
+            <button data-arrow="normal">Flecha normal</button>
+            <button data-arrow="kick">Flecha de patada</button>
+        </div>
+    </div>
     <button id="mode-text">Texto</button>
     <button id="mode-scrum">Melé</button>
     <button id="clear-arrows">Borrar flechas</button>

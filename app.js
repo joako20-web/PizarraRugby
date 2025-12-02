@@ -789,8 +789,6 @@ function setMode(m){
     previewArrow=null;
     document.querySelectorAll("#sidebar button").forEach(b=>b.classList.remove("active"));
     if(m==="move") document.getElementById("mode-move").classList.add("active");
-    if(m==="draw") document.getElementById("mode-draw").classList.add("active");
-    if(m==="kick") document.getElementById("mode-kick").classList.add("active");
     if(m==="text") document.getElementById("mode-text").classList.add("active");
     if(m==="scrum") document.getElementById("mode-scrum").classList.add("active");
     drawFrame();
@@ -886,6 +884,27 @@ document.getElementById("stop-animation").onclick=()=>{cancelPlay=true;};
 // ==============================
 // CLEAR ARROWS
 // ==============================
+// OPCIONES DEL MENÚ DE FLECHAS
+document.querySelectorAll("#arrow-menu button").forEach(btn => {
+    btn.onclick = () => {
+
+        const type = btn.dataset.arrow;
+
+        if (type === "normal") {
+            setMode("draw");
+            document.getElementById("mode-arrow").textContent = "Flecha (Normal) ▼";
+        }
+
+        if (type === "kick") {
+            setMode("kick");
+            document.getElementById("mode-arrow").textContent = "Flecha (Patada) ▼";
+        }
+
+        // cerrar el menú al elegir
+        document.getElementById("arrow-menu").classList.add("hidden");
+    };
+});
+
 document.getElementById("clear-arrows").onclick=()=>{
     getCurrentFrame().arrows=[];
     drawFrame();
@@ -982,10 +1001,12 @@ document.getElementById("export-webm").onclick=async()=>{
 // BOTONES DE MODO
 // ==============================
 document.getElementById("mode-move").onclick=()=>setMode("move");
-document.getElementById("mode-draw").onclick=()=>setMode("draw");
-document.getElementById("mode-kick").onclick=()=>setMode("kick");
 document.getElementById("mode-text").onclick=()=>setMode("text");
 document.getElementById("mode-scrum").onclick=()=>setMode("scrum");
+document.getElementById("mode-arrow").onclick = () => {
+    document.getElementById("arrow-menu").classList.toggle("hidden");
+};
+
 
 
 // ==============================

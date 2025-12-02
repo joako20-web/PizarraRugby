@@ -114,3 +114,32 @@ button.active {
 .sep{
     margin:8px 0;
 }
+#arrow-menu-container {
+    position: relative;
+}
+
+#arrow-menu {
+    position: absolute;
+    top: 36px;
+    left: 0;
+    background: #1f2a3a;
+    border: 1px solid #333;
+    padding: 5px;
+    border-radius: 6px;
+    width: 100%;
+    z-index: 50;
+}
+
+#arrow-menu.hidden {
+    display: none;
+}
+
+#arrow-menu button {
+    width: 100%;
+    margin: 2px 0;
+    padding: 6px;
+    background: #293546;
+    border: 1px solid #444;
+    color: white;
+    text-align: left;
+}
