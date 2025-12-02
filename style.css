@@ -15,7 +15,7 @@ body {
     width: 320px;
     background: #141b24;
     padding: 10px;
-    overflow-y: auto;
+    overflow-y: none;
     border-right: 1px solid #222;
 }
 
@@ -33,7 +33,8 @@ body {
 }
 
 .panel {
-    margin-bottom: 14px;
+    margin-top: 0px;
+    margin-bottom: 0px;
     padding: 10px;
     border: 1px solid #222;
     border-radius: 8px;
