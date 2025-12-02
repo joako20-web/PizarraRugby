@@ -728,7 +728,7 @@ const xSide = team === "A"
 const spacing = 45;
 
 // Posición arriba del todo
-const yTop = marginY + 60;
+const yTop = marginY + 40;
 
 // CADA jugador ocupa una posición vertical según su dorsal
 p.x = xSide;
