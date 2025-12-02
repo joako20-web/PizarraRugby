@@ -680,45 +680,32 @@ window.addEventListener("keydown",e=>{
 // ==============================
 // PANEL DE JUGADORES
 // ==============================
-function loadPlayerPanels(){
-    const blueGrid=document.getElementById("players-blue");
-    const redGrid=document.getElementById("players-red");
-    const blueSelect=document.getElementById("blue-select");
-    const redSelect=document.getElementById("red-select");
+function loadPlayerPanels() {
+    const blueGrid = document.getElementById("players-blue");
+    const redGrid = document.getElementById("players-red");
 
-    for(let i=1;i<=NUM_PLAYERS;i++){
-        const optA=document.createElement("option");
-        optA.value=i; optA.textContent="Dorsal "+i;
-        blueSelect.appendChild(optA);
+    for (let i = 1; i <= NUM_PLAYERS; i++) {
 
-        const optB=document.createElement("option");
-        optB.value=i; optB.textContent="Dorsal "+i;
-        redSelect.appendChild(optB);
-
-        const a=document.createElement("div");
-        a.className="player-toggle";
-        a.textContent=i;
-        a.dataset.team="A";
-        a.dataset.number=i;
-        a.onclick=togglePlayer;
+        // Cuadrado azul
+        const a = document.createElement("div");
+        a.className = "player-toggle";
+        a.textContent = i;
+        a.dataset.team = "A";
+        a.dataset.number = i;
+        a.onclick = togglePlayer;
         blueGrid.appendChild(a);
 
-        const b=document.createElement("div");
-        b.className="player-toggle red";
-        b.textContent=i;
-        b.dataset.team="B";
-        b.dataset.number=i;
-        b.onclick=togglePlayer;
+        // Cuadrado rojo
+        const b = document.createElement("div");
+        b.className = "player-toggle red";
+        b.textContent = i;
+        b.dataset.team = "B";
+        b.dataset.number = i;
+        b.onclick = togglePlayer;
         redGrid.appendChild(b);
     }
-
-    document.getElementById("blue-add").onclick=()=>{
-        togglePlayerByTeamNumber("A",parseInt(blueSelect.value));
-    };
-    document.getElementById("red-add").onclick=()=>{
-        togglePlayerByTeamNumber("B",parseInt(redSelect.value));
-    };
 }
+
 
 function togglePlayer(e){
     const team=e.target.dataset.team;

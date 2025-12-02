@@ -13,8 +13,6 @@
             <h2>Jugadores AZUL</h2>
 
             <div class="player-selector">
-            <select id="blue-select" aria-label="Seleccionar jugador del equipo azul"></select>
-            <button id="blue-add">Añadir / Mostrar</button>
             </div>
 
             <div id="players-blue" class="players-grid"></div>
@@ -24,13 +22,11 @@
             <h2>Jugadores ROJO</h2>
 
             <div class="player-selector">
-            <select id="red-select" aria-label="Seleccionar jugador del equipo rojo"></select>
-            <button id="red-add">Añadir / Mostrar</button>
             </div>
 
             <div id="players-red" class="players-grid"></div>
         </div>
-
+    
 <div class="panel">
     <h3>Modos</h3>
     <button id="mode-move" class="active">Mover fichas</button>
@@ -42,33 +38,29 @@
     <button id="clear-board">Limpiar tablero</button>
     <button id="toggle-ball">Mostrar / ocultar balón</button>
 </div>
-
-
-
-        <div class="panel">
-            <h3>Animación</h3>
-            <button id="add-frame">Añadir frame</button>
-            <button id="delete-frame">Borrar frame</button>
-            <button id="prev-frame">◀ Anterior</button>
-            <button id="next-frame">Siguiente ▶</button>
-            <button id="play-animation">▶ Reproducir (suave)</button>
-            <button id="stop-animation">■ Parar</button>
-
-            <div id="timeline-info">
-                Frame: <span id="current-frame-index">1</span> /
-                <span id="total-frames">1</span>
-            </div>
-        </div>
-
-        <div class="panel">
-            <h3>Exportar</h3>
-            <button id="export-webm">Exportar WebM</button>
-        </div>
     </div>
-
     <div id="main">
-        <canvas id="pitch" width="1400" height="800"></canvas>
+        <canvas id="pitch" width="1200" height="800"></canvas>
     </div>
+<div id="right-panel">
+    <h2>Animación</h2>
+
+    <button id="add-frame">Añadir frame</button>
+    <button id="delete-frame">Eliminar frame</button>
+
+    <div style="margin:8px 0;">
+        Frame <span id="current-frame-index">1</span> /
+        <span id="total-frames">1</span>
+    </div>
+
+    <button id="prev-frame">Anterior</button>
+    <button id="next-frame">Siguiente</button>
+
+    <button id="play-animation">▶ Reproducir</button>
+    <button id="stop-animation">⏹ Parar</button>
+
+    <button id="export-webm">Exportar WebM HD</button>
+</div>
 
     <script src="app.js"></script>
 </body>
