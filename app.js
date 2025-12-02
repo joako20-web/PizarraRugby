@@ -680,6 +680,31 @@ window.addEventListener("keydown",e=>{
 // ==============================
 // PANEL DE JUGADORES
 // ==============================
+function showTeam(team) {
+    const f = getCurrentFrame();
+    const { fieldWidth, fieldHeight } = fieldDims();
+
+    // Ajuste lateral (misma lógica que ya usamos para colocar jugadores)
+    const xSide = team === "A"
+        ? marginX + fieldWidth * 0.15
+        : marginX + fieldWidth * 0.85;
+
+    const spacing = 45;
+    const yTop = marginY + 40;
+
+    // Activar todos los jugadores del equipo
+    for (let n = 1; n <= NUM_PLAYERS; n++) {
+        const p = f.players.find(pl => pl.team === team && pl.number === n);
+
+        p.visible = true;
+        p.x = xSide;
+        p.y = yTop + (n - 1) * spacing;
+    }
+
+    syncPlayerToggles();
+    drawFrame();
+}
+
 function loadPlayerPanels() {
     const blueGrid = document.getElementById("players-blue");
     const redGrid = document.getElementById("players-red");
@@ -769,7 +794,13 @@ function setMode(m){
     if(m==="scrum") document.getElementById("mode-scrum").classList.add("active");
     drawFrame();
 }
+document.getElementById("show-team-a").onclick = () => {
+    showTeam("A");
+};
 
+document.getElementById("show-team-b").onclick = () => {
+    showTeam("B");
+};
 
 // ==============================
 // FRAMES
