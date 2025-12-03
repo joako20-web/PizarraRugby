@@ -1,8 +1,14 @@
+/* ========================================
+   ESTILOS GLOBALES
+   ======================================== */
+
+/* Normalización básica y fuente por defecto */
 * {
     box-sizing: border-box;
     font-family: Arial, sans-serif;
 }
 
+/* Contenedor principal del body */
 body {
     margin: 0;
     display: flex;
@@ -11,14 +17,20 @@ body {
     color: #fff;
 }
 
+/* ========================================
+   LAYOUT PRINCIPAL
+   ======================================== */
+
+/* Barra lateral izquierda */
 #sidebar {
     width: 320px;
     background: #141b24;
     padding: 10px;
-    overflow-y: none;
+    overflow-y: auto; /* Corregido: 'none' no es un valor válido, cambiado a 'auto' */
     border-right: 1px solid #222;
 }
 
+/* Área de contenido principal */
 #main {
     flex: 1;
     display: flex;
@@ -26,20 +38,27 @@ body {
     align-items: center;
 }
 
+/* Campo de juego */
 #pitch {
     background: #0d5e30;
     border-radius: 12px;
     box-shadow: 0 0 22px #000;
 }
 
+/* ========================================
+   COMPONENTES DE PANEL
+   ======================================== */
+
+/* Panel contenedor genérico */
 .panel {
-    margin-top: 0px;
-    margin-bottom: 0px;
+    margin-top: 0;
+    margin-bottom: 0;
     padding: 10px;
     border: 1px solid #222;
     border-radius: 8px;
 }
 
+/* Grid de jugadores (5 columnas) */
 .players-grid {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
@@ -47,6 +66,11 @@ body {
     margin-top: 8px;
 }
 
+/* ========================================
+   BOTONES Y SELECTORES DE JUGADORES
+   ======================================== */
+
+/* Botón de selección de jugador */
 .player-toggle {
     padding: 6px;
     background: #1f2a3a;
@@ -57,19 +81,27 @@ body {
     font-size: 13px;
 }
 
+/* Estado activo del botón de jugador (azul) */
 .player-toggle.active {
     background: #0068ff;
     outline: 2px solid #fff;
 }
 
+/* Botón de jugador del equipo rojo */
 .player-toggle.red {
     background: #5a2020;
 }
 
+/* Estado activo del botón de jugador rojo */
 .player-toggle.red.active {
     background: #ff3333;
 }
 
+/* ========================================
+   BOTONES GENERALES
+   ======================================== */
+
+/* Estilos base para todos los botones */
 button {
     width: 100%;
     padding: 6px;
@@ -82,22 +114,30 @@ button {
     font-size: 13px;
 }
 
+/* Estado activo de botones genéricos */
 button.active {
     outline: 2px solid #fff;
 }
 
+/* ========================================
+   INFORMACIÓN Y SELECTORES
+   ======================================== */
+
+/* Información de la línea de tiempo */
 #timeline-info {
     text-align: center;
     margin-top: 6px;
     font-size: 13px;
 }
 
+/* Contenedor del selector de jugador */
 .player-selector {
     display: flex;
     gap: 6px;
     margin-bottom: 6px;
 }
 
+/* Menú desplegable dentro del selector */
 .player-selector select {
     flex: 1;
     padding: 4px;
@@ -108,16 +148,26 @@ button.active {
     font-size: 13px;
 }
 
+/* Botones dentro del selector de jugador */
 .player-selector button {
     flex: 1;
 }
-.sep{
-    margin:8px 0;
+
+/* Separador visual */
+.sep {
+    margin: 8px 0;
 }
+
+/* ========================================
+   MENÚ DE FLECHAS (DROPDOWN)
+   ======================================== */
+
+/* Contenedor del menú de flechas */
 #arrow-menu-container {
     position: relative;
 }
 
+/* Menú desplegable de flechas */
 #arrow-menu {
     position: absolute;
     top: 36px;
@@ -130,10 +180,12 @@ button.active {
     z-index: 50;
 }
 
+/* Estado oculto del menú de flechas */
 #arrow-menu.hidden {
     display: none;
 }
 
+/* Botones dentro del menú de flechas */
 #arrow-menu button {
     width: 100%;
     margin: 2px 0;
