@@ -250,76 +250,82 @@ function drawKickArrow(a){
 
 
 function drawZones() {
-    zones.forEach(z => {
-                // DIBUJAR CANDADO EN ZONA SELECCIONADA (CENTRADO)
-        if (z === selectedZone) {
 
-            const left = Math.min(z.x1, z.x2);
-            const top = Math.min(z.y1, z.y2);
-            const w = Math.abs(z.x2 - z.x1);
-            const h = Math.abs(z.y2 - z.y1);
+    // Siempre dibujar zonas + pendingZone si existe
+    const list = pendingZone ? [...zones, pendingZone] : zones;
 
-            // Centro de la zona
+    list.forEach(z => {
+
+        const left = Math.min(z.x1, z.x2);
+        const top = Math.min(z.y1, z.y2);
+        const w = Math.abs(z.x2 - z.x1);
+        const h = Math.abs(z.y2 - z.y1);
+
+        // --- RECTÁNGULO ---
+        ctx.save();
+
+        // Relleno translúcido
+        ctx.fillStyle = z.color || "#ffffff";
+        ctx.globalAlpha = 0.25;
+        ctx.fillRect(left, top, w, h);
+
+        // Contorno sólido
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = (z === selectedZone ? "white" : z.color);
+        ctx.lineWidth = (z === selectedZone ? 4 : 3);
+        ctx.strokeRect(left, top, w, h);
+
+        ctx.restore();
+
+        // --- ETIQUETA ---
+        if (z.labelOffsetX !== undefined && z.labelOffsetY !== undefined) {
+
+            const labelX = left + z.labelOffsetX * w;
+            const labelY = top + z.labelOffsetY * h;
+
+            ctx.font = "16px Arial";
+            ctx.fillStyle = "white";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(z.name, labelX, labelY);
+
+            z.labelX = labelX;
+            z.labelY = labelY;
+        }
+
+        // --- CANDADO (solo zonas reales, NO pendingZone) ---
+        if (z === selectedZone && z !== pendingZone) {
+
+            const lockSize = 26;
             const lockX = left + w / 2;
             const lockY = top + h / 2;
 
-            const size = 26; // tamaño del fondo
-
-            // Guardar coordenadas para detección de click
             z.lockIcon = {
-                x: lockX - size / 2,
-                y: lockY - size / 2,
-                size: size
+                x: lockX - lockSize / 2,
+                y: lockY - lockSize / 2,
+                size: lockSize
             };
 
-            // Fondo sólido oscuro
-            ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
-            ctx.fillRect(lockX - size / 2, lockY - size / 2, size, size);
+            // Fondo para el candado
+            ctx.fillStyle = "rgba(0,0,0,0.8)";
+            ctx.fillRect(
+                lockX - lockSize / 2,
+                lockY - lockSize / 2,
+                lockSize,
+                lockSize
+            );
 
-            // Dibujar emoji centrado
+            // Emoji
             ctx.fillStyle = "white";
             ctx.font = "22px Arial";
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
             ctx.fillText(z.locked ? "🔒" : "🔓", lockX, lockY);
         }
-
-
-        ctx.fillStyle = z.color + "40";
-
-        const x = Math.min(z.x1, z.x2);
-        const y = Math.min(z.y1, z.y2);
-        const w = Math.abs(z.x2 - z.x1);
-        const h = Math.abs(z.y2 - z.y1);
-
-        ctx.beginPath();
-        ctx.rect(x, y, w, h);
-        ctx.fill();
-        ctx.stroke();
-
-        if (z.labelOffsetX !== undefined && z.labelOffsetY !== undefined) {
-
-    const left = Math.min(z.x1, z.x2);
-    const top = Math.min(z.y1, z.y2);
-    const w = Math.abs(z.x2 - z.x1);
-    const h = Math.abs(z.y2 - z.y1);
-
-    // Calcular posición REAL cada vez que se mueve el rectángulo
-    const labelX = left + z.labelOffsetX * w;
-    const labelY = top + z.labelOffsetY * h;
-
-    ctx.fillStyle = "white";
-    ctx.font = "16px Arial";
-    ctx.textAlign = "center";
-    ctx.fillText(z.name, labelX, labelY);
-
-    // Guardar para detección futura
-    z.labelX = labelX;
-    z.labelY = labelY;
-}
-    
     });
 }
+
+
 function zoneHitTest(x, y) {
     for (let i = zones.length - 1; i >= 0; i--) {
         const z = zones[i];
@@ -626,18 +632,25 @@ if (mode === "zone") {
             return;
         }
 
-        pendingZone = {
-            x1: zoneStart.x,
-            y1: zoneStart.y,
-            x2: zoneEnd.x,
-            y2: zoneEnd.y,
-            name,
-            color: selectedZoneColor,
-            labelX: null,
-            labelY: null,
-            locked: false
-        };
+        // Normalizar coordenadas para que x1 < x2 e y1 < y2
+const x1 = Math.min(zoneStart.x, pos.x);
+const y1 = Math.min(zoneStart.y, pos.y);
+const x2 = Math.max(zoneStart.x, pos.x);
+const y2 = Math.max(zoneStart.y, pos.y);
 
+pendingZone = {
+    x1,
+    y1,
+    x2,
+    y2,
+    name,
+    color: selectedZoneColor,
+    labelOffsetX: undefined,
+    labelOffsetY: undefined,
+    locked: false
+};
+
+        drawFrame();
         return;
     }
 
@@ -653,11 +666,9 @@ pendingZone.labelOffsetX = (pos.x - left) / w;
 pendingZone.labelOffsetY = (pos.y - top) / h;
 
         zones.push(pendingZone);
-
         pendingZone = null;
         zoneStart = null;
         zoneEnd = null;
-
         setMode("move");
         drawFrame();
         return;
@@ -687,6 +698,42 @@ if (mode === "move") {
 }
 
     if(mode==="move"){
+    // Primero, comprobar si clicas en alguna zona
+    const z = zoneHitTest(pos.x, pos.y);
+    if (z) {
+        selectedZone = z;
+
+        // Si clicas en el candado, alterna bloqueo y no arrastres
+        if (z.lockIcon) {
+            const L = z.lockIcon;
+            if (
+                pos.x >= L.x && pos.x <= L.x + L.size &&
+                pos.y >= L.y && pos.y <= L.y + L.size
+            ) {
+                z.locked = !z.locked;
+                drawFrame();
+                return;
+            }
+        }
+
+        // Si está desbloqueada, empezamos a arrastrar
+        if (!z.locked) {
+            draggingZone = true;
+
+            const left = Math.min(z.x1, z.x2);
+            const top  = Math.min(z.y1, z.y2);
+
+            zoneDragOffset.x = pos.x - left;
+            zoneDragOffset.y = pos.y - top;
+        }
+
+        drawFrame();
+        return;
+    }
+
+    // ... aquí sigue tu lógica normal de mover textos, jugadores, balón, etc.
+
+
         const t=findTextAt(pos.x,pos.y);
         if(t){
             dragTarget={type:"text",obj:t};
@@ -769,28 +816,24 @@ canvas.addEventListener("mousemove",e=>{
 if (draggingZone && selectedZone && !selectedZone.locked) {
     const pos = canvasPos(e);
 
-    const w = selectedZone.x2 - selectedZone.x1;
-    const h = selectedZone.y2 - selectedZone.y1;
+    const left = Math.min(selectedZone.x1, selectedZone.x2);
+    const top  = Math.min(selectedZone.y1, selectedZone.y2);
+    const w = Math.abs(selectedZone.x2 - selectedZone.x1);
+    const h = Math.abs(selectedZone.y2 - selectedZone.y1);
 
     const newLeft = pos.x - zoneDragOffset.x;
-    const newTop = pos.y - zoneDragOffset.y;
-
-    selectedZone.x2 = newLeft + w;
-    selectedZone.y2 = newTop + h;
+    const newTop  = pos.y - zoneDragOffset.y;
 
     selectedZone.x1 = newLeft;
     selectedZone.y1 = newTop;
-
     selectedZone.x2 = newLeft + w;
-selectedZone.y2 = newTop + h;
+    selectedZone.y2 = newTop + h;
 
-selectedZone.x1 = newLeft;
-selectedZone.y1 = newTop;
-
-drawFrame();
-return;
-
+    drawFrame();
+    return;
 }
+
+
 
 if ((mode === "draw" || mode === "kick") && arrowStart) {
 
