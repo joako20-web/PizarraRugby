@@ -195,3 +195,45 @@ button.active {
     color: white;
     text-align: left;
 }
+/* ========================================
+   PANEL FLOTANTE PARA ZONAS
+   ======================================== */
+
+#zone-color-panel {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1f2a3a;
+    border: 1px solid #444;
+    border-radius: 8px;
+    padding: 10px;
+    z-index: 999;
+    width: 220px;
+    text-align: center;
+    box-shadow: 0 0 10px #000;
+}
+
+#zone-color-panel.hidden {
+    display: none;
+}
+
+.zcp-title {
+    font-size: 14px;
+    margin-bottom: 8px;
+    color: white;
+}
+
+.zcp-colors {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.zcp-color {
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 2px solid white;
+}

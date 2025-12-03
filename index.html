@@ -63,7 +63,14 @@
             
             <!-- Control de visibilidad del balón -->
             <button id="toggle-ball">Mostrar / ocultar balón</button>
+            <!-- Boton para el modo de zonas-->
+            <button id="mode-zone">Zonas</button>
+            <button id="lock-zone">Bloquear zona</button>
+            <button id="unlock-zone">Desbloquear zona</button>
+            <button id="delete-zone">Eliminar zona</button>
+
         </div>
+        
     </div>
 
     <!-- ========================================
@@ -73,6 +80,15 @@
         <!-- Canvas donde se dibuja el campo de rugby -->
         <canvas id="pitch" width="1200" height="800"></canvas>
     </div>
+<div id="zone-color-panel" class="hidden">
+    <div class="zcp-title">Color de la zona</div>
+    <div class="zcp-colors">
+        <div class="zcp-color" data-color="#00aaff" style="background:#00aaff"></div>
+        <div class="zcp-color" data-color="#ff3333" style="background:#ff3333"></div>
+        <div class="zcp-color" data-color="#ffd000" style="background:#ffd000"></div>
+        <div class="zcp-color" data-color="#00cc66" style="background:#00cc66"></div>
+    </div>
+</div>
 
     <!-- ========================================
          PANEL LATERAL DERECHO (ANIMACIÓN)

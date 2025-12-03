@@ -25,6 +25,16 @@ let selectBoxStart = null;
 let selectBoxEnd = null;
 let kickArcHeight = 60;  // altura inicial del arco de la patada
 
+let zones = [];             // zonas globales para todos los frames
+let zoneStart = null;       // primer click
+let zoneEnd = null;         // segundo click
+let pendingZone = null;     // zona que espera la colocación del texto
+let selectedZoneColor = null;
+let selectedZone = null;     // zona actualmente seleccionada
+let draggingZone = false;
+let zoneDragOffset = { x: 0, y: 0 };
+
+
 const canvas = document.getElementById("pitch");
 const ctx = canvas.getContext("2d");
 
@@ -239,6 +249,91 @@ function drawKickArrow(a){
 }
 
 
+function drawZones() {
+    zones.forEach(z => {
+                // DIBUJAR CANDADO EN ZONA SELECCIONADA (CENTRADO)
+        if (z === selectedZone) {
+
+            const left = Math.min(z.x1, z.x2);
+            const top = Math.min(z.y1, z.y2);
+            const w = Math.abs(z.x2 - z.x1);
+            const h = Math.abs(z.y2 - z.y1);
+
+            // Centro de la zona
+            const lockX = left + w / 2;
+            const lockY = top + h / 2;
+
+            const size = 26; // tamaño del fondo
+
+            // Guardar coordenadas para detección de click
+            z.lockIcon = {
+                x: lockX - size / 2,
+                y: lockY - size / 2,
+                size: size
+            };
+
+            // Fondo sólido oscuro
+            ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
+            ctx.fillRect(lockX - size / 2, lockY - size / 2, size, size);
+
+            // Dibujar emoji centrado
+            ctx.fillStyle = "white";
+            ctx.font = "22px Arial";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(z.locked ? "🔒" : "🔓", lockX, lockY);
+        }
+
+
+        ctx.fillStyle = z.color + "40";
+
+        const x = Math.min(z.x1, z.x2);
+        const y = Math.min(z.y1, z.y2);
+        const w = Math.abs(z.x2 - z.x1);
+        const h = Math.abs(z.y2 - z.y1);
+
+        ctx.beginPath();
+        ctx.rect(x, y, w, h);
+        ctx.fill();
+        ctx.stroke();
+
+        if (z.labelOffsetX !== undefined && z.labelOffsetY !== undefined) {
+
+    const left = Math.min(z.x1, z.x2);
+    const top = Math.min(z.y1, z.y2);
+    const w = Math.abs(z.x2 - z.x1);
+    const h = Math.abs(z.y2 - z.y1);
+
+    // Calcular posición REAL cada vez que se mueve el rectángulo
+    const labelX = left + z.labelOffsetX * w;
+    const labelY = top + z.labelOffsetY * h;
+
+    ctx.fillStyle = "white";
+    ctx.font = "16px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText(z.name, labelX, labelY);
+
+    // Guardar para detección futura
+    z.labelX = labelX;
+    z.labelY = labelY;
+}
+    
+    });
+}
+function zoneHitTest(x, y) {
+    for (let i = zones.length - 1; i >= 0; i--) {
+        const z = zones[i];
+        const left = Math.min(z.x1, z.x2);
+        const top = Math.min(z.y1, z.y2);
+        const w = Math.abs(z.x2 - z.x1);
+        const h = Math.abs(z.y2 - z.y1);
+
+        if (x >= left && x <= left + w && y >= top && y <= top + h) {
+            return z;
+        }
+    }
+    return null;
+}
 
 
 // ==============================
@@ -281,6 +376,7 @@ function findTextAt(x,y){
 // ==============================
 function drawFrame() {
     drawPitch();
+    drawZones();
     const f = getCurrentFrame();
 
     // Trail persistente
@@ -489,6 +585,106 @@ function placeScrumWithPrompt(x,y){
 canvas.addEventListener("mousedown",e=>{
     const pos=canvasPos(e);
     const f=getCurrentFrame();
+        // CLICK SOBRE CANDADO DE ZONA
+    if (selectedZone && selectedZone.lockIcon) {
+        const pos = canvasPos(e);
+        const L = selectedZone.lockIcon;
+
+        if (pos.x >= L.x && pos.x <= L.x + L.size &&
+            pos.y >= L.y && pos.y <= L.y + L.size) {
+
+            // alternar bloqueo
+            selectedZone.locked = !selectedZone.locked;
+
+            drawFrame();
+            return;
+        }
+    }
+
+if (mode === "zone") {
+    if (!selectedZoneColor) {
+        alert("Primero selecciona un color en el panel superior.");
+        return;
+    }
+
+    const pos = canvasPos(e);
+
+    // click 1 → esquina inicial
+    if (!zoneStart) {
+        zoneStart = pos;
+        return;
+    }
+
+    // click 2 → esquina final
+    if (!zoneEnd) {
+        zoneEnd = pos;
+
+        const name = prompt("Nombre de la zona:");
+        if (!name || name.trim() === "") {
+            zoneStart = null;
+            zoneEnd = null;
+            return;
+        }
+
+        pendingZone = {
+            x1: zoneStart.x,
+            y1: zoneStart.y,
+            x2: zoneEnd.x,
+            y2: zoneEnd.y,
+            name,
+            color: selectedZoneColor,
+            labelX: null,
+            labelY: null,
+            locked: false
+        };
+
+        return;
+    }
+
+    // click 3 → colocar etiqueta
+    if (pendingZone) {
+        const left = Math.min(pendingZone.x1, pendingZone.x2);
+const top = Math.min(pendingZone.y1, pendingZone.y2);
+const w = Math.abs(pendingZone.x2 - pendingZone.x1);
+const h = Math.abs(pendingZone.y2 - pendingZone.y1);
+
+// Guardar posición RELATIVA dentro del rectángulo
+pendingZone.labelOffsetX = (pos.x - left) / w;
+pendingZone.labelOffsetY = (pos.y - top) / h;
+
+        zones.push(pendingZone);
+
+        pendingZone = null;
+        zoneStart = null;
+        zoneEnd = null;
+
+        setMode("move");
+        drawFrame();
+        return;
+    }
+}
+if (mode === "move") {
+    const pos = canvasPos(e);
+    const z = zoneHitTest(pos.x, pos.y);
+
+    if (z) {
+        selectedZone = z;
+
+        // no mover si está bloqueada
+        if (!z.locked) {
+            draggingZone = true;
+
+            const left = Math.min(z.x1, z.x2);
+            const top = Math.min(z.y1, z.y2);
+
+            zoneDragOffset.x = pos.x - left;
+            zoneDragOffset.y = pos.y - top;
+        }
+
+        drawFrame();
+        return;
+    }
+}
 
     if(mode==="move"){
         const t=findTextAt(pos.x,pos.y);
@@ -570,6 +766,31 @@ canvas.addEventListener("mousedown",e=>{
 
 canvas.addEventListener("mousemove",e=>{
     const pos=canvasPos(e);
+if (draggingZone && selectedZone && !selectedZone.locked) {
+    const pos = canvasPos(e);
+
+    const w = selectedZone.x2 - selectedZone.x1;
+    const h = selectedZone.y2 - selectedZone.y1;
+
+    const newLeft = pos.x - zoneDragOffset.x;
+    const newTop = pos.y - zoneDragOffset.y;
+
+    selectedZone.x2 = newLeft + w;
+    selectedZone.y2 = newTop + h;
+
+    selectedZone.x1 = newLeft;
+    selectedZone.y1 = newTop;
+
+    selectedZone.x2 = newLeft + w;
+selectedZone.y2 = newTop + h;
+
+selectedZone.x1 = newLeft;
+selectedZone.y1 = newTop;
+
+drawFrame();
+return;
+
+}
 
 if ((mode === "draw" || mode === "kick") && arrowStart) {
 
@@ -629,6 +850,8 @@ if ((mode === "draw" || mode === "kick") && arrowStart) {
 
 
 canvas.addEventListener("mouseup",()=>{
+    draggingZone = false;
+
     if(dragTarget && dragTarget.type==="players"){
         const f=getCurrentFrame();
         dragTarget.players.forEach((pl,i)=>{
@@ -791,6 +1014,33 @@ function setMode(m){
     if(m==="move") document.getElementById("mode-move").classList.add("active");
     if(m==="text") document.getElementById("mode-text").classList.add("active");
     if(m==="scrum") document.getElementById("mode-scrum").classList.add("active");
+    if (m === "zone") {
+    document.getElementById("zone-color-panel").classList.remove("hidden");
+} else {
+    document.getElementById("zone-color-panel").classList.add("hidden");
+}
+    document.getElementById("lock-zone").onclick = () => {
+    if (!selectedZone) return alert("No hay ninguna zona seleccionada.");
+    selectedZone.locked = true;
+    drawFrame();
+};
+
+document.getElementById("unlock-zone").onclick = () => {
+    if (!selectedZone) return alert("No hay ninguna zona seleccionada.");
+    selectedZone.locked = false;
+    drawFrame();
+};
+
+document.getElementById("delete-zone").onclick = () => {
+    if (!selectedZone) return alert("No hay ninguna zona seleccionada.");
+
+    if (selectedZone.locked)
+        return alert("No puedes eliminar una zona bloqueada.");
+
+    zones = zones.filter(z => z !== selectedZone);
+    selectedZone = null;
+    drawFrame();
+};
     drawFrame();
 }
 document.getElementById("show-team-a").onclick = () => {
@@ -996,6 +1246,11 @@ document.getElementById("export-webm").onclick=async()=>{
     rec.stop();
 };
 
+document.querySelectorAll(".zcp-color").forEach(btn => {
+    btn.onclick = () => {
+        selectedZoneColor = btn.dataset.color;
+    };
+});
 
 // ==============================
 // BOTONES DE MODO
@@ -1006,6 +1261,8 @@ document.getElementById("mode-scrum").onclick=()=>setMode("scrum");
 document.getElementById("mode-arrow").onclick = () => {
     document.getElementById("arrow-menu").classList.toggle("hidden");
 };
+document.getElementById("mode-zone").onclick = () => setMode("zone");
+
 
 
 
