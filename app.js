@@ -283,7 +283,7 @@ function drawZones() {
             const labelX = left + z.labelOffsetX * w;
             const labelY = top + z.labelOffsetY * h;
 
-            ctx.font = "16px Arial";
+            ctx.font = "36px Arial";
             ctx.fillStyle = "white";
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
@@ -347,16 +347,8 @@ function zoneHitTest(x, y) {
 // ==============================
 function drawTexts(f){
     f.texts.forEach(t=>{
-        ctx.font="16px Arial";
+        ctx.font="36px Arial";
         const w=ctx.measureText(t.text).width;
-        const h=18, px=6, py=4;
-
-        ctx.fillStyle="rgba(0,0,0,0.65)";
-        ctx.fillRect(t.x-w/2-px, t.y-py, w+px*2, h+py*2);
-
-        ctx.strokeStyle="white";
-        ctx.strokeRect(t.x-w/2-px, t.y-py, w+px*2, h+py*2);
-
         ctx.fillStyle="white";
         ctx.textAlign="center";
         ctx.textBaseline="top";
