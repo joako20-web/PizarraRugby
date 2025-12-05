@@ -78,9 +78,6 @@ function canvasPos(e) {
 // ========================
 // SISTEMA GLOBAL DE POPUPS
 // ========================
-// ========================
-// SISTEMA GLOBAL DE POPUPS
-// ========================
 function showPopup({ title = "Mensaje", html = "", showCancel = true }) {
     return new Promise(resolve => {
         const overlay = document.getElementById("popup-overlay");
@@ -93,6 +90,7 @@ function showPopup({ title = "Mensaje", html = "", showCancel = true }) {
         modalTitle.textContent = title;
         content.innerHTML = html;
 
+        // Mostrar / ocultar botón cancelar y centrar botón aceptar
         if (showCancel) {
             btnCancel.style.display = "block";
             buttonsBox.style.justifyContent = "space-between";
@@ -103,14 +101,33 @@ function showPopup({ title = "Mensaje", html = "", showCancel = true }) {
 
         overlay.classList.remove("hidden");
 
+        // Click ACEPTAR
         btnOk.onclick = () => {
             overlay.classList.add("hidden");
             resolve(true);
         };
 
+        // Click CANCELAR
         btnCancel.onclick = () => {
             overlay.classList.add("hidden");
             resolve(false);
+        };
+
+        // ============================
+        // CLIC FUERA DEL POP-UP
+        // ============================
+        overlay.onclick = (e) => {
+            const popup = document.getElementById("popup-modal");
+
+            // Si clicas fuera del cuadro modal → cerrar
+            if (!popup.contains(e.target)) {
+                overlay.classList.add("hidden");
+
+                if (showCancel)
+                    resolve(false);   // Caso melé → cancelar
+                else
+                    resolve(true);    // Caso color → aceptar
+            }
         };
     });
 }
