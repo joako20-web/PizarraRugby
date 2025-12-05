@@ -5,46 +5,169 @@ const NUM_PLAYERS = 15;
 const INTERP_DURATION = 950;
 const INTERP_STEPS = 24;
 
+// Modo actual de la herramienta
 let mode = "move";
+
+// Sistema de frames / animación
 let frames = [];
 let currentFrameIndex = 0;
 let isPlaying = false;
 let cancelPlay = false;
 
+// Drag & selección
 let dragTarget = null;
 let dragOffsetX = 0;
 let dragOffsetY = 0;
-
-let arrowStart = null;
-let previewArrow = null;
-
 let selectedPlayers = new Set();
-
 let selectingBox = false;
 let selectBoxStart = null;
 let selectBoxEnd = null;
-let kickArcHeight = 60;  // altura inicial del arco de la patada
 
-let zones = [];             // zonas globales para todos los frames
-let zoneStart = null;       // primer click
-let zoneEnd = null;         // segundo click
-let pendingZone = null;     // zona que espera la colocación del texto
-let selectedZoneColor = null;
-let selectedZone = null;     // zona actualmente seleccionada
+// Flechas / patadas
+let arrowStart = null;
+let previewArrow = null;
+let kickArcHeight = 60; // altura inicial del arco de la patada
+
+// Zonas (globales a toda la animación)
+let zones = [];
+let zoneStart = null;
+let zoneEnd = null;
+let pendingZone = null;        // zona a medio crear (pendiente de etiqueta)
+let selectedZoneColor = null;  // color elegido en el panel superior
+let selectedZone = null;       // zona actualmente seleccionada
 let draggingZone = false;
 let zoneDragOffset = { x: 0, y: 0 };
 
-
+// Canvas
 const canvas = document.getElementById("pitch");
 const ctx = canvas.getContext("2d");
-
 const marginX = 60;
 const marginY = 50;
 
 
 // ==============================
-// CREAR FRAME
+// UTILIDADES BÁSICAS
 // ==============================
+
+/**
+ * Devuelve el frame actual.
+ */
+function getCurrentFrame() {
+    return frames[currentFrameIndex];
+}
+
+/**
+ * Dimensiones del campo interno (sin márgenes).
+ */
+function fieldDims() {
+    const fieldWidth = canvas.width - marginX * 2;
+    const fieldHeight = canvas.height - marginY * 2;
+    return { fieldWidth, fieldHeight };
+}
+
+/**
+ * Convierte coordenadas del ratón a coordenadas de canvas.
+ */
+function canvasPos(e) {
+    const r = canvas.getBoundingClientRect();
+    return {
+        x: e.clientX - r.left,
+        y: e.clientY - r.top
+    };
+}
+// ========================
+// SISTEMA GLOBAL DE POPUPS
+// ========================
+// ========================
+// SISTEMA GLOBAL DE POPUPS
+// ========================
+function showPopup({ title = "Mensaje", html = "", showCancel = true }) {
+    return new Promise(resolve => {
+        const overlay = document.getElementById("popup-overlay");
+        const modalTitle = document.getElementById("popup-title");
+        const content = document.getElementById("popup-content");
+        const btnCancel = document.getElementById("popup-cancel");
+        const btnOk = document.getElementById("popup-ok");
+        const buttonsBox = document.getElementById("popup-buttons");
+
+        modalTitle.textContent = title;
+        content.innerHTML = html;
+
+        if (showCancel) {
+            btnCancel.style.display = "block";
+            buttonsBox.style.justifyContent = "space-between";
+        } else {
+            btnCancel.style.display = "none";
+            buttonsBox.style.justifyContent = "center";
+        }
+
+        overlay.classList.remove("hidden");
+
+        btnOk.onclick = () => {
+            overlay.classList.add("hidden");
+            resolve(true);
+        };
+
+        btnCancel.onclick = () => {
+            overlay.classList.add("hidden");
+            resolve(false);
+        };
+    });
+}
+
+
+
+// =======================
+// PROMPT PERSONALIZADO
+// =======================
+function popupPrompt(title, placeholder="") {
+    return new Promise(resolve => {
+        showPopup({
+            title,
+            html: `<input id="popup-input" type="text" placeholder="${placeholder}">`
+        }).then(ok => {
+            if (!ok) return resolve(null);
+            const val = document.getElementById("popup-input").value.trim();
+            resolve(val === "" ? null : val);
+        });
+    });
+}
+
+
+// =======================
+// SELECCIÓN DE EQUIPO MELÉ
+// =======================
+function popupSelectScrumTeam() {
+    return new Promise(resolve => {
+        showPopup({
+            title: "Equipo para la melé",
+            html: `
+                <button class="choice" data-v="A">Equipo A</button>
+                <button class="choice" data-v="B">Equipo B</button>
+                <button class="choice" data-v="AB">Ambos (AB)</button>
+            `,
+            showCancel: true
+        }).then(ok => {
+            if (!ok) return resolve(null);
+        });
+
+        document.querySelectorAll("#popup-content .choice").forEach(btn => {
+            btn.onclick = () => {
+                document.getElementById("popup-overlay").classList.add("hidden");
+                resolve(btn.dataset.v);
+            };
+        });
+    });
+}
+
+
+// ==============================
+// FRAMES Y JUGADORES
+// ==============================
+
+/**
+ * Crea el array de jugadores vacío (para ambos equipos).
+ */
 function createEmptyPlayers() {
     const arr = [];
     for (let team of ["A", "B"]) {
@@ -62,16 +185,28 @@ function createEmptyPlayers() {
     return arr;
 }
 
+/**
+ * Crea un frame vacío.
+ */
 function createFrame() {
     return {
         players: createEmptyPlayers(),
-        ball: { x: canvas.width/2, y: canvas.height/2, rx: 24, ry: 16, visible: true },
+        ball: {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            rx: 24,
+            ry: 16,
+            visible: true
+        },
         arrows: [],
         texts: [],
-        trailLines: []   // << TRAILS POR FRAME
+        trailLines: [] // líneas de trayectoria al mover jugadores
     };
 }
 
+/**
+ * Clona un frame (deep copy superficial).
+ */
 function cloneFrame(f) {
     return {
         players: f.players.map(p => ({ ...p })),
@@ -82,20 +217,14 @@ function cloneFrame(f) {
     };
 }
 
-function getCurrentFrame() {
-    return frames[currentFrameIndex];
-}
-
-function fieldDims() {
-    const fw = canvas.width - marginX * 2;
-    const fh = canvas.height - marginY * 2;
-    return { fieldWidth: fw, fieldHeight: fh };
-}
-
 
 // ==============================
-// DIBUJAR CAMPO REGLAMENTARIO
+// DIBUJO DEL CAMPO
 // ==============================
+
+/**
+ * Dibuja el campo de rugby con marcas reglamentarias.
+ */
 function drawPitch() {
     ctx.setLineDash([]);
     const w = canvas.width;
@@ -106,14 +235,14 @@ function drawPitch() {
     const xTryLeft = marginX + inGoal;
     const xTryRight = marginX + fieldWidth - inGoal;
 
-    // Césped general
-    const grass = ctx.createLinearGradient(0,0,0,h);
-    grass.addColorStop(0,"#0b7c39");
-    grass.addColorStop(1,"#0a6d33");
+    // Césped
+    const grass = ctx.createLinearGradient(0, 0, 0, h);
+    grass.addColorStop(0, "#0b7c39");
+    grass.addColorStop(1, "#0a6d33");
     ctx.fillStyle = grass;
-    ctx.fillRect(0,0,w,h);
+    ctx.fillRect(0, 0, w, h);
 
-    // Zonas de ensayo más oscuras
+    // Zonas de ensayo
     ctx.fillStyle = "#064d24";
     ctx.fillRect(marginX, marginY, inGoal, fieldHeight);
     ctx.fillRect(xTryRight, marginY, inGoal, fieldHeight);
@@ -124,16 +253,16 @@ function drawPitch() {
     ctx.strokeRect(marginX, marginY, fieldWidth, fieldHeight);
 
     // Líneas verticales
-    const mainField = fieldWidth - inGoal*2;
-    const x5L  = xTryLeft + mainField*0.05;
-    const x22L = xTryLeft + mainField*0.22;
-    const xMid = xTryLeft + mainField*0.50;
-    const x10L = xMid - mainField*0.10;
-    const x10R = xMid + mainField*0.10;
-    const x22R = xTryLeft + mainField*(1 - 0.22);
-    const x5R  = xTryLeft + mainField*(1 - 0.05);
+    const mainField = fieldWidth - inGoal * 2;
+    const x5L  = xTryLeft + mainField * 0.05;
+    const x22L = xTryLeft + mainField * 0.22;
+    const xMid = xTryLeft + mainField * 0.50;
+    const x10L = xMid - mainField * 0.10;
+    const x10R = xMid + mainField * 0.10;
+    const x22R = xTryLeft + mainField * (1 - 0.22);
+    const x5R  = xTryLeft + mainField * (1 - 0.05);
 
-    function v(x, dash=[], width=2) {
+    function v(x, dash = [], width = 2) {
         ctx.setLineDash(dash);
         ctx.lineWidth = width;
         ctx.beginPath();
@@ -142,48 +271,50 @@ function drawPitch() {
         ctx.stroke();
     }
 
-    v(xTryLeft, [],3);
-    v(xTryRight,[],3);
-    v(x5L,[20,14]);
-    v(x5R,[20,14]);
+    v(xTryLeft, [], 3);
+    v(xTryRight, [], 3);
+    v(x5L, [20, 14]);
+    v(x5R, [20, 14]);
     v(x22L);
     v(x22R);
-    v(x10L,[14,10]);
-    v(x10R,[14,10]);
-    v(xMid,[],3);
+    v(x10L, [14, 10]);
+    v(x10R, [14, 10]);
+    v(xMid, [], 3);
 
-    // Líneas horizontales (solo en campo de juego)
-    const y5T  = marginY + fieldHeight*0.05;
-    const y15T = marginY + fieldHeight*0.25;
-    const y15B = marginY + fieldHeight*0.75;
-    const y5B  = marginY + fieldHeight*0.95;
+    // Líneas horizontales
+    const y5T  = marginY + fieldHeight * 0.05;
+    const y15T = marginY + fieldHeight * 0.25;
+    const y15B = marginY + fieldHeight * 0.75;
+    const y5B  = marginY + fieldHeight * 0.95;
 
-    ctx.setLineDash([20,14]);
+    ctx.setLineDash([20, 14]);
     ctx.lineWidth = 2;
 
-    for (let y of [y5T,y15T,y15B,y5B]) {
+    for (let y of [y5T, y15T, y15B, y5B]) {
         ctx.beginPath();
         ctx.moveTo(xTryLeft, y);
         ctx.lineTo(xTryRight, y);
         ctx.stroke();
     }
+
+    ctx.setLineDash([]);
 }
 
-
-// ==============================
-// BALÓN OVALADO
-// ==============================
+/**
+ * Dibuja el balón de rugby.
+ */
 function drawRugbyBall(b) {
     if (!b.visible) return;
+
     ctx.save();
-    ctx.translate(b.x,b.y);
+    ctx.translate(b.x, b.y);
     ctx.rotate(-0.4);
     ctx.beginPath();
-    ctx.ellipse(0,0,b.rx,b.ry,0,0,Math.PI*2);
-    ctx.fillStyle="#f5e1c0";
+    ctx.ellipse(0, 0, b.rx, b.ry, 0, 0, Math.PI * 2);
+    ctx.fillStyle = "#f5e1c0";
     ctx.fill();
-    ctx.strokeStyle="#b37a42";
-    ctx.lineWidth=2;
+    ctx.strokeStyle = "#b37a42";
+    ctx.lineWidth = 2;
     ctx.stroke();
     ctx.restore();
 }
@@ -192,26 +323,40 @@ function drawRugbyBall(b) {
 // ==============================
 // FLECHAS
 // ==============================
-function drawNormalArrow(a){
-    ctx.strokeStyle="white";
-    ctx.lineWidth=3;
+
+/**
+ * Dibuja una flecha recta normal.
+ */
+function drawNormalArrow(a) {
+    ctx.strokeStyle = "white";
+    ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.moveTo(a.x1,a.y1);
-    ctx.lineTo(a.x2,a.y2);
+    ctx.moveTo(a.x1, a.y1);
+    ctx.lineTo(a.x2, a.y2);
     ctx.stroke();
 
-    const head=14;
-    const ang=Math.atan2(a.y2-a.y1,a.x2-a.x1);
+    const head = 14;
+    const ang = Math.atan2(a.y2 - a.y1, a.x2 - a.x1);
+
     ctx.beginPath();
-    ctx.moveTo(a.x2,a.y2);
-    ctx.lineTo(a.x2-head*Math.cos(ang-Math.PI/6), a.y2-head*Math.sin(ang-Math.PI/6));
-    ctx.lineTo(a.x2-head*Math.cos(ang+Math.PI/6), a.y2-head*Math.sin(ang+Math.PI/6));
-    ctx.fillStyle="white";
+    ctx.moveTo(a.x2, a.y2);
+    ctx.lineTo(
+        a.x2 - head * Math.cos(ang - Math.PI / 6),
+        a.y2 - head * Math.sin(ang - Math.PI / 6)
+    );
+    ctx.lineTo(
+        a.x2 - head * Math.cos(ang + Math.PI / 6),
+        a.y2 - head * Math.sin(ang + Math.PI / 6)
+    );
+    ctx.fillStyle = "white";
     ctx.fill();
 }
 
-function drawKickArrow(a){
-    // Crear el punto de control del arco
+/**
+ * Dibuja una flecha de patada (curva).
+ */
+function drawKickArrow(a) {
+    // Punto de control del arco (altura configurable)
     const mx = (a.x1 + a.x2) / 2;
     const my = (a.y1 + a.y2) / 2 - kickArcHeight;
 
@@ -224,24 +369,29 @@ function drawKickArrow(a){
     ctx.quadraticCurveTo(mx, my, a.x2, a.y2);
     ctx.stroke();
 
-    // Calcular punto de orientación para la punta
+    // Cálculo del punto cercano a la punta para orientar la cabeza
     const t = 0.9;
-    const qx = (1 - t)*(1 - t)*a.x1 + 2*(1 - t)*t*mx + t*t*a.x2;
-    const qy = (1 - t)*(1 - t)*a.y1 + 2*(1 - t)*t*my + t*t*a.y2;
+    const qx =
+        (1 - t) * (1 - t) * a.x1 +
+        2 * (1 - t) * t * mx +
+        t * t * a.x2;
+    const qy =
+        (1 - t) * (1 - t) * a.y1 +
+        2 * (1 - t) * t * my +
+        t * t * a.y2;
 
     const ang = Math.atan2(a.y2 - qy, a.x2 - qx);
     const head = 14;
 
-    // PUNTA DE LA FLECHA
     ctx.beginPath();
     ctx.moveTo(a.x2, a.y2);
     ctx.lineTo(
-        a.x2 - head * Math.cos(ang - Math.PI/6),
-        a.y2 - head * Math.sin(ang - Math.PI/6)
+        a.x2 - head * Math.cos(ang - Math.PI / 6),
+        a.y2 - head * Math.sin(ang - Math.PI / 6)
     );
     ctx.lineTo(
-        a.x2 - head * Math.cos(ang + Math.PI/6),
-        a.y2 - head * Math.sin(ang + Math.PI/6)
+        a.x2 - head * Math.cos(ang + Math.PI / 6),
+        a.y2 - head * Math.sin(ang + Math.PI / 6)
     );
     ctx.closePath();
     ctx.fillStyle = "yellow";
@@ -249,37 +399,37 @@ function drawKickArrow(a){
 }
 
 
-function drawZones() {
+// ==============================
+// ZONAS
+// ==============================
 
-    // Siempre dibujar zonas + pendingZone si existe
+/**
+ * Dibuja todas las zonas (y la pendingZone si existe).
+ */
+function drawZones() {
     const list = pendingZone ? [...zones, pendingZone] : zones;
 
     list.forEach(z => {
-
         const left = Math.min(z.x1, z.x2);
         const top = Math.min(z.y1, z.y2);
         const w = Math.abs(z.x2 - z.x1);
         const h = Math.abs(z.y2 - z.y1);
 
-        // --- RECTÁNGULO ---
-        ctx.save();
-
         // Relleno translúcido
+        ctx.save();
         ctx.fillStyle = z.color || "#ffffff";
         ctx.globalAlpha = 0.25;
         ctx.fillRect(left, top, w, h);
 
-        // Contorno sólido
+        // Contorno
         ctx.globalAlpha = 1;
         ctx.strokeStyle = (z === selectedZone ? "white" : z.color);
         ctx.lineWidth = (z === selectedZone ? 4 : 3);
         ctx.strokeRect(left, top, w, h);
-
         ctx.restore();
 
-        // --- ETIQUETA ---
+        // Etiqueta
         if (z.labelOffsetX !== undefined && z.labelOffsetY !== undefined) {
-
             const labelX = left + z.labelOffsetX * w;
             const labelY = top + z.labelOffsetY * h;
 
@@ -293,9 +443,8 @@ function drawZones() {
             z.labelY = labelY;
         }
 
-        // --- CANDADO (solo zonas reales, NO pendingZone) ---
+        // Candado sólo para zonas reales (no pendingZone)
         if (z === selectedZone && z !== pendingZone) {
-
             const lockSize = 26;
             const lockX = left + w / 2;
             const lockY = top + h / 2;
@@ -306,7 +455,6 @@ function drawZones() {
                 size: lockSize
             };
 
-            // Fondo para el candado
             ctx.fillStyle = "rgba(0,0,0,0.8)";
             ctx.fillRect(
                 lockX - lockSize / 2,
@@ -315,7 +463,6 @@ function drawZones() {
                 lockSize
             );
 
-            // Emoji
             ctx.fillStyle = "white";
             ctx.font = "22px Arial";
             ctx.textAlign = "center";
@@ -325,7 +472,9 @@ function drawZones() {
     });
 }
 
-
+/**
+ * Devuelve la última zona que contenga el punto (x,y), o null si ninguna.
+ */
 function zoneHitTest(x, y) {
     for (let i = zones.length - 1; i >= 0; i--) {
         const z = zones[i];
@@ -333,7 +482,6 @@ function zoneHitTest(x, y) {
         const top = Math.min(z.y1, z.y2);
         const w = Math.abs(z.x2 - z.x1);
         const h = Math.abs(z.y2 - z.y1);
-
         if (x >= left && x <= left + w && y >= top && y <= top + h) {
             return z;
         }
@@ -345,41 +493,93 @@ function zoneHitTest(x, y) {
 // ==============================
 // TEXTOS
 // ==============================
-function drawTexts(f){
-    f.texts.forEach(t=>{
-        ctx.font="36px Arial";
-        const w=ctx.measureText(t.text).width;
-        ctx.fillStyle="white";
-        ctx.textAlign="center";
-        ctx.textBaseline="top";
-        ctx.fillText(t.text,t.x,t.y);
+
+/**
+ * Dibuja los textos del frame.
+ */
+function drawTexts(f) {
+    f.texts.forEach(t => {
+        ctx.font = "36px Arial";
+        ctx.fillStyle = "white";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "top";
+        ctx.fillText(t.text, t.x, t.y);
     });
 }
 
-function findTextAt(x,y){
-    const f=getCurrentFrame();
-    ctx.font="16px Arial";
-    for(let t of f.texts){
-        const w=ctx.measureText(t.text).width, h=18, px=6, py=4;
-        const x1=t.x-w/2-px, y1=t.y-py;
-        const x2=x1+w+px*2, y2=y1+h+py*2;
-        if(x>=x1 && x<=x2 && y>=y1 && y<=y2) return t;
+/**
+ * Busca un texto en el frame actual que contenga el punto (x,y).
+ */
+function findTextAt(x, y) {
+    const f = getCurrentFrame();
+    ctx.font = "16px Arial";
+
+    for (let t of f.texts) {
+        const w = ctx.measureText(t.text).width;
+        const h = 18;
+        const px = 6;
+        const py = 4;
+        const x1 = t.x - w / 2 - px;
+        const y1 = t.y - py;
+        const x2 = x1 + w + px * 2;
+        const y2 = y1 + h + py * 2;
+
+        if (x >= x1 && x <= x2 && y >= y1 && y <= y2) {
+            return t;
+        }
     }
     return null;
 }
 
 
 // ==============================
-// DIBUJAR FRAME
+// HIT TESTS: JUGADORES / BALÓN
 // ==============================
+
+/**
+ * Devuelve el jugador en (pos.x, pos.y) si hay alguno, o null.
+ */
+function findPlayerAt(pos) {
+    const f = getCurrentFrame();
+    for (let p of f.players) {
+        if (!p.visible) continue;
+        if (Math.hypot(pos.x - p.x, pos.y - p.y) < p.radius) {
+            return p;
+        }
+    }
+    return null;
+}
+
+/**
+ * Test de colisión con el balón.
+ */
+function ballHitTest(pos) {
+    const b = getCurrentFrame().ball;
+    if (!b.visible) return false;
+
+    const dx = pos.x - b.x;
+    const dy = pos.y - b.y;
+    const r = Math.max(b.rx, b.ry);
+    return dx * dx + dy * dy <= r * r;
+}
+
+
+// ==============================
+// DIBUJAR UN FRAME COMPLETO
+// ==============================
+
+/**
+ * Dibuja el frame actual (campo + zonas + jugadores + flechas + texto).
+ */
 function drawFrame() {
     drawPitch();
     drawZones();
+
     const f = getCurrentFrame();
 
-    // Trail persistente
-    f.trailLines.forEach(tl=>{
-        ctx.strokeStyle = tl.team==="A" ? "#7fb9ff" : "#ff7a7a";
+    // Trails almacenados
+    f.trailLines.forEach(tl => {
+        ctx.strokeStyle = tl.team === "A" ? "#7fb9ff" : "#ff7a7a";
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(tl.x1, tl.y1);
@@ -387,188 +587,191 @@ function drawFrame() {
         ctx.stroke();
     });
 
-    // Flechas finales
-    f.arrows.forEach(a=>{
-        if(a.type==="kick") drawKickArrow(a);
+    // Flechas definitivas
+    f.arrows.forEach(a => {
+        if (a.type === "kick") drawKickArrow(a);
         else drawNormalArrow(a);
     });
 
-    // Flecha preview
-    if(previewArrow){
-        if(previewArrow.type==="kick") drawKickArrow(previewArrow);
+    // Flecha de preview
+    if (previewArrow) {
+        if (previewArrow.type === "kick") drawKickArrow(previewArrow);
         else drawNormalArrow(previewArrow);
     }
 
     // Textos
     drawTexts(f);
 
-    // Rastro activo mientras arrastras
-    if(dragTarget && dragTarget.type==="players"){
-        ctx.lineWidth=2;
-        dragTarget.players.forEach((pl,i)=>{
-            const st=dragTarget.startPositions[i];
-            ctx.strokeStyle=pl.team==="A"?"#7fb9ff":"#ff7a7a";
+    // Rastro activo mientras arrastramos jugadores
+    if (dragTarget && dragTarget.type === "players") {
+        ctx.lineWidth = 2;
+        dragTarget.players.forEach((pl, i) => {
+            const st = dragTarget.startPositions[i];
+            ctx.strokeStyle = pl.team === "A" ? "#7fb9ff" : "#ff7a7a";
             ctx.beginPath();
-            ctx.moveTo(st.x,st.y);
-            ctx.lineTo(pl.x,pl.y);
+            ctx.moveTo(st.x, st.y);
+            ctx.lineTo(pl.x, pl.y);
             ctx.stroke();
         });
     }
 
     // Jugadores
-    f.players.forEach(p=>{
-        if(!p.visible) return;
+    f.players.forEach(p => {
+        if (!p.visible) return;
+
         ctx.beginPath();
-        ctx.arc(p.x,p.y,p.radius,0,Math.PI*2);
-        ctx.fillStyle=p.team==="A"?"#1e88ff":"#ff3333";
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = p.team === "A" ? "#1e88ff" : "#ff3333";
         ctx.fill();
 
-        if(selectedPlayers.has(p)){
-            ctx.strokeStyle="white";
-            ctx.lineWidth=3;
+        if (selectedPlayers.has(p)) {
+            ctx.strokeStyle = "white";
+            ctx.lineWidth = 3;
             ctx.stroke();
         }
 
-        ctx.fillStyle="white";
-        ctx.font="bold 14px Arial";
-        ctx.textAlign="center";
-        ctx.textBaseline="middle";
-        ctx.fillText(p.number,p.x,p.y);
+        ctx.fillStyle = "white";
+        ctx.font = "bold 14px Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(p.number, p.x, p.y);
     });
 
+    // Balón
     drawRugbyBall(f.ball);
 
-    // Selección rectangular
-    if(selectingBox && selectBoxStart && selectBoxEnd){
-        ctx.setLineDash([6,4]);
-        ctx.strokeStyle="white";
-        ctx.lineWidth=1.5;
-        const x=Math.min(selectBoxStart.x,selectBoxEnd.x);
-        const y=Math.min(selectBoxStart.y,selectBoxEnd.y);
-        const w=Math.abs(selectBoxEnd.x-selectBoxStart.x);
-        const h=Math.abs(selectBoxEnd.y-selectBoxStart.y);
-        ctx.strokeRect(x,y,w,h);
+    // Selección rectangular de jugadores
+    if (selectingBox && selectBoxStart && selectBoxEnd) {
+        ctx.setLineDash([6, 4]);
+        ctx.strokeStyle = "white";
+        ctx.lineWidth = 1.5;
+        const x = Math.min(selectBoxStart.x, selectBoxEnd.x);
+        const y = Math.min(selectBoxStart.y, selectBoxEnd.y);
+        const w = Math.abs(selectBoxEnd.x - selectBoxStart.x);
+        const h = Math.abs(selectBoxEnd.y - selectBoxStart.y);
+        ctx.strokeRect(x, y, w, h);
         ctx.setLineDash([]);
     }
 }
 
 
 // ==============================
-// FRAME INTERPOLADO
+// DIBUJAR FRAME INTERPOLADO
 // ==============================
-function drawInterpolatedFrame(a,b,t){
+
+/**
+ * Dibuja una interpolación entre dos frames (t entre 0 y 1).
+ */
+function drawInterpolatedFrame(a, b, t) {
     drawPitch();
+    drawZones(); // Zonas se mantienen globales
 
     // Jugadores
-    for(let i=0;i<a.players.length;i++){
-        const p1=a.players[i], p2=b.players[i];
-        if(!(p1.visible||p2.visible)) continue;
+    for (let i = 0; i < a.players.length; i++) {
+        const p1 = a.players[i];
+        const p2 = b.players[i];
+        if (!(p1.visible || p2.visible)) continue;
 
-        let x,y;
-        if(p1.visible && p2.visible){
-            x=p1.x+(p2.x-p1.x)*t;
-            y=p1.y+(p2.y-p1.y)*t;
-        }else if(p1.visible){ x=p1.x; y=p1.y; }
-        else { x=p2.x; y=p2.y; }
+        let x, y;
+        if (p1.visible && p2.visible) {
+            x = p1.x + (p2.x - p1.x) * t;
+            y = p1.y + (p2.y - p1.y) * t;
+        } else if (p1.visible) {
+            x = p1.x;
+            y = p1.y;
+        } else {
+            x = p2.x;
+            y = p2.y;
+        }
 
         ctx.beginPath();
-        ctx.arc(x,y,p1.radius,0,Math.PI*2);
-        ctx.fillStyle=p1.team==="A"?"#1e88ff":"#ff3333";
+        ctx.arc(x, y, p1.radius, 0, Math.PI * 2);
+        ctx.fillStyle = p1.team === "A" ? "#1e88ff" : "#ff3333";
         ctx.fill();
 
-        ctx.fillStyle="white";
-        ctx.font="bold 14px Arial";
-        ctx.textAlign="center";
-        ctx.textBaseline="middle";
-        ctx.fillText(p1.number,x,y);
+        ctx.fillStyle = "white";
+        ctx.font = "bold 14px Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(p1.number, x, y);
     }
 
     // Flechas y textos del frame destino
-    b.arrows.forEach(a=>{
-        if(a.type==="kick") drawKickArrow(a);
-        else drawNormalArrow(a);
+    b.arrows.forEach(aRow => {
+        if (aRow.type === "kick") drawKickArrow(aRow);
+        else drawNormalArrow(aRow);
     });
     drawTexts(b);
 
     // Balón
-    const bl1=a.ball, bl2=b.ball;
-    let bx,by;
-    if(bl1.visible && bl2.visible){
-        bx=bl1.x+(bl2.x-bl1.x)*t;
-        by=bl1.y+(bl2.y-bl1.y)*t;
-    } else if(bl1.visible){ bx=bl1.x; by=bl1.y; }
-    else { bx=bl2.x; by=bl2.y; }
-
-    drawRugbyBall({x:bx,y:by,rx:bl1.rx,ry:bl1.ry,visible:true});
-}
-
-
-// ==============================
-// HERRAMIENTAS INTERNAS
-// ==============================
-function canvasPos(e){
-    const r=canvas.getBoundingClientRect();
-    return {x:e.clientX-r.left,y:e.clientY-r.top};
-}
-
-function findPlayerAt(pos){
-    const f=getCurrentFrame();
-    for(let p of f.players){
-        if(!p.visible) continue;
-        if(Math.hypot(pos.x-p.x,pos.y-p.y)<p.radius) return p;
+    const bl1 = a.ball;
+    const bl2 = b.ball;
+    let bx, by;
+    if (bl1.visible && bl2.visible) {
+        bx = bl1.x + (bl2.x - bl1.x) * t;
+        by = bl1.y + (bl2.y - bl1.y) * t;
+    } else if (bl1.visible) {
+        bx = bl1.x;
+        by = bl1.y;
+    } else {
+        bx = bl2.x;
+        by = bl2.y;
     }
-    return null;
-}
 
-function ballHitTest(pos){
-    const b=getCurrentFrame().ball;
-    if(!b.visible) return false;
-    const dx=pos.x-b.x, dy=pos.y-b.y;
-    const r=Math.max(b.rx,b.ry);
-    return dx*dx+dy*dy<=r*r;
+    drawRugbyBall({ x: bx, y: by, rx: bl1.rx, ry: bl1.ry, visible: true });
 }
 
 
 // ==============================
 // MELÉ
 // ==============================
-function placeScrumWithPrompt(x,y){
-    const choice=(prompt("Equipo para melé: A, B, AB","AB")||"AB").toUpperCase();
-    const f=getCurrentFrame();
 
-    const spacingY=40;
-    const rowX=32;
-    const pack=35;
+/**
+ * Coloca una melé alrededor del punto (x,y).
+ */
+async function placeScrumWithPrompt(x, y){
+    const choice = await popupSelectScrumTeam();
+    if (!choice) return;  // cancelado
+    const f = getCurrentFrame();
 
-    function set(team,num,px,py){
-        const p=f.players.find(a=>a.team===team && a.number===num);
-        if(!p)return;
-        p.visible=true;
-        p.x=px; p.y=py;
+    const spacingY = 40;
+    const rowX = 32;
+    const pack = 35;
+
+    function set(team, num, px, py) {
+        const p = f.players.find(a => a.team === team && a.number === num);
+        if (!p) return;
+        p.visible = true;
+        p.x = px;
+        p.y = py;
     }
 
-    if(choice==="A"||choice==="AB"){
-        const bx=x-pack, cy=y;
-        set("A",1,bx,cy-spacingY);
-        set("A",2,bx,cy);
-        set("A",3,bx,cy+spacingY);
-        set("A",6,bx-rowX,cy-spacingY*1.5);
-        set("A",4,bx-rowX,cy-spacingY*0.5);
-        set("A",5,bx-rowX,cy+spacingY*0.5);
-        set("A",7,bx-rowX,cy+spacingY*1.5);
-        set("A",8,bx-rowX*2,cy);
+    // Equipo A
+    if (choice === "A" || choice === "AB") {
+        const bx = x - pack;
+        const cy = y;
+        set("A", 1, bx, cy - spacingY);
+        set("A", 2, bx, cy);
+        set("A", 3, bx, cy + spacingY);
+        set("A", 6, bx - rowX, cy - spacingY * 1.5);
+        set("A", 4, bx - rowX, cy - spacingY * 0.5);
+        set("A", 5, bx - rowX, cy + spacingY * 0.5);
+        set("A", 7, bx - rowX, cy + spacingY * 1.5);
+        set("A", 8, bx - rowX * 2, cy);
     }
 
-    if(choice==="B"||choice==="AB"){
-        const bx=x+pack, cy=y;
-        set("B",3,bx,cy-spacingY);
-        set("B",2,bx,cy);
-        set("B",1,bx,cy+spacingY);
-        set("B",7,bx+rowX,cy-spacingY*1.5);
-        set("B",5,bx+rowX,cy-spacingY*0.5);
-        set("B",4,bx+rowX,cy+spacingY*0.5);
-        set("B",6,bx+rowX,cy+spacingY*1.5);
-        set("B",8,bx+rowX*2,cy);
+    // Equipo B
+    if (choice === "B" || choice === "AB") {
+        const bx = x + pack;
+        const cy = y;
+        set("B", 3, bx, cy - spacingY);
+        set("B", 2, bx, cy);
+        set("B", 1, bx, cy + spacingY);
+        set("B", 7, bx + rowX, cy - spacingY * 1.5);
+        set("B", 5, bx + rowX, cy - spacingY * 0.5);
+        set("B", 4, bx + rowX, cy + spacingY * 0.5);
+        set("B", 6, bx + rowX, cy + spacingY * 1.5);
+        set("B", 8, bx + rowX * 2, cy);
     }
 
     syncPlayerToggles();
@@ -578,305 +781,282 @@ function placeScrumWithPrompt(x,y){
 
 
 // ==============================
-// EVENTOS RATÓN
+// EVENTOS DE RATÓN SOBRE CANVAS
 // ==============================
-canvas.addEventListener("mousedown",e=>{
-    const pos=canvasPos(e);
-    const f=getCurrentFrame();
-        // CLICK SOBRE CANDADO DE ZONA
+
+canvas.addEventListener("mousedown", async e => {
+    const pos = canvasPos(e);
+    const f = getCurrentFrame();
+
+    // --- CLICK SOBRE CANDADO DE ZONA (si hay zona seleccionada) ---
     if (selectedZone && selectedZone.lockIcon) {
-        const pos = canvasPos(e);
         const L = selectedZone.lockIcon;
-
-        if (pos.x >= L.x && pos.x <= L.x + L.size &&
-            pos.y >= L.y && pos.y <= L.y + L.size) {
-
-            // alternar bloqueo
+        if (
+            pos.x >= L.x && pos.x <= L.x + L.size &&
+            pos.y >= L.y && pos.y <= L.y + L.size
+        ) {
             selectedZone.locked = !selectedZone.locked;
-
             drawFrame();
             return;
         }
     }
 
-if (mode === "zone") {
-    if (!selectedZoneColor) {
-        alert("Primero selecciona un color en el panel superior.");
-        return;
-    }
+    // --- MODO ZONA: flujo de 3 clics (esquina 1, esquina 2, etiqueta) ---
+    if (mode === "zone") {
+        if (!selectedZoneColor) {
+    await showPopup({
+        title: "Color no seleccionado",
+        html: `<p>Debes elegir un color para crear una zona.</p>`,
+        showCancel: false
+    });
+    return;
+}
 
-    const pos = canvasPos(e);
 
-    // click 1 → esquina inicial
-    if (!zoneStart) {
-        zoneStart = pos;
-        return;
-    }
-
-    // click 2 → esquina final
-    if (!zoneEnd) {
-        zoneEnd = pos;
-
-        const name = prompt("Nombre de la zona:");
-        if (!name || name.trim() === "") {
-            zoneStart = null;
-            zoneEnd = null;
+        // Clic 1 → esquina inicial
+        if (!zoneStart) {
+            zoneStart = pos;
             return;
         }
 
-        // Normalizar coordenadas para que x1 < x2 e y1 < y2
-const x1 = Math.min(zoneStart.x, pos.x);
-const y1 = Math.min(zoneStart.y, pos.y);
-const x2 = Math.max(zoneStart.x, pos.x);
-const y2 = Math.max(zoneStart.y, pos.y);
+        // Clic 2 → esquina final y nombre
+        if (!zoneEnd) {
+            zoneEnd = pos;
 
-pendingZone = {
-    x1,
-    y1,
-    x2,
-    y2,
-    name,
-    color: selectedZoneColor,
-    labelOffsetX: undefined,
-    labelOffsetY: undefined,
-    locked: false
-};
-
-        drawFrame();
-        return;
-    }
-
-    // click 3 → colocar etiqueta
-    if (pendingZone) {
-        const left = Math.min(pendingZone.x1, pendingZone.x2);
-const top = Math.min(pendingZone.y1, pendingZone.y2);
-const w = Math.abs(pendingZone.x2 - pendingZone.x1);
-const h = Math.abs(pendingZone.y2 - pendingZone.y1);
-
-// Guardar posición RELATIVA dentro del rectángulo
-pendingZone.labelOffsetX = (pos.x - left) / w;
-pendingZone.labelOffsetY = (pos.y - top) / h;
-
-        zones.push(pendingZone);
-        pendingZone = null;
-        zoneStart = null;
-        zoneEnd = null;
-        setMode("move");
-        drawFrame();
-        return;
-    }
-}
-if (mode === "move") {
-    const pos = canvasPos(e);
-    const z = zoneHitTest(pos.x, pos.y);
-
-    if (z) {
-        selectedZone = z;
-
-        // no mover si está bloqueada
-        if (!z.locked) {
-            draggingZone = true;
-
-            const left = Math.min(z.x1, z.x2);
-            const top = Math.min(z.y1, z.y2);
-
-            zoneDragOffset.x = pos.x - left;
-            zoneDragOffset.y = pos.y - top;
-        }
-
-        drawFrame();
-        return;
-    }
-}
-
-    if(mode==="move"){
-    // Primero, comprobar si clicas en alguna zona
-    const z = zoneHitTest(pos.x, pos.y);
-    if (z) {
-        selectedZone = z;
-
-        // Si clicas en el candado, alterna bloqueo y no arrastres
-        if (z.lockIcon) {
-            const L = z.lockIcon;
-            if (
-                pos.x >= L.x && pos.x <= L.x + L.size &&
-                pos.y >= L.y && pos.y <= L.y + L.size
-            ) {
-                z.locked = !z.locked;
-                drawFrame();
+            const name = await popupPrompt("Nombre de la zona:");
+            if (!name || name.trim() === "") {
+                zoneStart = null;
+                zoneEnd = null;
                 return;
             }
-        }
 
-        // Si está desbloqueada, empezamos a arrastrar
-        if (!z.locked) {
-            draggingZone = true;
+            const x1 = Math.min(zoneStart.x, pos.x);
+            const y1 = Math.min(zoneStart.y, pos.y);
+            const x2 = Math.max(zoneStart.x, pos.x);
+            const y2 = Math.max(zoneStart.y, pos.y);
 
-            const left = Math.min(z.x1, z.x2);
-            const top  = Math.min(z.y1, z.y2);
+            pendingZone = {
+                x1,
+                y1,
+                x2,
+                y2,
+                name,
+                color: selectedZoneColor,
+                labelOffsetX: undefined,
+                labelOffsetY: undefined,
+                locked: false
+            };
 
-            zoneDragOffset.x = pos.x - left;
-            zoneDragOffset.y = pos.y - top;
-        }
-
-        drawFrame();
-        return;
-    }
-
-    // ... aquí sigue tu lógica normal de mover textos, jugadores, balón, etc.
-
-
-        const t=findTextAt(pos.x,pos.y);
-        if(t){
-            dragTarget={type:"text",obj:t};
-            dragOffsetX=pos.x-t.x;
-            dragOffsetY=pos.y-t.y;
+            drawFrame();
             return;
         }
 
-        const p=findPlayerAt(pos);
-        if(p){
-            if(e.ctrlKey){
-                if(!selectedPlayers.has(p)) selectedPlayers.add(p);
-            }else{
-                if(!selectedPlayers.has(p)||selectedPlayers.size>1){
+        // Clic 3 → posición del texto dentro del rectángulo
+        if (pendingZone) {
+            const left = Math.min(pendingZone.x1, pendingZone.x2);
+            const top = Math.min(pendingZone.y1, pendingZone.y2);
+            const w = Math.abs(pendingZone.x2 - pendingZone.x1);
+            const h = Math.abs(pendingZone.y2 - pendingZone.y1);
+
+            pendingZone.labelOffsetX = (pos.x - left) / w;
+            pendingZone.labelOffsetY = (pos.y - top) / h;
+
+            zones.push(pendingZone);
+            pendingZone = null;
+            zoneStart = null;
+            zoneEnd = null;
+
+            setMode("move");
+            drawFrame();
+            return;
+        }
+    }
+
+    // --- MODO MOVE: primero probamos interacción con zonas ---
+    if (mode === "move") {
+        const z = zoneHitTest(pos.x, pos.y);
+
+        if (z) {
+            selectedZone = z;
+
+            // Si la zona no está bloqueada, la preparamos para arrastrar
+            if (!z.locked) {
+                draggingZone = true;
+
+                const left = Math.min(z.x1, z.x2);
+                const top = Math.min(z.y1, z.y2);
+
+                zoneDragOffset.x = pos.x - left;
+                zoneDragOffset.y = pos.y - top;
+            }
+
+            drawFrame();
+            return;
+        }
+
+        // --- Si no hay zona, probamos texto, jugadores, balón o selección ---
+        const t = findTextAt(pos.x, pos.y);
+        if (t) {
+            dragTarget = { type: "text", obj: t };
+            dragOffsetX = pos.x - t.x;
+            dragOffsetY = pos.y - t.y;
+            return;
+        }
+
+        const p = findPlayerAt(pos);
+        if (p) {
+            if (e.ctrlKey) {
+                if (!selectedPlayers.has(p)) {
+                    selectedPlayers.add(p);
+                }
+            } else {
+                if (!selectedPlayers.has(p) || selectedPlayers.size > 1) {
                     selectedPlayers.clear();
                     selectedPlayers.add(p);
                 }
             }
-            dragTarget={
-                type:"players",
-                players:Array.from(selectedPlayers),
-                startPositions:Array.from(selectedPlayers).map(a=>({x:a.x,y:a.y})),
-                startMouse:pos
+
+            dragTarget = {
+                type: "players",
+                players: Array.from(selectedPlayers),
+                startPositions: Array.from(selectedPlayers).map(a => ({ x: a.x, y: a.y })),
+                startMouse: pos
             };
             drawFrame();
             return;
         }
 
-        if(ballHitTest(pos)){
-            dragTarget={type:"ball",obj:f.ball};
-            dragOffsetX=pos.x-f.ball.x;
-            dragOffsetY=pos.y-f.ball.y;
+        if (ballHitTest(pos)) {
+            dragTarget = { type: "ball", obj: f.ball };
+            dragOffsetX = pos.x - f.ball.x;
+            dragOffsetY = pos.y - f.ball.y;
             return;
         }
 
-        if(!e.ctrlKey) selectedPlayers.clear();
-        selectingBox=true;
-        selectBoxStart=pos;
-        selectBoxEnd=pos;
+        // Selección rectangular de jugadores
+        if (!e.ctrlKey) {
+            selectedPlayers.clear();
+        }
+        selectingBox = true;
+        selectBoxStart = pos;
+        selectBoxEnd = pos;
         drawFrame();
         return;
     }
 
-    if(mode==="draw"||mode==="kick"){
-        if(!arrowStart){
-            arrowStart=pos;
+    // --- MODO FLECHAS / PATADA ---
+    if (mode === "draw" || mode === "kick") {
+        if (!arrowStart) {
+            arrowStart = pos;
         } else {
             f.arrows.push({
-                x1:arrowStart.x,
-                y1:arrowStart.y,
-                x2:pos.x,
-                y2:pos.y,
-                type: mode==="kick"?"kick":"normal"
+                x1: arrowStart.x,
+                y1: arrowStart.y,
+                x2: pos.x,
+                y2: pos.y,
+                type: mode === "kick" ? "kick" : "normal"
             });
-            arrowStart=null;
-            previewArrow=null;
+            arrowStart = null;
+            previewArrow = null;
             drawFrame();
         }
         return;
     }
 
-    if(mode==="text"){
-        const tx=prompt("Texto:");
-        if(tx && tx.trim()!==""){
-            f.texts.push({x:pos.x,y:pos.y,text:tx.trim()});
+    // --- MODO TEXTO ---
+    if (mode === "text") {
+        const tx = await popupPrompt("Escribe el texto:");
+        if (tx && tx.trim() !== "") {
+            f.texts.push({ x: pos.x, y: pos.y, text: tx.trim() });
             drawFrame();
         }
         return;
     }
 
-    if(mode==="scrum"){
-        placeScrumWithPrompt(pos.x,pos.y);
+    // --- MODO MELÉ ---
+    if (mode === "scrum") {
+        placeScrumWithPrompt(pos.x, pos.y);
         return;
     }
 });
 
 
-canvas.addEventListener("mousemove",e=>{
-    const pos=canvasPos(e);
-if (draggingZone && selectedZone && !selectedZone.locked) {
+canvas.addEventListener("mousemove", e => {
     const pos = canvasPos(e);
 
-    const left = Math.min(selectedZone.x1, selectedZone.x2);
-    const top  = Math.min(selectedZone.y1, selectedZone.y2);
-    const w = Math.abs(selectedZone.x2 - selectedZone.x1);
-    const h = Math.abs(selectedZone.y2 - selectedZone.y1);
+    // Arrastrar zona seleccionada
+    if (draggingZone && selectedZone && !selectedZone.locked) {
+        const left = Math.min(selectedZone.x1, selectedZone.x2);
+        const top  = Math.min(selectedZone.y1, selectedZone.y2);
+        const w = Math.abs(selectedZone.x2 - selectedZone.x1);
+        const h = Math.abs(selectedZone.y2 - selectedZone.y1);
 
-    const newLeft = pos.x - zoneDragOffset.x;
-    const newTop  = pos.y - zoneDragOffset.y;
+        const newLeft = pos.x - zoneDragOffset.x;
+        const newTop  = pos.y - zoneDragOffset.y;
 
-    selectedZone.x1 = newLeft;
-    selectedZone.y1 = newTop;
-    selectedZone.x2 = newLeft + w;
-    selectedZone.y2 = newTop + h;
+        selectedZone.x1 = newLeft;
+        selectedZone.y1 = newTop;
+        selectedZone.x2 = newLeft + w;
+        selectedZone.y2 = newTop + h;
 
-    drawFrame();
-    return;
-}
-
-
-
-if ((mode === "draw" || mode === "kick") && arrowStart) {
-
-    // ALTURA AJUSTABLE — SHIFT pulsado
-    if (e.shiftKey && mode === "kick") {
-        kickArcHeight += (arrowStart.y - pos.y) * 0.1;
-        kickArcHeight = Math.max(10, Math.min(200, kickArcHeight)); 
+        drawFrame();
+        return;
     }
 
-    previewArrow = {
-        x1: arrowStart.x,
-        y1: arrowStart.y,
-        x2: pos.x,
-        y2: pos.y,
-        type: mode === "kick" ? "kick" : "normal"
-    };
+    // Preview de flecha / patada
+    if ((mode === "draw" || mode === "kick") && arrowStart) {
+        if (e.shiftKey && mode === "kick") {
+            kickArcHeight += (arrowStart.y - pos.y) * 0.1;
+            kickArcHeight = Math.max(10, Math.min(200, kickArcHeight));
+        }
 
-    drawFrame();
-    return;
-}
+        previewArrow = {
+            x1: arrowStart.x,
+            y1: arrowStart.y,
+            x2: pos.x,
+            y2: pos.y,
+            type: mode === "kick" ? "kick" : "normal"
+        };
 
-    if(dragTarget && mode==="move"){
-        if(dragTarget.type==="text"){
-            dragTarget.obj.x=pos.x-dragOffsetX;
-            dragTarget.obj.y=pos.y-dragOffsetY;
-        } else if(dragTarget.type==="ball"){
-            dragTarget.obj.x=pos.x-dragOffsetX;
-            dragTarget.obj.y=pos.y-dragOffsetY;
-        } else if(dragTarget.type==="players"){
-            const dx=pos.x-dragTarget.startMouse.x;
-            const dy=pos.y-dragTarget.startMouse.y;
-            dragTarget.players.forEach((pl,i)=>{
-                pl.x=dragTarget.startPositions[i].x+dx;
-                pl.y=dragTarget.startPositions[i].y+dy;
+        drawFrame();
+        return;
+    }
+
+    // Arrastre de texto, balón o jugadores
+    if (dragTarget && mode === "move") {
+        if (dragTarget.type === "text") {
+            dragTarget.obj.x = pos.x - dragOffsetX;
+            dragTarget.obj.y = pos.y - dragOffsetY;
+        } else if (dragTarget.type === "ball") {
+            dragTarget.obj.x = pos.x - dragOffsetX;
+            dragTarget.obj.y = pos.y - dragOffsetY;
+        } else if (dragTarget.type === "players") {
+            const dx = pos.x - dragTarget.startMouse.x;
+            const dy = pos.y - dragTarget.startMouse.y;
+            dragTarget.players.forEach((pl, i) => {
+                pl.x = dragTarget.startPositions[i].x + dx;
+                pl.y = dragTarget.startPositions[i].y + dy;
             });
         }
         drawFrame();
         return;
     }
 
-    if(selectingBox && mode==="move"){
-        selectBoxEnd=pos;
+    // Actualizar selección rectangular
+    if (selectingBox && mode === "move") {
+        selectBoxEnd = pos;
         selectedPlayers.clear();
-        const x1=Math.min(selectBoxStart.x,selectBoxEnd.x);
-        const y1=Math.min(selectBoxStart.y,selectBoxEnd.y);
-        const x2=Math.max(selectBoxStart.x,selectBoxEnd.x);
-        const y2=Math.max(selectBoxStart.y,selectBoxEnd.y);
 
-        getCurrentFrame().players.forEach(p=>{
-            if(!p.visible) return;
-            if(p.x>=x1 && p.x<=x2 && p.y>=y1 && p.y<=y2) selectedPlayers.add(p);
+        const x1 = Math.min(selectBoxStart.x, selectBoxEnd.x);
+        const y1 = Math.min(selectBoxStart.y, selectBoxEnd.y);
+        const x2 = Math.max(selectBoxStart.x, selectBoxEnd.x);
+        const y2 = Math.max(selectBoxStart.y, selectBoxEnd.y);
+
+        getCurrentFrame().players.forEach(p => {
+            if (!p.visible) return;
+            if (p.x >= x1 && p.x <= x2 && p.y >= y1 && p.y <= y2) {
+                selectedPlayers.add(p);
+            }
         });
 
         drawFrame();
@@ -884,52 +1064,60 @@ if ((mode === "draw" || mode === "kick") && arrowStart) {
 });
 
 
-canvas.addEventListener("mouseup",()=>{
+canvas.addEventListener("mouseup", () => {
     draggingZone = false;
 
-    if(dragTarget && dragTarget.type==="players"){
-        const f=getCurrentFrame();
-        dragTarget.players.forEach((pl,i)=>{
-            const st=dragTarget.startPositions[i];
+    // Al soltar jugadores, guardamos trailLines
+    if (dragTarget && dragTarget.type === "players") {
+        const f = getCurrentFrame();
+        dragTarget.players.forEach((pl, i) => {
+            const st = dragTarget.startPositions[i];
             f.trailLines.push({
-                x1:st.x,
-                y1:st.y,
-                x2:pl.x,
-                y2:pl.y,
-                team:pl.team
+                x1: st.x,
+                y1: st.y,
+                x2: pl.x,
+                y2: pl.y,
+                team: pl.team
             });
         });
     }
 
-    dragTarget=null;
+    dragTarget = null;
 
-    if(selectingBox){
-        selectingBox=false;
-        selectBoxStart=null;
-        selectBoxEnd=null;
+    // Final de selección rectangular
+    if (selectingBox) {
+        selectingBox = false;
+        selectBoxStart = null;
+        selectBoxEnd = null;
         drawFrame();
     }
 });
 
 
-canvas.addEventListener("dblclick",e=>{
-    const pos=canvasPos(e);
-    const t=findTextAt(pos.x,pos.y);
-    if(!t) return;
-    const tx=prompt("Editar texto (vacío para borrar):",t.text);
-    if(tx===null) return;
-    const f=getCurrentFrame();
-    if(tx.trim()===""){
-        f.texts=f.texts.filter(x=>x!==t);
+canvas.addEventListener("dblclick", e => {
+    const pos = canvasPos(e);
+    const t = findTextAt(pos.x, pos.y);
+    if (!t) return;
+
+    const tx = prompt("Editar texto (vacío para borrar):", t.text);
+    if (tx === null) return;
+
+    const f = getCurrentFrame();
+    if (tx.trim() === "") {
+        f.texts = f.texts.filter(x => x !== t);
     } else {
-        t.text=tx.trim();
+        t.text = tx.trim();
     }
     drawFrame();
 });
 
 
-window.addEventListener("keydown",e=>{
-    if(e.key==="Escape"){
+// ==============================
+// TECLADO
+// ==============================
+
+window.addEventListener("keydown", e => {
+    if (e.key === "Escape") {
         selectedPlayers.clear();
         drawFrame();
     }
@@ -937,13 +1125,16 @@ window.addEventListener("keydown",e=>{
 
 
 // ==============================
-// PANEL DE JUGADORES
+// PANEL DE JUGADORES (SIDEBAR)
 // ==============================
+
+/**
+ * Coloca todos los jugadores de un equipo en el lateral del campo.
+ */
 function showTeam(team) {
     const f = getCurrentFrame();
-    const { fieldWidth, fieldHeight } = fieldDims();
+    const { fieldWidth } = fieldDims();
 
-    // Ajuste lateral (misma lógica que ya usamos para colocar jugadores)
     const xSide = team === "A"
         ? marginX + fieldWidth * 0.15
         : marginX + fieldWidth * 0.85;
@@ -951,10 +1142,8 @@ function showTeam(team) {
     const spacing = 45;
     const yTop = marginY + 40;
 
-    // Activar todos los jugadores del equipo
     for (let n = 1; n <= NUM_PLAYERS; n++) {
         const p = f.players.find(pl => pl.team === team && pl.number === n);
-
         p.visible = true;
         p.x = xSide;
         p.y = yTop + (n - 1) * spacing;
@@ -964,13 +1153,14 @@ function showTeam(team) {
     drawFrame();
 }
 
+/**
+ * Crea los botones de jugadores en los paneles azul y rojo.
+ */
 function loadPlayerPanels() {
     const blueGrid = document.getElementById("players-blue");
     const redGrid = document.getElementById("players-red");
 
     for (let i = 1; i <= NUM_PLAYERS; i++) {
-
-        // Cuadrado azul
         const a = document.createElement("div");
         a.className = "player-toggle";
         a.textContent = i;
@@ -979,7 +1169,6 @@ function loadPlayerPanels() {
         a.onclick = togglePlayer;
         blueGrid.appendChild(a);
 
-        // Cuadrado rojo
         const b = document.createElement("div");
         b.className = "player-toggle red";
         b.textContent = i;
@@ -990,49 +1179,57 @@ function loadPlayerPanels() {
     }
 }
 
-
-function togglePlayer(e){
-    const team=e.target.dataset.team;
-    const num=parseInt(e.target.dataset.number);
-    togglePlayerByTeamNumber(team,num);
+/**
+ * Handler del click en el botón de un jugador.
+ */
+function togglePlayer(e) {
+    const team = e.target.dataset.team;
+    const num = parseInt(e.target.dataset.number);
+    togglePlayerByTeamNumber(team, num);
 }
 
-function togglePlayerByTeamNumber(team, num){
-    const f=getCurrentFrame();
-    const p=f.players.find(x=>x.team===team && x.number===num);
-    p.visible=!p.visible;
-    if(p.visible && p.x===null){
-        const {fieldWidth,fieldHeight}=fieldDims();
+/**
+ * Activa/desactiva un jugador por equipo y dorsal.
+ */
+function togglePlayerByTeamNumber(team, num) {
+    const f = getCurrentFrame();
+    const p = f.players.find(x => x.team === team && x.number === num);
+    p.visible = !p.visible;
 
-const xSide = team === "A"
-    ? marginX + fieldWidth * 0.15    // lado izquierdo
-    : marginX + fieldWidth * 0.85;   // lado derecho
+    // Si se activa por primera vez, le damos posición lateral
+    if (p.visible && p.x === null) {
+        const { fieldWidth } = fieldDims();
 
-// Espaciado vertical
-const spacing = 45;
+        const xSide = team === "A"
+            ? marginX + fieldWidth * 0.15
+            : marginX + fieldWidth * 0.85;
 
-// Posición arriba del todo
-const yTop = marginY + 40;
+        const spacing = 45;
+        const yTop = marginY + 40;
 
-// CADA jugador ocupa una posición vertical según su dorsal
-p.x = xSide;
-p.y = yTop + (num - 1) * spacing;
-
+        p.x = xSide;
+        p.y = yTop + (num - 1) * spacing;
     }
 
-    const selector=`.player-toggle[data-team="${team}"][data-number="${num}"]`;
-    const div=document.querySelector(selector);
-    if(div) div.classList.toggle("active", p.visible);
+    const selector =
+        `.player-toggle[data-team="${team}"][data-number="${num}"]`;
+    const div = document.querySelector(selector);
+    if (div) {
+        div.classList.toggle("active", p.visible);
+    }
 
     drawFrame();
 }
 
-function syncPlayerToggles(){
-    const f=getCurrentFrame();
-    document.querySelectorAll(".player-toggle").forEach(div=>{
-        const team=div.dataset.team;
-        const num=parseInt(div.dataset.number);
-        const p=f.players.find(x=>x.team===team && x.number===num);
+/**
+ * Sincroniza el estado visual de los botones de jugadores con el frame.
+ */
+function syncPlayerToggles() {
+    const f = getCurrentFrame();
+    document.querySelectorAll(".player-toggle").forEach(div => {
+        const team = div.dataset.team;
+        const num = parseInt(div.dataset.number);
+        const p = f.players.find(x => x.team === team && x.number === num);
         div.classList.toggle("active", p.visible);
     });
 }
@@ -1041,93 +1238,94 @@ function syncPlayerToggles(){
 // ==============================
 // MODOS
 // ==============================
-function setMode(m){
-    mode=m;
-    arrowStart=null;
-    previewArrow=null;
-    document.querySelectorAll("#sidebar button").forEach(b=>b.classList.remove("active"));
-    if(m==="move") document.getElementById("mode-move").classList.add("active");
-    if(m==="text") document.getElementById("mode-text").classList.add("active");
-    if(m==="scrum") document.getElementById("mode-scrum").classList.add("active");
+
+/**
+ * Cambia el modo de interacción (move, text, scrum, draw, kick, zone).
+ */
+function setMode(m) {
+    mode = m;
+    arrowStart = null;
+    previewArrow = null;
+
+    // Estado visual de los botones del sidebar
+    document
+        .querySelectorAll("#sidebar button")
+        .forEach(b => b.classList.remove("active"));
+
+    if (m === "move") {
+        document.getElementById("mode-move").classList.add("active");
+    }
+    if (m === "text") {
+        document.getElementById("mode-text").classList.add("active");
+    }
+    if (m === "scrum") {
+        document.getElementById("mode-scrum").classList.add("active");
+    }
+
+    // Panel flotante de colores de zona
+    const zonePanel = document.getElementById("zone-color-panel");
     if (m === "zone") {
-    document.getElementById("zone-color-panel").classList.remove("hidden");
-} else {
-    document.getElementById("zone-color-panel").classList.add("hidden");
-}
-    document.getElementById("lock-zone").onclick = () => {
-    if (!selectedZone) return alert("No hay ninguna zona seleccionada.");
-    selectedZone.locked = true;
-    drawFrame();
-};
+        zonePanel.classList.remove("hidden");
+    } else {
+        zonePanel.classList.add("hidden");
+    }
 
-document.getElementById("unlock-zone").onclick = () => {
-    if (!selectedZone) return alert("No hay ninguna zona seleccionada.");
-    selectedZone.locked = false;
-    drawFrame();
-};
-
-document.getElementById("delete-zone").onclick = () => {
-    if (!selectedZone) return alert("No hay ninguna zona seleccionada.");
-
-    if (selectedZone.locked)
-        return alert("No puedes eliminar una zona bloqueada.");
-
-    zones = zones.filter(z => z !== selectedZone);
-    selectedZone = null;
-    drawFrame();
-};
     drawFrame();
 }
-document.getElementById("show-team-a").onclick = () => {
-    showTeam("A");
-};
 
-document.getElementById("show-team-b").onclick = () => {
-    showTeam("B");
-};
 
 // ==============================
-// FRAMES
+// FRAMES: UI Y NAVEGACIÓN
 // ==============================
-function updateFrameUI(){
-    document.getElementById("current-frame-index").textContent=currentFrameIndex+1;
-    document.getElementById("total-frames").textContent=frames.length;
+
+/**
+ * Actualiza los indicadores de frame actual / total.
+ */
+function updateFrameUI() {
+    document.getElementById("current-frame-index").textContent =
+        currentFrameIndex + 1;
+    document.getElementById("total-frames").textContent =
+        frames.length;
 }
 
-document.getElementById("add-frame").onclick=()=>{
-    const nf=cloneFrame(getCurrentFrame());
-    frames.splice(currentFrameIndex+1,0,nf);
+// Añadir frame (clonando el actual)
+document.getElementById("add-frame").onclick = () => {
+    const nf = cloneFrame(getCurrentFrame());
+    frames.splice(currentFrameIndex + 1, 0, nf);
     currentFrameIndex++;
-    getCurrentFrame().trailLines=[]; // limpiar trails al cambiar frame
+    getCurrentFrame().trailLines = []; // limpiar trails en el nuevo
     updateFrameUI();
     drawFrame();
 };
 
-document.getElementById("delete-frame").onclick=()=>{
-    if(frames.length>1){
-        frames.splice(currentFrameIndex,1);
-        currentFrameIndex=Math.max(0,currentFrameIndex-1);
-        getCurrentFrame().trailLines=[];
+// Eliminar frame
+document.getElementById("delete-frame").onclick = () => {
+    if (frames.length > 1) {
+        frames.splice(currentFrameIndex, 1);
+        currentFrameIndex = Math.max(0, currentFrameIndex - 1);
+        getCurrentFrame().trailLines = [];
         updateFrameUI();
         drawFrame();
         syncPlayerToggles();
     }
 };
 
-document.getElementById("next-frame").onclick=()=>{
-    if(currentFrameIndex<frames.length-1){
+// Frame siguiente
+document.getElementById("next-frame").onclick = () => {
+    if (currentFrameIndex < frames.length - 1) {
         currentFrameIndex++;
-        getCurrentFrame().trailLines=[];
+        getCurrentFrame().trailLines = [];
         updateFrameUI();
         drawFrame();
         syncPlayerToggles();
     }
 };
 
-document.getElementById("prev-frame").onclick=()=>{
-    if(currentFrameIndex>0){
+// Frame anterior
+document.getElementById("prev-frame").onclick = () => {
+    if (currentFrameIndex > 0) {
         currentFrameIndex--;
-        getCurrentFrame().trailLines=[];
+        getCurrentFrame().trailLines = [];
         updateFrameUI();
         drawFrame();
         syncPlayerToggles();
@@ -1138,79 +1336,95 @@ document.getElementById("prev-frame").onclick=()=>{
 // ==============================
 // PLAY / STOP
 // ==============================
-async function playSmooth(){
-    if(isPlaying||frames.length<2) return;
-    isPlaying=true;
-    cancelPlay=false;
 
-    for(let i=0;i<frames.length-1;i++){
-        if(cancelPlay) break;
+/**
+ * Reproducción suave de la animación con interpolación.
+ */
+async function playSmooth() {
+    if (isPlaying || frames.length < 2) return;
+    isPlaying = true;
+    cancelPlay = false;
 
-        const a=frames[i], b=frames[i+1];
-        for(let s=0;s<=INTERP_STEPS;s++){
-            if(cancelPlay) break;
-            drawInterpolatedFrame(a,b,s/INTERP_STEPS);
-            await new Promise(r=>setTimeout(r,INTERP_DURATION/INTERP_STEPS));
+    for (let i = 0; i < frames.length - 1; i++) {
+        if (cancelPlay) break;
+
+        const a = frames[i];
+        const b = frames[i + 1];
+
+        for (let s = 0; s <= INTERP_STEPS; s++) {
+            if (cancelPlay) break;
+            drawInterpolatedFrame(a, b, s / INTERP_STEPS);
+            await new Promise(r => setTimeout(r, INTERP_DURATION / INTERP_STEPS));
         }
 
-        currentFrameIndex=i+1;
+        currentFrameIndex = i + 1;
         updateFrameUI();
     }
 
     drawFrame();
-    isPlaying=false;
-    cancelPlay=false;
+    isPlaying = false;
+    cancelPlay = false;
 }
 
-document.getElementById("play-animation").onclick=()=>playSmooth();
-document.getElementById("stop-animation").onclick=()=>{cancelPlay=true;};
+document.getElementById("play-animation").onclick = () => playSmooth();
+document.getElementById("stop-animation").onclick = () => {
+    cancelPlay = true;
+};
 
 
 // ==============================
-// CLEAR ARROWS
+// FLECHAS: MENÚ Y BORRADO
 // ==============================
-// OPCIONES DEL MENÚ DE FLECHAS
-document.querySelectorAll("#arrow-menu button").forEach(btn => {
-    btn.onclick = () => {
 
-        const type = btn.dataset.arrow;
+// Opciones del menú desplegable de tipo de flecha
+document
+    .querySelectorAll("#arrow-menu button")
+    .forEach(btn => {
+        btn.onclick = () => {
+            const type = btn.dataset.arrow;
 
-        if (type === "normal") {
-            setMode("draw");
-            document.getElementById("mode-arrow").textContent = "Flecha (Normal) ▼";
-        }
+            if (type === "normal") {
+                setMode("draw");
+                document.getElementById("mode-arrow").textContent =
+                    "Flecha (Normal) ▼";
+            }
+            if (type === "kick") {
+                setMode("kick");
+                document.getElementById("mode-arrow").textContent =
+                    "Flecha (Patada) ▼";
+            }
 
-        if (type === "kick") {
-            setMode("kick");
-            document.getElementById("mode-arrow").textContent = "Flecha (Patada) ▼";
-        }
+            document.getElementById("arrow-menu").classList.add("hidden");
+        };
+    });
 
-        // cerrar el menú al elegir
-        document.getElementById("arrow-menu").classList.add("hidden");
-    };
-});
-
-document.getElementById("clear-arrows").onclick=()=>{
-    getCurrentFrame().arrows=[];
+// Borrar flechas del frame actual
+document.getElementById("clear-arrows").onclick = () => {
+    getCurrentFrame().arrows = [];
     drawFrame();
 };
+
+
+// ==============================
+// LIMPIAR TABLERO
+// ==============================
+
 document.getElementById("clear-board").onclick = () => {
     const f = getCurrentFrame();
 
-    // Reset jugadores
+    // Jugadores
     f.players.forEach(p => {
         p.visible = false;
         p.x = null;
         p.y = null;
     });
 
-    // Reset flechas
+    // Flechas, textos, trails
     f.arrows = [];
-    // Reset textos
     f.texts = [];
-    // Reset trails
     f.trailLines = [];
-    // Reset balón
+
+    // Balón al centro
     f.ball = {
         x: canvas.width / 2,
         y: canvas.height / 2,
@@ -1232,77 +1446,94 @@ document.getElementById("clear-board").onclick = () => {
 // ==============================
 // MOSTRAR / OCULTAR BALÓN
 // ==============================
-document.getElementById("toggle-ball").onclick=()=>{
-    const f=getCurrentFrame();
-    f.ball.visible=!f.ball.visible;
+
+document.getElementById("toggle-ball").onclick = () => {
+    const f = getCurrentFrame();
+    f.ball.visible = !f.ball.visible;
     drawFrame();
 };
 
 
 // ==============================
-// EXPORTAR WEBM HD
+// EXPORTAR ANIMACIÓN A WEBM
 // ==============================
-document.getElementById("export-webm").onclick=async()=>{
-    if(frames.length<2) return;
 
-    const stream=canvas.captureStream(30);
-    const chunks=[];
-    const rec=new MediaRecorder(stream,{
-        mimeType:"video/webm;codecs=vp9",
-        videoBitsPerSecond:8000000
+document.getElementById("export-webm").onclick = async () => {
+    if (frames.length < 2) return;
+
+    const stream = canvas.captureStream(30);
+    const chunks = [];
+    const rec = new MediaRecorder(stream, {
+        mimeType: "video/webm;codecs=vp9",
+        videoBitsPerSecond: 8000000
     });
 
-    rec.ondataavailable=e=>chunks.push(e.data);
-    rec.onstop=()=>{
-        const blob=new Blob(chunks,{type:"video/webm"});
-        const url=URL.createObjectURL(blob);
-        const a=document.createElement("a");
-        a.href=url;
-        a.download="animacion_rugby.webm";
+    rec.ondataavailable = e => chunks.push(e.data);
+    rec.onstop = () => {
+        const blob = new Blob(chunks, { type: "video/webm" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "animacion_rugby.webm";
         a.click();
         URL.revokeObjectURL(url);
     };
 
     rec.start();
 
-    for(let i=0;i<frames.length-1;i++){
-        const a=frames[i], b=frames[i+1];
-        for(let s=0;s<=INTERP_STEPS;s++){
-            drawInterpolatedFrame(a,b,s/INTERP_STEPS);
-            await new Promise(r=>setTimeout(r,INTERP_DURATION/INTERP_STEPS));
+    for (let i = 0; i < frames.length - 1; i++) {
+        const a = frames[i];
+        const b = frames[i + 1];
+        for (let s = 0; s <= INTERP_STEPS; s++) {
+            drawInterpolatedFrame(a, b, s / INTERP_STEPS);
+            await new Promise(r => setTimeout(r, INTERP_DURATION / INTERP_STEPS));
         }
     }
 
-    currentFrameIndex=frames.length-1;
+    currentFrameIndex = frames.length - 1;
     updateFrameUI();
     drawFrame();
-    await new Promise(r=>setTimeout(r,500));
+    await new Promise(r => setTimeout(r, 500));
 
     rec.stop();
 };
 
-document.querySelectorAll(".zcp-color").forEach(btn => {
-    btn.onclick = () => {
-        selectedZoneColor = btn.dataset.color;
-    };
-});
 
 // ==============================
-// BOTONES DE MODO
+// PANEL COLORES ZONA
 // ==============================
-document.getElementById("mode-move").onclick=()=>setMode("move");
-document.getElementById("mode-text").onclick=()=>setMode("text");
-document.getElementById("mode-scrum").onclick=()=>setMode("scrum");
+
+document
+    .querySelectorAll(".zcp-color")
+    .forEach(btn => {
+        btn.onclick = () => {
+            selectedZoneColor = btn.dataset.color;
+        };
+    });
+
+
+// ==============================
+// BOTONES DE MODO Y EQUIPOS
+// ==============================
+
+document.getElementById("mode-move").onclick = () => setMode("move");
+document.getElementById("mode-text").onclick = () => setMode("text");
+document.getElementById("mode-scrum").onclick = () => setMode("scrum");
 document.getElementById("mode-arrow").onclick = () => {
     document.getElementById("arrow-menu").classList.toggle("hidden");
 };
 document.getElementById("mode-zone").onclick = () => setMode("zone");
 
-
+document.getElementById("show-team-a").onclick = () => {
+    showTeam("A");
+};
+document.getElementById("show-team-b").onclick = () => {
+    showTeam("B");
+};
 
 
 // ==============================
-// INICIALIZAR
+// INICIALIZACIÓN GENERAL
 // ==============================
 frames.push(createFrame());
 loadPlayerPanels();

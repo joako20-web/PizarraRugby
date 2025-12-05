@@ -56,15 +56,14 @@
             <!-- Otros modos -->
             <button id="mode-text">Texto</button>
             <button id="mode-scrum">Melé</button>
-            
+                        <!-- Control de visibilidad del balón -->
+            <button id="toggle-ball">Mostrar / ocultar balón</button>
+            <!-- Boton para el modo de zonas-->
+            <button id="mode-zone">Zonas</button>
             <!-- Botones de limpieza -->
             <button id="clear-arrows">Borrar flechas</button>
             <button id="clear-board">Limpiar tablero</button>
             
-            <!-- Control de visibilidad del balón -->
-            <button id="toggle-ball">Mostrar / ocultar balón</button>
-            <!-- Boton para el modo de zonas-->
-            <button id="mode-zone">Zonas</button>
         </div>
         
     </div>
@@ -79,10 +78,10 @@
 <div id="zone-color-panel" class="hidden">
     <div class="zcp-title">Color de la zona</div>
     <div class="zcp-colors">
-        <div class="zcp-color" data-color="#00aaff" style="background:#00aaff"></div>
-        <div class="zcp-color" data-color="#ff3333" style="background:#ff3333"></div>
-        <div class="zcp-color" data-color="#ffd000" style="background:#ffd000"></div>
-        <div class="zcp-color" data-color="#00cc66" style="background:#00cc66"></div>
+        <div class="zcp-color color-1" data-color="#00aaff"></div>
+        <div class="zcp-color color-2" data-color="#ff3333"></div>
+        <div class="zcp-color color-3" data-color="#ffd000"></div>
+        <div class="zcp-color color-4" data-color="#00cc66"></div>
     </div>
 </div>
 
@@ -116,5 +115,23 @@
 
     <!-- Script principal de la aplicación -->
     <script src="app.js"></script>
+    <!-- ===========================
+     POPUP MODAL PERSONALIZADO
+     =========================== -->
+<div id="popup-overlay" class="hidden">
+    <div id="popup-modal">
+        <h2 id="popup-title">Título</h2>
+
+        <div id="popup-content">
+            <!-- Aquí va el contenido dinámico -->
+        </div>
+
+        <div id="popup-buttons">
+            <button id="popup-cancel">Cancelar</button>
+            <button id="popup-ok">Aceptar</button>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>
