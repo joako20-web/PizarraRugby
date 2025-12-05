@@ -66,20 +66,15 @@ function fieldDims() {
 }
 
 /**
- * Convierte coordenadas del ratón a coordenadas de canvas
- * teniendo en cuenta el escalado visual.
+ * Convierte coordenadas del ratón a coordenadas de canvas.
  */
 function canvasPos(e) {
     const r = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / r.width;
-    const scaleY = canvas.height / r.height;
     return {
-        x: (e.clientX - r.left) * scaleX,
-        y: (e.clientY - r.top) * scaleY
+        x: e.clientX - r.left,
+        y: e.clientY - r.top
     };
 }
-
-
 // ========================
 // SISTEMA GLOBAL DE POPUPS
 // ========================
@@ -118,10 +113,13 @@ function showPopup({ title = "Mensaje", html = "", showCancel = true }) {
             resolve(false);
         };
 
-        // Clic fuera del popup
+        // ============================
+        // CLIC FUERA DEL POP-UP
+        // ============================
         overlay.onclick = (e) => {
             const popup = document.getElementById("popup-modal");
 
+            // Si clicas fuera del cuadro modal → cerrar
             if (!popup.contains(e.target)) {
                 overlay.classList.add("hidden");
 
@@ -133,6 +131,7 @@ function showPopup({ title = "Mensaje", html = "", showCancel = true }) {
         };
     });
 }
+
 
 
 // =======================
@@ -822,13 +821,14 @@ canvas.addEventListener("mousedown", async e => {
     // --- MODO ZONA: flujo de 3 clics (esquina 1, esquina 2, etiqueta) ---
     if (mode === "zone") {
         if (!selectedZoneColor) {
-            await showPopup({
-                title: "Color no seleccionado",
-                html: `<p>Debes elegir un color para crear una zona.</p>`,
-                showCancel: false
-            });
-            return;
-        }
+    await showPopup({
+        title: "Color no seleccionado",
+        html: `<p>Debes elegir un color para crear una zona.</p>`,
+        showCancel: false
+    });
+    return;
+}
+
 
         // Clic 1 → esquina inicial
         if (!zoneStart) {
@@ -1550,143 +1550,10 @@ document.getElementById("show-team-b").onclick = () => {
 
 
 // ==============================
-// TOGGLES DE PANELES LATERALES
-// ==============================
-
-const sidebarEl = document.getElementById("sidebar");
-const rightPanelEl = document.getElementById("right-panel");
-const btnToggleLeft = document.getElementById("toggle-left");
-const btnToggleRight = document.getElementById("toggle-right");
-
-// Cambia el icono según el estado
-function updateToggleIcons() {
-    btnToggleLeft.textContent = sidebarEl.classList.contains("hidden-panel") ? ">" : "☰";
-    btnToggleRight.textContent = rightPanelEl.classList.contains("hidden-panel") ? "<" : "☰";
-}
-
-btnToggleLeft.onclick = () => {
-    sidebarEl.classList.toggle("hidden-panel");
-    updateToggleIcons();
-};
-
-btnToggleRight.onclick = () => {
-    rightPanelEl.classList.toggle("hidden-panel");
-    updateToggleIcons();
-};
-
-// En pantallas pequeñas, ocultar el panel derecho por defecto para dejar más campo
-if (window.innerWidth < 900) {
-    rightPanelEl.classList.add("hidden-panel");
-}
-updateToggleIcons();
-
-
-// ==============================
-// RESPONSIVE REAL DEL CANVAS
-// ==============================
-
-let lastCanvasWidth = canvas.width;
-let lastCanvasHeight = canvas.height;
-
-/**
- * Reescala todos los objetos de todos los frames cuando cambia el tamaño.
- */
-function rescaleAllObjects(oldW, oldH, newW, newH) {
-    if (!frames.length || !oldW || !oldH) return;
-
-    const sX = newW / oldW;
-    const sY = newH / oldH;
-
-    // Reescalar frames
-    frames.forEach(f => {
-        // Jugadores
-        f.players.forEach(p => {
-            if (p.x != null) p.x *= sX;
-            if (p.y != null) p.y *= sY;
-        });
-
-        // Balón
-        f.ball.x *= sX;
-        f.ball.y *= sY;
-
-        // Flechas
-        f.arrows.forEach(a => {
-            a.x1 *= sX;
-            a.y1 *= sY;
-            a.x2 *= sX;
-            a.y2 *= sY;
-        });
-
-        // Textos
-        f.texts.forEach(t => {
-            t.x *= sX;
-            t.y *= sY;
-        });
-
-        // Trails
-        f.trailLines.forEach(t => {
-            t.x1 *= sX;
-            t.y1 *= sY;
-            t.x2 *= sX;
-            t.y2 *= sY;
-        });
-    });
-
-    // Zonas globales
-    zones.forEach(z => {
-        z.x1 *= sX;
-        z.y1 *= sY;
-        z.x2 *= sX;
-        z.y2 *= sY;
-        if (z.labelX != null) z.labelX *= sX;
-        if (z.labelY != null) z.labelY *= sY;
-    });
-}
-
-function resizeCanvas() {
-    const parent = document.getElementById("main");
-
-    const maxWidth = parent.clientWidth || window.innerWidth;
-    const maxHeight = parent.clientHeight || window.innerHeight;
-
-    const ratio = 1200 / 800;
-    let newWidth = maxWidth;
-    let newHeight = newWidth / ratio;
-
-    if (newHeight > maxHeight) {
-        newHeight = maxHeight;
-        newWidth = newHeight * ratio;
-    }
-
-    // Si aún no hay frames, solo ajustamos el tamaño
-    if (!frames.length) {
-        canvas.width = newWidth;
-        canvas.height = newHeight;
-        lastCanvasWidth = newWidth;
-        lastCanvasHeight = newHeight;
-        return;
-    }
-
-    // Reescalar contenido
-    rescaleAllObjects(lastCanvasWidth, lastCanvasHeight, newWidth, newHeight);
-
-    lastCanvasWidth = newWidth;
-    lastCanvasHeight = newHeight;
-
-    canvas.width = newWidth;
-    canvas.height = newHeight;
-
-    drawFrame();
-}
-
-window.addEventListener("resize", resizeCanvas);
-
-
-// ==============================
 // INICIALIZACIÓN GENERAL
 // ==============================
 frames.push(createFrame());
 loadPlayerPanels();
 updateFrameUI();
-resizeCanvas();      // Ajusta canvas a pantalla y dibuja
+drawFrame();
 syncPlayerToggles();
