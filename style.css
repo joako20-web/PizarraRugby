@@ -17,6 +17,11 @@ body {
     color: #fff;
 }
 
+/* Clase genérica para ocultar paneles */
+.hidden-panel {
+    display: none;
+}
+
 /* ========================================
    LAYOUT PRINCIPAL
    ======================================== */
@@ -25,7 +30,7 @@ body {
 #sidebar {
     width: 320px;
     background: #141b24;
-    padding: 0px;
+    padding: 0px 10px 10px 10px;
     overflow-y: auto; 
     border-right: 1px solid #222;
 }
@@ -36,6 +41,17 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
+    padding: 10px;
+    overflow: hidden;
+}
+
+/* Panel lateral derecho (animación) */
+#right-panel {
+    width: 260px;
+    background: #141b24;
+    padding: 10px;
+    border-left: 1px solid #222;
+    overflow-y: auto;
 }
 
 /* Campo de juego */
@@ -43,6 +59,56 @@ body {
     background: #0d5e30;
     border-radius: 12px;
     box-shadow: 0 0 22px #000;
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* ========================================
+   PANEL FLOTANTE PARA ZONAS
+   ======================================== */
+
+#zone-color-panel {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1f2a3a;
+    border: 1px solid #444;
+    border-radius: 8px;
+    padding: 10px;
+    z-index: 999;
+    width: 220px;
+    text-align: center;
+    box-shadow: 0 0 10px #000;
+}
+.color-1 { background: #00aaff; }
+.color-2 { background: #ff3333; }
+.color-3 { background: #ffd000; }
+.color-4 { background: #00cc66; }
+
+#zone-color-panel.hidden {
+    display: none;
+}
+
+.zcp-title {
+    font-size: 14px;
+    margin-bottom: 8px;
+    color: white;
+}
+
+.zcp-colors {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.zcp-color {
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 2px solid white;
 }
 
 /* ========================================
@@ -52,10 +118,11 @@ body {
 /* Panel contenedor genérico */
 .panel {
     margin-top: 0;
-    margin-bottom: 0;
+    margin-bottom: 10px;
     padding: 10px;
     border: 1px solid #222;
     border-radius: 8px;
+    background: #151d28;
 }
 
 /* Grid de jugadores (5 columnas) */
@@ -195,52 +262,7 @@ button.active {
     color: white;
     text-align: left;
 }
-/* ========================================
-   PANEL FLOTANTE PARA ZONAS
-   ======================================== */
 
-#zone-color-panel {
-    position: absolute;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #1f2a3a;
-    border: 1px solid #444;
-    border-radius: 8px;
-    padding: 10px;
-    z-index: 999;
-    width: 220px;
-    text-align: center;
-    box-shadow: 0 0 10px #000;
-}
-.color-1 { background: #00aaff; }
-.color-2 { background: #ff3333; }
-.color-3 { background: #ffd000; }
-.color-4 { background: #00cc66; }
-
-#zone-color-panel.hidden {
-    display: none;
-}
-
-.zcp-title {
-    font-size: 14px;
-    margin-bottom: 8px;
-    color: white;
-}
-
-.zcp-colors {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-}
-
-.zcp-color {
-    width: 30px;
-    height: 30px;
-    border-radius: 6px;
-    cursor: pointer;
-    border: 2px solid white;
-}
 /* ========= POPUP MODAL ========= */
 
 #popup-overlay {
@@ -329,4 +351,76 @@ button.active {
     background: #3a4a5a;
 }
 
+/* ========================================
+   BOTONES FLOTANTES LATERALES
+   ======================================== */
 
+.side-toggle {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #1f2a3a;
+    color: #ffffff;
+    border: 1px solid #333;
+    box-shadow: 0 0 10px rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 1000;
+    font-size: 20px;
+    padding: 0;
+}
+
+.side-toggle-left {
+    left: 8px;
+}
+
+.side-toggle-right {
+    right: 8px;
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+
+@media (max-width: 1100px) {
+    #sidebar {
+        width: 260px;
+    }
+
+    #right-panel {
+        width: 240px;
+    }
+}
+
+@media (max-width: 900px) {
+    body {
+        height: 100vh;
+    }
+
+    #sidebar {
+        width: 240px;
+    }
+
+    #right-panel {
+        width: 220px;
+    }
+
+    .side-toggle {
+        width: 38px;
+        height: 38px;
+        font-size: 18px;
+    }
+}
+
+@media (max-width: 700px) {
+    /* En móviles muy pequeños suele ser útil ocultar el panel derecho por defecto (lo hace JS),
+       y que el usuario abra lo que necesite con los botones flotantes. */
+    #main {
+        padding: 5px;
+    }
+}
