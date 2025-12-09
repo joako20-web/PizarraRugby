@@ -853,45 +853,52 @@ const Animation = {
         state.cancelPlay = true;
     },
 
-    async exportWebM() {
-        if (state.frames.length < 2) return;
+async exportWebM() {
+    if (state.frames.length < 2) return;
 
-        const stream = canvas.captureStream(30);
-        const chunks = [];
-        const rec = new MediaRecorder(stream, {
-            mimeType: "video/webm;codecs=vp9",
-            videoBitsPerSecond: 8000000
-        });
+    // Pedir nombre
+    const nombre = await Popup.prompt("Nombre del archivo:", "Mi animacion");
+    if (!nombre) return;
 
-        rec.ondataavailable = e => chunks.push(e.data);
-        rec.onstop = () => {
-            const blob = new Blob(chunks, { type: "video/webm" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = "animacion_rugby.webm";
-            a.click();
-            URL.revokeObjectURL(url);
-        };
+    const fileName = nombre + ".webm";
 
-        rec.start();
+    const stream = canvas.captureStream(30);
+    const chunks = [];
+    const rec = new MediaRecorder(stream, {
+        mimeType: "video/webm;codecs=vp9",
+        videoBitsPerSecond: 8000000
+    });
 
-        for (let i = 0; i < state.frames.length - 1; i++) {
-            const a = state.frames[i];
-            const b = state.frames[i + 1];
-            for (let s = 0; s <= CONFIG.INTERP_STEPS; s++) {
-                Renderer.drawInterpolatedFrame(a, b, s / CONFIG.INTERP_STEPS);
-                await new Promise(r => setTimeout(r, CONFIG.INTERP_DURATION / CONFIG.INTERP_STEPS));
-            }
+    rec.ondataavailable = e => chunks.push(e.data);
+    rec.onstop = () => {
+        const blob = new Blob(chunks, { type: "video/webm" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = fileName;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
+    rec.start();
+
+    for (let i = 0; i < state.frames.length - 1; i++) {
+        const a = state.frames[i];
+        const b = state.frames[i + 1];
+        for (let s = 0; s <= CONFIG.INTERP_STEPS; s++) {
+            Renderer.drawInterpolatedFrame(a, b, s / CONFIG.INTERP_STEPS);
+            await new Promise(r => setTimeout(r, CONFIG.INTERP_DURATION / CONFIG.INTERP_STEPS));
         }
-
-        state.currentFrameIndex = state.frames.length - 1;
-        this.updateUI();
-        Renderer.drawFrame();
-        await new Promise(r => setTimeout(r, 500));
-
-        rec.stop();
     }
+
+    state.currentFrameIndex = state.frames.length - 1;
+    this.updateUI();
+    Renderer.drawFrame();
+    await new Promise(r => setTimeout(r, 500));
+
+    rec.stop();
+}
+
 };
 
 // ==============================

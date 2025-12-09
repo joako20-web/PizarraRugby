@@ -328,5 +328,62 @@ button.active {
 #popup-cancel:hover {
     background: #3a4a5a;
 }
+/* ===== NUEVA BARRA MODERNA DE FRAMES ===== */
+
+#frame-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 8px 0;
+    margin: 10px 0;
+    background: #1a2330;
+    border: 1px solid #333;
+    border-radius: 8px;
+}
+
+.fb-btn {
+    width: 36px;
+    height: 32px;
+    background: #2c3948;
+    border: 1px solid #444;
+    border-radius: 6px;
+    cursor: pointer;
+    color: white;
+    font-size: 16px;
+}
+
+.fb-btn:hover {
+    background: #3c4d61;
+}
+
+#frame-counter {
+    font-size: 14px;
+    color: #ddd;
+    text-align: center;
+    min-width: 120px;
+}
+
+#frame-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.fb-action {
+    width: auto;
+    padding: 6px 12px;
+    background: #2c3948;
+    border: 1px solid #444;
+    border-radius: 6px;
+    cursor: pointer;
+    color: white;
+    font-size: 13px;
+}
+
+.fb-action:hover {
+    background: #3c4d61;
+}
 
 

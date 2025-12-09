@@ -88,30 +88,33 @@
     <!-- ========================================
          PANEL LATERAL DERECHO (ANIMACIÓN)
          ======================================== -->
-    <div id="right-panel">
-        <h2>Animación</h2>
+<div id="right-panel">
+    <h2>Animación</h2>
 
-        <!-- Controles de frames -->
-        <button id="add-frame">Añadir frame</button>
-        <button id="delete-frame">Eliminar frame</button>
-        
-        <!-- Información del frame actual -->
-        <div class="sep">
-            Frame <span id="current-frame-index">1</span> /
+    <!-- Barra moderna de frames -->
+    <div id="frame-bar">
+        <button id="prev-frame" class="fb-btn">◀</button>
+
+        <div id="frame-counter">
+            Frame <span id="current-frame-index">1</span> de 
             <span id="total-frames">1</span>
         </div>
 
-        <!-- Navegación entre frames -->
-        <button id="prev-frame">Anterior</button>
-        <button id="next-frame">Siguiente</button>
-
-        <!-- Controles de reproducción -->
-        <button id="play-animation">▶ Reproducir</button>
-        <button id="stop-animation">⏹ Parar</button>
-
-        <!-- Exportación de video -->
-        <button id="export-webm">Exportar WebM HD</button>
+        <button id="next-frame" class="fb-btn">▶</button>
     </div>
+
+    <div id="frame-actions">
+        <button id="add-frame" class="fb-action">+ Añadir</button>
+        <button id="delete-frame" class="fb-action">– Eliminar</button>
+    </div>
+
+    <!-- Controles de reproducción -->
+    <button id="play-animation">▶ Reproducir</button>
+    <button id="stop-animation">⏹ Parar</button>
+
+    <!-- Exportación de video -->
+    <button id="export-webm">Exportar WebM HD</button>
+</div>
 
     <!-- Script principal de la aplicación -->
     <script src="app.js"></script>
