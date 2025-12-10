@@ -524,4 +524,33 @@ button.active {
     display: block;
 }
 
+/* ========================================
+   INDICADOR DE VERSIÓN
+   ======================================== */
+
+#version-indicator {
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.6);
+    color: #aaa;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-family: monospace;
+    z-index: 100;
+    pointer-events: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* En móvil, mover más arriba para no tapar controles */
+@media (max-width: 1024px) {
+    #version-indicator {
+        bottom: 70px;
+        font-size: 10px;
+        padding: 3px 8px;
+    }
+}
+
 
