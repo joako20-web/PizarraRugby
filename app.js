@@ -1419,8 +1419,26 @@ function initEvents() {
 // REDIMENSIONAMIENTO PARA MÓVILES
 // ==============================
 function handleResize() {
+    const sidebar = document.getElementById("sidebar");
+    const rightPanel = document.getElementById("right-panel");
+    const mobileMenuBtn = document.getElementById("mobile-menu-btn");
+    const mobileRightMenuBtn = document.getElementById("mobile-right-menu-btn");
+    const overlay = document.getElementById("mobile-overlay");
+
     // Solo redimensionar en móviles
     if (window.innerWidth <= 1024) {
+        // MODO MÓVIL
+
+        // Mostrar botones de menú móvil
+        mobileMenuBtn.style.display = "block";
+        mobileRightMenuBtn.style.display = "block";
+
+        // Ocultar paneles laterales (quitar clase show si está)
+        sidebar.classList.remove("show");
+        rightPanel.classList.remove("show");
+        overlay.classList.remove("show");
+
+        // Redimensionar canvas
         const maxWidth = window.innerWidth - 10;
         const maxHeight = window.innerHeight - 80;
 
@@ -1446,7 +1464,18 @@ function handleResize() {
 
         Renderer.drawFrame();
     } else {
-        // En desktop, mantener tamaño original
+        // MODO DESKTOP
+
+        // Ocultar botones de menú móvil
+        mobileMenuBtn.style.display = "none";
+        mobileRightMenuBtn.style.display = "none";
+
+        // Asegurar que paneles estén visibles en desktop
+        sidebar.classList.remove("show");
+        rightPanel.classList.remove("show");
+        overlay.classList.remove("show");
+
+        // En desktop, mantener tamaño original del canvas
         canvas.style.width = '';
         canvas.style.height = '';
     }
