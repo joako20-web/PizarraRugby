@@ -2,11 +2,13 @@
    ESTILOS GLOBALES
    ======================================== */
 
+/* Normalización básica y fuente por defecto */
 * {
     box-sizing: border-box;
     font-family: Arial, sans-serif;
 }
 
+/* Contenedor principal del body */
 body {
     margin: 0;
     display: flex;
@@ -19,29 +21,25 @@ body {
    LAYOUT PRINCIPAL
    ======================================== */
 
+/* Barra lateral izquierda */
 #sidebar {
     width: 320px;
     background: #141b24;
     padding: 0px;
-    overflow-y: auto;
+    overflow-y: auto; 
     border-right: 1px solid #222;
 }
 
+/* Área de contenido principal */
 #main {
     flex: 1;
     display: flex;
     justify-content: center;
-    align-items: flex-start;
-    padding: 0;
-    width: 100%;
-    height: 100vh;
+    align-items: center;
 }
 
-/* El canvas debe ocupar todo el espacio disponible */
+/* Campo de juego */
 #pitch {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
     background: #0d5e30;
     border-radius: 12px;
     box-shadow: 0 0 22px #000;
@@ -51,6 +49,7 @@ body {
    COMPONENTES DE PANEL
    ======================================== */
 
+/* Panel contenedor genérico */
 .panel {
     margin-top: 0;
     margin-bottom: 0;
@@ -59,6 +58,7 @@ body {
     border-radius: 8px;
 }
 
+/* Grid de jugadores (5 columnas) */
 .players-grid {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
@@ -70,6 +70,7 @@ body {
    BOTONES Y SELECTORES DE JUGADORES
    ======================================== */
 
+/* Botón de selección de jugador */
 .player-toggle {
     padding: 6px;
     background: #1f2a3a;
@@ -80,15 +81,18 @@ body {
     font-size: 13px;
 }
 
+/* Estado activo del botón de jugador (azul) */
 .player-toggle.active {
     background: #0068ff;
     outline: 2px solid #fff;
 }
 
+/* Botón de jugador del equipo rojo */
 .player-toggle.red {
     background: #5a2020;
 }
 
+/* Estado activo del botón de jugador rojo */
 .player-toggle.red.active {
     background: #ff3333;
 }
@@ -97,6 +101,7 @@ body {
    BOTONES GENERALES
    ======================================== */
 
+/* Estilos base para todos los botones */
 button {
     width: 100%;
     padding: 6px;
@@ -109,6 +114,7 @@ button {
     font-size: 13px;
 }
 
+/* Estado activo de botones genéricos */
 button.active {
     outline: 2px solid #fff;
 }
@@ -117,12 +123,21 @@ button.active {
    INFORMACIÓN Y SELECTORES
    ======================================== */
 
+/* Información de la línea de tiempo */
+#timeline-info {
+    text-align: center;
+    margin-top: 6px;
+    font-size: 13px;
+}
+
+/* Contenedor del selector de jugador */
 .player-selector {
     display: flex;
     gap: 6px;
     margin-bottom: 6px;
 }
 
+/* Menú desplegable dentro del selector */
 .player-selector select {
     flex: 1;
     padding: 4px;
@@ -133,18 +148,26 @@ button.active {
     font-size: 13px;
 }
 
+/* Botones dentro del selector de jugador */
 .player-selector button {
     flex: 1;
 }
 
+/* Separador visual */
+.sep {
+    margin: 8px 0;
+}
+
 /* ========================================
-   MENÚ DE FLECHAS
+   MENÚ DE FLECHAS (DROPDOWN)
    ======================================== */
 
+/* Contenedor del menú de flechas */
 #arrow-menu-container {
     position: relative;
 }
 
+/* Menú desplegable de flechas */
 #arrow-menu {
     position: absolute;
     top: 36px;
@@ -157,10 +180,12 @@ button.active {
     z-index: 50;
 }
 
+/* Estado oculto del menú de flechas */
 #arrow-menu.hidden {
     display: none;
 }
 
+/* Botones dentro del menú de flechas */
 #arrow-menu button {
     width: 100%;
     margin: 2px 0;
@@ -170,9 +195,8 @@ button.active {
     color: white;
     text-align: left;
 }
-
 /* ========================================
-   PANEL FLOTANTE ZONAS
+   PANEL FLOTANTE PARA ZONAS
    ======================================== */
 
 #zone-color-panel {
@@ -189,18 +213,35 @@ button.active {
     text-align: center;
     box-shadow: 0 0 10px #000;
 }
-#zone-color-panel.hidden {
-    display: none;
-}
-
 .color-1 { background: #00aaff; }
 .color-2 { background: #ff3333; }
 .color-3 { background: #ffd000; }
 .color-4 { background: #00cc66; }
 
-/* ========================================
-   POPUP
-   ======================================== */
+#zone-color-panel.hidden {
+    display: none;
+}
+
+.zcp-title {
+    font-size: 14px;
+    margin-bottom: 8px;
+    color: white;
+}
+
+.zcp-colors {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.zcp-color {
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 2px solid white;
+}
+/* ========= POPUP MODAL ========= */
 
 #popup-overlay {
     position: fixed;
@@ -228,30 +269,133 @@ button.active {
     max-width: 90%;
     color: white;
     box-shadow: 0 0 20px black;
+    animation: popup-fade 0.18s ease-out;
+}
+
+@keyframes popup-fade {
+    from { transform: scale(0.85); opacity: 0; }
+    to   { transform: scale(1);   opacity: 1; }
+}
+
+#popup-title {
+    margin-top: 0;
+    margin-bottom: 12px;
+    text-align: center;
+}
+
+#popup-content input,
+#popup-content select,
+#popup-content button.choice {
+    width: 100%;
+    margin: 6px 0;
+    padding: 8px;
+    border-radius: 6px;
+    border: none;
+    background: #2c3948;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+#popup-content button.choice:hover {
+    background: #3a4a5a;
+}
+
+#popup-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 15px;
+}
+
+#popup-buttons button {
+    width: 48%;
+    padding: 10px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    background: #2c3948;
+    color: white;
+}
+
+#popup-ok {
+    background: #0068ff;
+}
+
+#popup-ok:hover {
+    background: #1c7cff;
+}
+
+#popup-cancel:hover {
+    background: #3a4a5a;
+}
+/* ===== NUEVA BARRA MODERNA DE FRAMES ===== */
+
+#frame-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 8px 0;
+    margin: 10px 0;
+    background: #1a2330;
+    border: 1px solid #333;
+    border-radius: 8px;
+}
+
+.fb-btn {
+    width: 36px;
+    height: 32px;
+    background: #2c3948;
+    border: 1px solid #444;
+    border-radius: 6px;
+    cursor: pointer;
+    color: white;
+    font-size: 16px;
+}
+
+.fb-btn:hover {
+    background: #3c4d61;
+}
+
+#frame-counter {
+    font-size: 14px;
+    color: #ddd;
+    text-align: center;
+    min-width: 120px;
+}
+
+#frame-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.fb-action {
+    width: auto;
+    padding: 6px 12px;
+    background: #2c3948;
+    border: 1px solid #444;
+    border-radius: 6px;
+    cursor: pointer;
+    color: white;
+    font-size: 13px;
+}
+
+.fb-action:hover {
+    background: #3c4d61;
 }
 
 /* ========================================
-   PANEL DERECHO
+   ESTILOS MÓVILES
    ======================================== */
 
-#right-panel {
-    width: 300px;
-    background: #141b24;
-    padding: 15px;
-    border-left: 1px solid #222;
-    overflow-y: auto;
-}
-
-/* ========================================
-   MÓVIL
-   ======================================== */
-
+/* Botones de menú móvil - ocultos por defecto */
 .mobile-only {
     display: none;
 }
 
-#mobile-menu-btn,
-#mobile-right-menu-btn {
+#mobile-menu-btn, #mobile-right-menu-btn {
     position: fixed;
     top: 10px;
     z-index: 1000;
@@ -274,14 +418,17 @@ button.active {
     right: 10px;
 }
 
-/* ===== MODO MÓVIL ===== */
-
+/* Media query para tablets y móviles */
 @media (max-width: 1024px) {
+    body {
+        flex-direction: column;
+    }
 
     .mobile-only {
         display: block;
     }
 
+    /* Sidebar oculto por defecto en móvil */
     #sidebar {
         position: fixed;
         left: -320px;
@@ -297,6 +444,7 @@ button.active {
         left: 0;
     }
 
+    /* Panel derecho oculto por defecto en móvil */
     #right-panel {
         position: fixed;
         right: -320px;
@@ -308,6 +456,7 @@ button.active {
         overflow-y: auto;
         z-index: 999;
         transition: right 0.3s ease;
+        box-shadow: -2px 0 10px rgba(0,0,0,0.5);
         border-left: 1px solid #222;
     }
 
@@ -315,22 +464,69 @@ button.active {
         right: 0;
     }
 
+    /* Área principal ocupa todo el espacio */
     #main {
-        padding: 0 !important;
         width: 100%;
+        height: 100vh;
+        padding: 70px 5px 5px 5px;
+    }
+
+    /* Canvas más grande en móvil */
+    #pitch {
+        max-width: calc(100vw - 10px);
+        max-height: calc(100vh - 80px);
+        width: calc(100vw - 10px);
+        height: auto;
+    }
+}
+
+/* Media query específica para móviles en modo portrait */
+@media (max-width: 768px) and (orientation: portrait) {
+    #pitch {
+        width: calc(100vw - 10px);
+        max-height: calc(100vh - 80px);
+        height: auto;
+    }
+
+    #main {
+        padding: 65px 5px 5px 5px;
+    }
+}
+
+/* Media query para móviles en modo landscape */
+@media (max-width: 1024px) and (orientation: landscape) {
+    #main {
+        padding: 65px 5px 5px 5px;
         height: 100vh;
     }
 
     #pitch {
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
+        max-width: calc(100vw - 10px);
+        max-height: calc(100vh - 75px);
+        width: calc(100vw - 10px);
+        height: calc(100vh - 75px);
     }
 }
 
-/* ============================
+/* Overlay para cerrar menús al hacer clic fuera */
+#mobile-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 998;
+}
+
+#mobile-overlay.show {
+    display: block;
+}
+
+/* ========================================
    INDICADOR DE VERSIÓN
-   ============================ */
+   ======================================== */
 
 #version-indicator {
     position: fixed;
@@ -344,4 +540,17 @@ button.active {
     font-family: monospace;
     z-index: 100;
     pointer-events: none;
+    -webkit-user-select: none;
+    user-select: none;
 }
+
+/* En móvil, mover más arriba para no tapar controles */
+@media (max-width: 1024px) {
+    #version-indicator {
+        bottom: 70px;
+        font-size: 10px;
+        padding: 3px 8px;
+    }
+}
+
+

@@ -1424,17 +1424,11 @@ function initEvents() {
 // REDIMENSIONAMIENTO PARA MÓVILES
 // ==============================
 function isMobileDevice() {
-    // Detecta móviles reales (user agent) + pantallas pequeñas
-    const ua = navigator.userAgent.toLowerCase();
-
-    const isPhoneUA =
-        /iphone|ipod|android.*mobile|windows phone|blackberry|opera mini|mobile/i.test(ua);
-
-    const isSmall = Math.min(window.innerWidth, window.innerHeight) < 850;
-
-    return isPhoneUA || isSmall;
+    // Detectar dispositivo móvil por capacidad táctil Y tamaño de pantalla
+    const hasTouchScreen = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+    const isSmallScreen = window.innerWidth <= 1024 || window.innerHeight <= 1024;
+    return hasTouchScreen && isSmallScreen;
 }
-
 
 function handleResize() {
     const sidebar = document.getElementById("sidebar");
@@ -1456,34 +1450,31 @@ function handleResize() {
         rightPanel.classList.remove("show");
         overlay.classList.remove("show");
 
-// Forzar que el campo ocupe TODO el espacio disponible
-const areaW = window.innerWidth;
-const areaH = window.innerHeight;
+        // Redimensionar canvas
+        const maxWidth = window.innerWidth - 10;
+        const maxHeight = window.innerHeight - 80;
 
-// Mantener proporción 3:2
-const aspect = 1200 / 800;
+        // Mantener la proporción 3:2 del canvas (1200x800)
+        const aspectRatio = 1200 / 800;
 
-let w = areaW;
-let h = w / aspect;
+        let newWidth = maxWidth;
+        let newHeight = maxWidth / aspectRatio;
 
-if (h > areaH) {
-    h = areaH;
-    w = h * aspect;
-}
+        // Si la altura calculada es mayor que el máximo disponible, ajustar por altura
+        if (newHeight > maxHeight) {
+            newHeight = maxHeight;
+            newWidth = newHeight * aspectRatio;
+        }
 
-// Establecer tamaño REAL del canvas
-canvas.width  = w;
-canvas.height = h;
+        // Actualizar el tamaño del canvas manteniendo las proporciones internas
+        const scaleX = newWidth / 1200;
+        const scaleY = newHeight / 800;
+        const scale = Math.min(scaleX, scaleY);
 
-// Ajustar tamaño visual (CSS) al mismo valor
-canvas.style.width  = w + "px";
-canvas.style.height = h + "px";
+        canvas.style.width = (1200 * scale) + 'px';
+        canvas.style.height = (800 * scale) + 'px';
 
-Renderer.drawFrame();
-
-
-Renderer.drawFrame();
-
+        Renderer.drawFrame();
     } else {
         // MODO DESKTOP
 
