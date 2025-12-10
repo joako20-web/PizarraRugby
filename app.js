@@ -72,9 +72,12 @@ const Utils = {
     
     canvasPos(e) {
         const r = canvas.getBoundingClientRect();
+        // Soporte para eventos touch
+        const clientX = e.clientX !== undefined ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+        const clientY = e.clientY !== undefined ? e.clientY : (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
         return {
-            x: e.clientX - r.left,
-            y: e.clientY - r.top
+            x: clientX - r.left,
+            y: clientY - r.top
         };
     }
 };
@@ -1211,10 +1214,32 @@ const CanvasEvents = {
 // INICIALIZACIÓN DE EVENTOS
 // ==============================
 function initEvents() {
+    // Eventos de mouse
     canvas.addEventListener("mousedown", e => CanvasEvents.handleMouseDown(e));
     canvas.addEventListener("mousemove", e => CanvasEvents.handleMouseMove(e));
     canvas.addEventListener("mouseup", () => CanvasEvents.handleMouseUp());
     canvas.addEventListener("dblclick", e => CanvasEvents.handleDoubleClick(e));
+
+    // Eventos touch para móviles
+    canvas.addEventListener("touchstart", e => {
+        e.preventDefault();
+        CanvasEvents.handleMouseDown(e);
+    }, { passive: false });
+
+    canvas.addEventListener("touchmove", e => {
+        e.preventDefault();
+        CanvasEvents.handleMouseMove(e);
+    }, { passive: false });
+
+    canvas.addEventListener("touchend", e => {
+        e.preventDefault();
+        CanvasEvents.handleMouseUp();
+    }, { passive: false });
+
+    canvas.addEventListener("touchcancel", e => {
+        e.preventDefault();
+        CanvasEvents.handleMouseUp();
+    }, { passive: false });
 
     window.addEventListener("keydown", e => {
         if (e.key === "Escape") {
@@ -1347,6 +1372,84 @@ function initEvents() {
         f.ball.visible = !f.ball.visible;
         Renderer.drawFrame();
     };
+
+    // Menú móvil - Sidebar izquierdo
+    document.getElementById("mobile-menu-btn").onclick = () => {
+        const sidebar = document.getElementById("sidebar");
+        const overlay = document.getElementById("mobile-overlay");
+        const rightPanel = document.getElementById("right-panel");
+
+        sidebar.classList.toggle("show");
+        overlay.classList.toggle("show");
+
+        // Cerrar el panel derecho si está abierto
+        if (rightPanel.classList.contains("show")) {
+            rightPanel.classList.remove("show");
+        }
+    };
+
+    // Menú móvil - Panel derecho
+    document.getElementById("mobile-right-menu-btn").onclick = () => {
+        const rightPanel = document.getElementById("right-panel");
+        const overlay = document.getElementById("mobile-overlay");
+        const sidebar = document.getElementById("sidebar");
+
+        rightPanel.classList.toggle("show");
+        overlay.classList.toggle("show");
+
+        // Cerrar el sidebar si está abierto
+        if (sidebar.classList.contains("show")) {
+            sidebar.classList.remove("show");
+        }
+    };
+
+    // Overlay móvil - Cerrar menús al hacer clic fuera
+    document.getElementById("mobile-overlay").onclick = () => {
+        const sidebar = document.getElementById("sidebar");
+        const rightPanel = document.getElementById("right-panel");
+        const overlay = document.getElementById("mobile-overlay");
+
+        sidebar.classList.remove("show");
+        rightPanel.classList.remove("show");
+        overlay.classList.remove("show");
+    };
+}
+
+// ==============================
+// REDIMENSIONAMIENTO PARA MÓVILES
+// ==============================
+function handleResize() {
+    // Solo redimensionar en móviles
+    if (window.innerWidth <= 1024) {
+        const maxWidth = window.innerWidth - 10;
+        const maxHeight = window.innerHeight - 80;
+
+        // Mantener la proporción 3:2 del canvas (1200x800)
+        const aspectRatio = 1200 / 800;
+
+        let newWidth = maxWidth;
+        let newHeight = maxWidth / aspectRatio;
+
+        // Si la altura calculada es mayor que el máximo disponible, ajustar por altura
+        if (newHeight > maxHeight) {
+            newHeight = maxHeight;
+            newWidth = newHeight * aspectRatio;
+        }
+
+        // Actualizar el tamaño del canvas manteniendo las proporciones internas
+        const scaleX = newWidth / 1200;
+        const scaleY = newHeight / 800;
+        const scale = Math.min(scaleX, scaleY);
+
+        canvas.style.width = (1200 * scale) + 'px';
+        canvas.style.height = (800 * scale) + 'px';
+
+        Renderer.drawFrame();
+    } else {
+        // En desktop, mantener tamaño original
+        canvas.style.width = '';
+        canvas.style.height = '';
+    }
 }
 
 // ==============================
@@ -1359,6 +1462,15 @@ function init() {
     Renderer.drawFrame();
     Players.syncToggles();
     initEvents();
+
+    // Ajustar tamaño inicial para móviles
+    handleResize();
+
+    // Redimensionar cuando cambie la orientación o tamaño de ventana
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', () => {
+        setTimeout(handleResize, 100);
+    });
 }
 
 // Iniciar la aplicación
