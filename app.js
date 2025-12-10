@@ -75,9 +75,14 @@ const Utils = {
         // Soporte para eventos touch
         const clientX = e.clientX !== undefined ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
         const clientY = e.clientY !== undefined ? e.clientY : (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+
+        // Calcular escala entre tamaño visual (CSS) y tamaño interno del canvas
+        const scaleX = canvas.width / r.width;
+        const scaleY = canvas.height / r.height;
+
         return {
-            x: clientX - r.left,
-            y: clientY - r.top
+            x: (clientX - r.left) * scaleX,
+            y: (clientY - r.top) * scaleY
         };
     }
 };
@@ -1418,6 +1423,13 @@ function initEvents() {
 // ==============================
 // REDIMENSIONAMIENTO PARA MÓVILES
 // ==============================
+function isMobileDevice() {
+    // Detectar dispositivo móvil por capacidad táctil Y tamaño de pantalla
+    const hasTouchScreen = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+    const isSmallScreen = window.innerWidth <= 1024 || window.innerHeight <= 1024;
+    return hasTouchScreen && isSmallScreen;
+}
+
 function handleResize() {
     const sidebar = document.getElementById("sidebar");
     const rightPanel = document.getElementById("right-panel");
@@ -1426,7 +1438,7 @@ function handleResize() {
     const overlay = document.getElementById("mobile-overlay");
 
     // Solo redimensionar en móviles
-    if (window.innerWidth <= 1024) {
+    if (isMobileDevice()) {
         // MODO MÓVIL
 
         // Mostrar botones de menú móvil
