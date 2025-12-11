@@ -48,7 +48,15 @@ const state = {
     selectedZoneColor: null,
     selectedZone: null,
     draggingZone: false,
-    zoneDragOffset: { x: 0, y: 0 }
+    zoneDragOffset: { x: 0, y: 0 },
+
+    // Escudos
+    draggingShield: null,
+    selectedShield: null,
+
+    // Textos y flechas
+    selectedText: null,
+    selectedArrow: null
 };
 
 // Canvas
@@ -88,10 +96,34 @@ const Utils = {
 };
 
 // ==============================
+// SISTEMA DE NOTIFICACIONES
+// ==============================
+const Notificacion = {
+    show(mensaje, duracion = 3000) {
+        const notif = document.getElementById("notification");
+        notif.textContent = mensaje;
+        notif.classList.remove("hidden");
+
+        // Esperar un frame para que se aplique el display antes de animar
+        setTimeout(() => {
+            notif.classList.add("show");
+        }, 10);
+
+        // Ocultar después de la duración especificada
+        setTimeout(() => {
+            notif.classList.remove("show");
+            setTimeout(() => {
+                notif.classList.add("hidden");
+            }, 300); // Esperar a que termine la animación
+        }, duracion);
+    }
+};
+
+// ==============================
 // SISTEMA DE POPUPS
 // ==============================
 const Popup = {
-    show({ title = "Mensaje", html = "", showCancel = true }) {
+    show({ title = "Mensaje", html = "", showCancel = true, okText = "OK", cancelText = "Cancelar" }) {
         return new Promise(resolve => {
             const overlay = document.getElementById("popup-overlay");
             const modalTitle = document.getElementById("popup-title");
@@ -102,6 +134,10 @@ const Popup = {
 
             modalTitle.textContent = title;
             content.innerHTML = html;
+
+            // Resetear el texto de los botones a los valores por defecto o personalizados
+            btnOk.textContent = okText;
+            btnCancel.textContent = cancelText;
 
             if (showCancel) {
                 btnCancel.style.display = "block";
@@ -201,7 +237,8 @@ const Frame = {
             },
             arrows: [],
             texts: [],
-            trailLines: []
+            trailLines: [],
+            trainingShields: []
         };
     },
 
@@ -211,8 +248,25 @@ const Frame = {
             ball: { ...f.ball },
             arrows: f.arrows.map(a => ({ ...a })),
             texts: f.texts.map(t => ({ ...t })),
-            trailLines: f.trailLines.map(t => ({ ...t }))
+            trailLines: f.trailLines.map(t => ({ ...t })),
+            trainingShields: (f.trainingShields || []).map(s => ({ ...s }))
         };
+    }
+};
+
+// ==============================
+// UTILIDADES DE UI
+// ==============================
+const UI = {
+    updateDeleteButton() {
+        const deleteBtn = document.getElementById("delete-btn");
+        const hasSelection = state.selectedShield || state.selectedZone || state.selectedText || state.selectedArrow;
+
+        if (hasSelection) {
+            deleteBtn.classList.remove("hidden");
+        } else {
+            deleteBtn.classList.add("hidden");
+        }
     }
 };
 
@@ -318,8 +372,9 @@ const Renderer = {
     },
 
     drawNormalArrow(a) {
-        ctx.strokeStyle = "white";
-        ctx.lineWidth = 3;
+        const isSelected = a === state.selectedArrow;
+        ctx.strokeStyle = isSelected ? "#00ff88" : "white";
+        ctx.lineWidth = isSelected ? 4 : 3;
         ctx.beginPath();
         ctx.moveTo(a.x1, a.y1);
         ctx.lineTo(a.x2, a.y2);
@@ -338,16 +393,17 @@ const Renderer = {
             a.x2 - head * Math.cos(ang + Math.PI / 6),
             a.y2 - head * Math.sin(ang + Math.PI / 6)
         );
-        ctx.fillStyle = "white";
+        ctx.fillStyle = isSelected ? "#00ff88" : "white";
         ctx.fill();
     },
 
     drawKickArrow(a) {
+        const isSelected = a === state.selectedArrow;
         const mx = (a.x1 + a.x2) / 2;
         const my = (a.y1 + a.y2) / 2 - state.kickArcHeight;
 
-        ctx.strokeStyle = "yellow";
-        ctx.lineWidth = 3;
+        ctx.strokeStyle = isSelected ? "#00ff88" : "yellow";
+        ctx.lineWidth = isSelected ? 4 : 3;
 
         ctx.beginPath();
         ctx.moveTo(a.x1, a.y1);
@@ -372,7 +428,7 @@ const Renderer = {
             a.y2 - head * Math.sin(ang + Math.PI / 6)
         );
         ctx.closePath();
-        ctx.fillStyle = "yellow";
+        ctx.fillStyle = isSelected ? "#00ff88" : "yellow";
         ctx.fill();
     },
 
@@ -435,10 +491,26 @@ const Renderer = {
 
     drawTexts(f) {
         f.texts.forEach(t => {
+            const isSelected = t === state.selectedText;
             ctx.font = "36px Arial";
-            ctx.fillStyle = "white";
             ctx.textAlign = "center";
             ctx.textBaseline = "top";
+
+            // Si está seleccionado, dibujar fondo resaltado
+            if (isSelected) {
+                const metrics = ctx.measureText(t.text);
+                const textWidth = metrics.width;
+                const textHeight = 40;
+
+                ctx.fillStyle = "rgba(0, 255, 136, 0.3)";
+                ctx.fillRect(t.x - textWidth / 2 - 5, t.y - 5, textWidth + 10, textHeight + 10);
+
+                ctx.strokeStyle = "#00ff88";
+                ctx.lineWidth = 2;
+                ctx.strokeRect(t.x - textWidth / 2 - 5, t.y - 5, textWidth + 10, textHeight + 10);
+            }
+
+            ctx.fillStyle = isSelected ? "#00ff88" : "white";
             ctx.fillText(t.text, t.x, t.y);
         });
     },
@@ -505,6 +577,36 @@ const Renderer = {
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
             ctx.fillText(p.number, p.x, p.y);
+        });
+
+        // Escudos de entrenamiento
+        f.trainingShields.forEach(shield => {
+            // Encontrar el jugador asociado
+            const player = f.players.find(p =>
+                p.team === shield.team &&
+                p.number === shield.number &&
+                p.visible
+            );
+
+            if (!player) return;
+
+            // Calcular la posición del escudo basado en el ángulo
+            const distance = player.radius + 8; // Distancia desde el centro del jugador
+            const shieldX = player.x + Math.cos(shield.angle) * distance;
+            const shieldY = player.y + Math.sin(shield.angle) * distance;
+            const shieldWidth = 16; // Ancho del rectángulo (ahora más estrecho)
+            const shieldHeight = 24; // Alto del rectángulo (ahora más largo)
+
+            // Dibujar el rectángulo amarillo (rotado 90 grados para que el lado largo esté pegado a la ficha)
+            ctx.save();
+            ctx.translate(shieldX, shieldY);
+            ctx.rotate(shield.angle);
+            ctx.fillStyle = "#FFD700"; // Color amarillo dorado
+            ctx.strokeStyle = shield === state.selectedShield ? "#FFFFFF" : "#000000";
+            ctx.lineWidth = shield === state.selectedShield ? 3 : 2;
+            ctx.fillRect(-shieldWidth / 2, -shieldHeight / 2, shieldWidth, shieldHeight);
+            ctx.strokeRect(-shieldWidth / 2, -shieldHeight / 2, shieldWidth, shieldHeight);
+            ctx.restore();
         });
 
         this.drawRugbyBall(f.ball);
@@ -638,6 +740,84 @@ const HitTest = {
             }
         }
         return null;
+    },
+
+    findShieldAt(x, y) {
+        const f = Utils.getCurrentFrame();
+        const shieldWidth = 16;
+        const shieldHeight = 24;
+
+        for (let shield of f.trainingShields) {
+            // Encontrar el jugador asociado
+            const player = f.players.find(p =>
+                p.team === shield.team &&
+                p.number === shield.number &&
+                p.visible
+            );
+
+            if (!player) continue;
+
+            // Calcular la posición del escudo
+            const distance = player.radius + 8;
+            const shieldX = player.x + Math.cos(shield.angle) * distance;
+            const shieldY = player.y + Math.sin(shield.angle) * distance;
+
+            // Rotar el punto de clic para verificarlo en el espacio local del escudo
+            const dx = x - shieldX;
+            const dy = y - shieldY;
+            const rotatedX = dx * Math.cos(-shield.angle) - dy * Math.sin(-shield.angle);
+            const rotatedY = dx * Math.sin(-shield.angle) + dy * Math.cos(-shield.angle);
+
+            // Verificar si el punto está dentro del rectángulo del escudo
+            if (Math.abs(rotatedX) <= shieldWidth / 2 && Math.abs(rotatedY) <= shieldHeight / 2) {
+                return shield;
+            }
+        }
+        return null;
+    },
+
+    findArrowAt(x, y) {
+        const f = Utils.getCurrentFrame();
+        const threshold = 10; // Distancia máxima para considerar un clic en la flecha
+
+        for (let i = f.arrows.length - 1; i >= 0; i--) {
+            const arrow = f.arrows[i];
+
+            if (arrow.type === "kick") {
+                // Para flechas curvas, verificar proximidad a la curva
+                const mx = (arrow.x1 + arrow.x2) / 2;
+                const my = (arrow.y1 + arrow.y2) / 2 - state.kickArcHeight;
+
+                // Verificar varios puntos a lo largo de la curva
+                for (let t = 0; t <= 1; t += 0.1) {
+                    const qx = (1 - t) * (1 - t) * arrow.x1 + 2 * (1 - t) * t * mx + t * t * arrow.x2;
+                    const qy = (1 - t) * (1 - t) * arrow.y1 + 2 * (1 - t) * t * my + t * t * arrow.y2;
+
+                    const dist = Math.hypot(x - qx, y - qy);
+                    if (dist <= threshold) {
+                        return arrow;
+                    }
+                }
+            } else {
+                // Para flechas rectas, verificar distancia a la línea
+                const dx = arrow.x2 - arrow.x1;
+                const dy = arrow.y2 - arrow.y1;
+                const length = Math.hypot(dx, dy);
+
+                if (length === 0) continue;
+
+                // Proyección del punto en la línea
+                const t = Math.max(0, Math.min(1, ((x - arrow.x1) * dx + (y - arrow.y1) * dy) / (length * length)));
+                const projX = arrow.x1 + t * dx;
+                const projY = arrow.y1 + t * dy;
+
+                const dist = Math.hypot(x - projX, y - projY);
+                if (dist <= threshold) {
+                    return arrow;
+                }
+            }
+        }
+        return null;
     }
 };
 
@@ -703,22 +883,55 @@ const Players = {
         const f = Utils.getCurrentFrame();
         const { fieldWidth } = Utils.fieldDims();
 
-        const xSide = team === "A"
-            ? CONFIG.MARGIN_X + fieldWidth * 0.15
-            : CONFIG.MARGIN_X + fieldWidth * 0.85;
+        // Verificar si todos los jugadores están visibles
+        const allVisible = f.players
+            .filter(pl => pl.team === team)
+            .every(pl => pl.visible);
 
-        const spacing = 45;
-        const yTop = CONFIG.MARGIN_Y + 40;
+        if (allVisible) {
+            // Si todos están visibles, ocultarlos
+            for (let n = 1; n <= CONFIG.NUM_PLAYERS; n++) {
+                const p = f.players.find(pl => pl.team === team && pl.number === n);
+                p.visible = false;
+            }
+        } else {
+            // Si no todos están visibles, mostrarlos
+            const xSide = team === "A"
+                ? CONFIG.MARGIN_X + fieldWidth * 0.15
+                : CONFIG.MARGIN_X + fieldWidth * 0.85;
 
-        for (let n = 1; n <= CONFIG.NUM_PLAYERS; n++) {
-            const p = f.players.find(pl => pl.team === team && pl.number === n);
-            p.visible = true;
-            p.x = xSide;
-            p.y = yTop + (n - 1) * spacing;
+            const spacing = 45;
+            const yTop = CONFIG.MARGIN_Y + 40;
+
+            for (let n = 1; n <= CONFIG.NUM_PLAYERS; n++) {
+                const p = f.players.find(pl => pl.team === team && pl.number === n);
+                p.visible = true;
+                p.x = xSide;
+                p.y = yTop + (n - 1) * spacing;
+            }
         }
 
         this.syncToggles();
+        this.updateTeamButtons();
         Renderer.drawFrame();
+    },
+
+    updateTeamButtons() {
+        const f = Utils.getCurrentFrame();
+
+        // Actualizar botón del equipo A
+        const allVisibleA = f.players
+            .filter(pl => pl.team === "A")
+            .every(pl => pl.visible);
+        const btnA = document.getElementById("show-team-a");
+        btnA.textContent = allVisibleA ? "Ocultar equipo azul" : "Mostrar equipo azul";
+
+        // Actualizar botón del equipo B
+        const allVisibleB = f.players
+            .filter(pl => pl.team === "B")
+            .every(pl => pl.visible);
+        const btnB = document.getElementById("show-team-b");
+        btnB.textContent = allVisibleB ? "Ocultar equipo rojo" : "Mostrar equipo rojo";
     },
 
     loadPanels() {
@@ -775,6 +988,7 @@ const Players = {
             div.classList.toggle("active", p.visible);
         }
 
+        this.updateTeamButtons();
         Renderer.drawFrame();
     },
 
@@ -786,6 +1000,7 @@ const Players = {
             const p = f.players.find(x => x.team === team && x.number === num);
             div.classList.toggle("active", p.visible);
         });
+        this.updateTeamButtons();
     }
 };
 
@@ -809,6 +1024,9 @@ const Mode = {
         }
         if (m === "scrum") {
             document.getElementById("mode-scrum").classList.add("active");
+        }
+        if (m === "shield") {
+            document.getElementById("mode-shield").classList.add("active");
         }
 
         const zonePanel = document.getElementById("zone-color-panel");
@@ -862,7 +1080,10 @@ const Animation = {
     },
 
 async exportWebM() {
-    if (state.frames.length < 2) return;
+    if (state.frames.length < 2) {
+        Notificacion.show("No puedes exportar un video con un solo frame. Añade más frames para crear una animación.");
+        return;
+    }
 
     // Pedir nombre
     const nombre = await Popup.prompt("Nombre del archivo:", "Mi animacion");
@@ -991,12 +1212,74 @@ const CanvasEvents = {
             }
         }
 
+        // Modo escudo de entrenamiento
+        if (state.mode === "shield") {
+            const p = HitTest.findPlayerAt(pos);
+            if (p) {
+                // Calcular el ángulo desde el centro del jugador hasta el punto de clic
+                const dx = pos.x - p.x;
+                const dy = pos.y - p.y;
+                const angle = Math.atan2(dy, dx);
+
+                // Buscar si el jugador ya tiene un escudo
+                const existingShield = f.trainingShields.find(s =>
+                    s.team === p.team && s.number === p.number
+                );
+
+                if (existingShield) {
+                    // Actualizar el ángulo del escudo existente y empezar a arrastrarlo
+                    existingShield.angle = angle;
+                    state.draggingShield = existingShield;
+                } else {
+                    // Crear nuevo escudo y empezar a arrastrarlo
+                    const newShield = {
+                        team: p.team,
+                        number: p.number,
+                        angle: angle
+                    };
+                    f.trainingShields.push(newShield);
+                    state.draggingShield = newShield;
+                }
+
+                Renderer.drawFrame();
+                return;
+            }
+        }
+
         // Modo move
         if (state.mode === "move") {
+            // Primero verificar si se hizo clic en un escudo
+            const shield = HitTest.findShieldAt(pos.x, pos.y);
+            if (shield) {
+                state.draggingShield = shield;
+                state.selectedShield = shield;
+                state.selectedZone = null;
+                state.selectedText = null;
+                state.selectedArrow = null;
+                UI.updateDeleteButton();
+                Renderer.drawFrame();
+                return;
+            }
+
+            // Verificar si se hizo clic en una flecha
+            const arrow = HitTest.findArrowAt(pos.x, pos.y);
+            if (arrow) {
+                state.selectedArrow = arrow;
+                state.selectedShield = null;
+                state.selectedZone = null;
+                state.selectedText = null;
+                UI.updateDeleteButton();
+                Renderer.drawFrame();
+                return;
+            }
+
             const z = HitTest.zoneHitTest(pos.x, pos.y);
 
             if (z) {
                 state.selectedZone = z;
+                state.selectedShield = null;
+                state.selectedText = null;
+                state.selectedArrow = null;
 
                 if (!z.locked) {
                     state.draggingZone = true;
@@ -1006,15 +1289,22 @@ const CanvasEvents = {
                     state.zoneDragOffset.y = pos.y - top;
                 }
 
+                UI.updateDeleteButton();
                 Renderer.drawFrame();
                 return;
             }
 
             const t = HitTest.findTextAt(pos.x, pos.y);
             if (t) {
+                state.selectedText = t;
+                state.selectedShield = null;
+                state.selectedZone = null;
+                state.selectedArrow = null;
                 state.dragTarget = { type: "text", obj: t };
                 state.dragOffsetX = pos.x - t.x;
                 state.dragOffsetY = pos.y - t.y;
+                UI.updateDeleteButton();
+                Renderer.drawFrame();
                 return;
             }
 
@@ -1051,6 +1341,11 @@ const CanvasEvents = {
             if (!e.ctrlKey) {
                 state.selectedPlayers.clear();
             }
+            state.selectedShield = null;
+            state.selectedZone = null;
+            state.selectedText = null;
+            state.selectedArrow = null;
+            UI.updateDeleteButton();
             state.selectingBox = true;
             state.selectBoxStart = pos;
             state.selectBoxEnd = pos;
@@ -1072,6 +1367,7 @@ const CanvasEvents = {
                 });
                 state.arrowStart = null;
                 state.previewArrow = null;
+                Mode.set("move");
                 Renderer.drawFrame();
             }
             return;
@@ -1082,8 +1378,9 @@ const CanvasEvents = {
             const tx = await Popup.prompt("Escribe el texto:");
             if (tx && tx.trim() !== "") {
                 f.texts.push({ x: pos.x, y: pos.y, text: tx.trim() });
-                Renderer.drawFrame();
             }
+            Mode.set("move");
+            Renderer.drawFrame();
             return;
         }
 
@@ -1096,6 +1393,24 @@ const CanvasEvents = {
 
     handleMouseMove(e) {
         const pos = Utils.canvasPos(e);
+
+        // Si estamos arrastrando un escudo, actualizar su ángulo
+        if (state.draggingShield) {
+            const f = Utils.getCurrentFrame();
+            const player = f.players.find(p =>
+                p.team === state.draggingShield.team &&
+                p.number === state.draggingShield.number &&
+                p.visible
+            );
+
+            if (player) {
+                const dx = pos.x - player.x;
+                const dy = pos.y - player.y;
+                state.draggingShield.angle = Math.atan2(dy, dx);
+                Renderer.drawFrame();
+            }
+            return;
+        }
 
         if (state.draggingZone && state.selectedZone && !state.selectedZone.locked) {
             const w = Math.abs(state.selectedZone.x2 - state.selectedZone.x1);
@@ -1173,6 +1488,16 @@ const CanvasEvents = {
     handleMouseUp() {
         state.draggingZone = false;
 
+        // Si estábamos arrastrando un escudo en modo shield, volver a modo move
+        if (state.draggingShield && state.mode === "shield") {
+            state.draggingShield = null;
+            Mode.set("move");
+            Renderer.drawFrame();
+            return;
+        }
+
+        state.draggingShield = null;
+
         if (state.dragTarget && state.dragTarget.type === "players") {
             const f = Utils.getCurrentFrame();
             state.dragTarget.players.forEach((pl, i) => {
@@ -1197,15 +1522,17 @@ const CanvasEvents = {
         }
     },
 
-    handleDoubleClick(e) {
+    async handleDoubleClick(e) {
         const pos = Utils.canvasPos(e);
+        const f = Utils.getCurrentFrame();
+
+        // Verificar si se hizo doble clic en un texto
         const t = HitTest.findTextAt(pos.x, pos.y);
         if (!t) return;
 
-        const tx = prompt("Editar texto (vacío para borrar):", t.text);
+        const tx = await Popup.prompt("Editar texto:", t.text);
         if (tx === null) return;
 
-        const f = Utils.getCurrentFrame();
         if (tx.trim() === "") {
             f.texts = f.texts.filter(x => x !== t);
         } else {
@@ -1249,9 +1576,92 @@ function initEvents() {
     window.addEventListener("keydown", e => {
         if (e.key === "Escape") {
             state.selectedPlayers.clear();
+            state.selectedShield = null;
+            state.selectedZone = null;
+            state.selectedText = null;
+            state.selectedArrow = null;
+            UI.updateDeleteButton();
             Renderer.drawFrame();
         }
+
+        // Borrar con teclas Delete o Supr
+        if (e.key === "Delete" || e.key === "Supr") {
+            const f = Utils.getCurrentFrame();
+            let deleted = false;
+
+            // Borrar escudo seleccionado
+            if (state.selectedShield) {
+                f.trainingShields = f.trainingShields.filter(s => s !== state.selectedShield);
+                state.selectedShield = null;
+                deleted = true;
+            }
+
+            // Borrar zona seleccionada
+            if (state.selectedZone) {
+                state.zones = state.zones.filter(z => z !== state.selectedZone);
+                state.selectedZone = null;
+                deleted = true;
+            }
+
+            // Borrar texto seleccionado
+            if (state.selectedText) {
+                f.texts = f.texts.filter(t => t !== state.selectedText);
+                state.selectedText = null;
+                deleted = true;
+            }
+
+            // Borrar flecha seleccionada
+            if (state.selectedArrow) {
+                f.arrows = f.arrows.filter(a => a !== state.selectedArrow);
+                state.selectedArrow = null;
+                deleted = true;
+            }
+
+            if (deleted) {
+                UI.updateDeleteButton();
+                Renderer.drawFrame();
+            }
+        }
     });
+
+    // Botón de borrar
+    document.getElementById("delete-btn").onclick = () => {
+        const f = Utils.getCurrentFrame();
+        let deleted = false;
+
+        // Borrar escudo seleccionado
+        if (state.selectedShield) {
+            f.trainingShields = f.trainingShields.filter(s => s !== state.selectedShield);
+            state.selectedShield = null;
+            deleted = true;
+        }
+
+        // Borrar zona seleccionada
+        if (state.selectedZone) {
+            state.zones = state.zones.filter(z => z !== state.selectedZone);
+            state.selectedZone = null;
+            deleted = true;
+        }
+
+        // Borrar texto seleccionado
+        if (state.selectedText) {
+            f.texts = f.texts.filter(t => t !== state.selectedText);
+            state.selectedText = null;
+            deleted = true;
+        }
+
+        // Borrar flecha seleccionada
+        if (state.selectedArrow) {
+            f.arrows = f.arrows.filter(a => a !== state.selectedArrow);
+            state.selectedArrow = null;
+            deleted = true;
+        }
+
+        if (deleted) {
+            UI.updateDeleteButton();
+            Renderer.drawFrame();
+        }
+    };
 
     // Frames
     document.getElementById("add-frame").onclick = () => {
@@ -1315,11 +1725,6 @@ function initEvents() {
         };
     });
 
-    document.getElementById("clear-arrows").onclick = () => {
-        Utils.getCurrentFrame().arrows = [];
-        Renderer.drawFrame();
-    };
-
     // Modos
     document.getElementById("mode-move").onclick = () => Mode.set("move");
     document.getElementById("mode-text").onclick = () => Mode.set("text");
@@ -1328,6 +1733,7 @@ function initEvents() {
         document.getElementById("arrow-menu").classList.toggle("hidden");
     };
     document.getElementById("mode-zone").onclick = () => Mode.set("zone");
+    document.getElementById("mode-shield").onclick = () => Mode.set("shield");
 
     // Equipos
     document.getElementById("show-team-a").onclick = () => Players.showTeam("A");
@@ -1353,6 +1759,7 @@ function initEvents() {
         f.arrows = [];
         f.texts = [];
         f.trailLines = [];
+        f.trainingShields = [];
 
         f.ball = {
             x: canvas.width / 2,
@@ -1362,11 +1769,15 @@ function initEvents() {
             visible: true
         };
 
+        state.zones = [];
         state.selectedPlayers.clear();
+        state.selectedZone = null;
+        state.selectedShield = null;
         state.dragTarget = null;
         state.previewArrow = null;
         state.arrowStart = null;
 
+        UI.updateDeleteButton();
         Players.syncToggles();
         Renderer.drawFrame();
     };
@@ -1514,5 +1925,337 @@ function init() {
     });
 }
 
+// ==============================
+// SISTEMA DE TUTORIAL
+// ==============================
+const Tutorial = {
+    active: false,
+    currentStep: 0,
+    currentTutorialType: null, // 'basic' o 'advanced'
+    actionCompleted: false,
+
+    // Definición de tutoriales
+    tutorials: {
+        basic: [
+            {
+                title: "1. Selección de Jugadores",
+                text: "En el menú izquierdo puedes seleccionar jugadores de cada equipo. Haz clic en los números para mostrar/ocultar jugadores en el campo. También puedes usar los botones 'Mostrar equipo azul/rojo' para colocar todo el equipo automáticamente.",
+                target: "#players-panels",
+                action: "playerToggle",
+                position: "right"
+            },
+            {
+                title: "2. Sistema de Animación",
+                text: "Usa los controles de frames para crear secuencias. El botón '+ Añadir' crea un nuevo frame. Las flechas ◀ ▶ te permiten navegar entre frames. Cada frame es un paso de tu jugada.",
+                target: "#frame-controls",
+                action: "frameAction",
+                position: "left"
+            },
+            {
+                title: "3. Mover Fichas",
+                text: "Con el modo 'Mover fichas' activo, arrastra los jugadores en el campo para crear tu jugada. Al moverlos, se crearán líneas de trayectoria. Puedes seleccionar varios jugadores con Ctrl+clic o arrastrando una caja.",
+                target: "#pitch",
+                action: "playerMove",
+                position: "top"
+            },
+            {
+                title: "4. Reproducir y Exportar",
+                text: "Usa '▶ Reproducir' para ver tu animación. El botón 'Exportar WebM HD' te permite guardar la animación como video. ¡Ya puedes crear tus jugadas!",
+                target: "#playback-controls",
+                action: null,
+                position: "left"
+            }
+        ],
+        advanced: [
+            {
+                title: "Herramienta: Flechas",
+                text: "El menú de flechas te permite dibujar dos tipos: flechas normales para indicar movimientos y flechas de patada con arco. Haz clic para marcar el inicio y el final de la flecha.",
+                target: "#arrow-menu-container",
+                action: null,
+                position: "right"
+            },
+            {
+                title: "Herramienta: Texto",
+                text: "Añade anotaciones a tus jugadas. Haz clic en el campo para colocar texto explicativo. Puedes arrastrar el texto para reposicionarlo.",
+                target: "#mode-text",
+                action: null,
+                position: "right"
+            },
+            {
+                title: "Herramienta: Melé",
+                text: "Posiciona automáticamente a los jugadores en formación de melé. Haz clic en el campo y elige qué equipo(s) participan. Los jugadores se colocarán en la formación correcta.",
+                target: "#mode-scrum",
+                action: null,
+                position: "right"
+            },
+            {
+                title: "Herramienta: Zonas",
+                text: "Crea zonas de colores en el campo para destacar áreas tácticas. Selecciona un color, dibuja el área y asígnale un nombre. Puedes bloquear/desbloquear zonas para evitar moverlas.",
+                target: "#mode-zone",
+                action: null,
+                position: "right"
+            },
+            {
+                title: "Controles del Balón",
+                text: "El botón 'Mostrar / ocultar balón' te permite controlar la visibilidad del balón en cada frame. Útil para simular diferentes fases de juego.",
+                target: "#toggle-ball",
+                action: null,
+                position: "right"
+            },
+            {
+                title: "Limpiar Tablero",
+                text: "Usa 'Borrar flechas' para eliminar solo las flechas del frame actual. 'Limpiar tablero' resetea completamente el frame: elimina jugadores, flechas, textos y trails.",
+                target: "#clear-board",
+                action: null,
+                position: "right"
+            }
+        ]
+    },
+
+    start(type = 'basic') {
+        this.active = true;
+        this.currentStep = 0;
+        this.currentTutorialType = type;
+        this.actionCompleted = false;
+
+        // Mostrar overlay
+        document.getElementById('tutorial-overlay').classList.remove('hidden');
+        document.getElementById('tutorial-box').classList.remove('hidden');
+
+        this.showStep(0);
+    },
+
+    showStep(stepIndex) {
+        const steps = this.tutorials[this.currentTutorialType];
+        if (stepIndex < 0 || stepIndex >= steps.length) return;
+
+        this.currentStep = stepIndex;
+        this.actionCompleted = false;
+        const step = steps[stepIndex];
+
+        // Actualizar contenido
+        document.getElementById('tutorial-title').textContent = step.title;
+        document.getElementById('tutorial-text').textContent = step.text;
+
+        // Actualizar botones
+        const btnPrev = document.getElementById('tutorial-prev');
+        const btnNext = document.getElementById('tutorial-next');
+
+        btnPrev.disabled = stepIndex === 0;
+
+        // Actualizar texto del botón siguiente
+        if (stepIndex === steps.length - 1) {
+            btnNext.innerHTML = 'Finalizar';
+        } else {
+            btnNext.innerHTML = `
+                <span class="btn-label">Paso adelante</span>
+                <span class="btn-arrow">→</span>
+            `;
+        }
+
+        // Posicionar spotlight y cuadro
+        this.positionSpotlight(step.target, step.position);
+    },
+
+    positionSpotlight(selector, boxPosition) {
+        const spotlight = document.getElementById('tutorial-spotlight');
+        const tutorialBox = document.getElementById('tutorial-box');
+        const target = document.querySelector(selector);
+
+        if (!target) {
+            console.warn('Tutorial: elemento no encontrado:', selector);
+            spotlight.classList.remove('active');
+            return;
+        }
+
+        const rect = target.getBoundingClientRect();
+        const padding = 10;
+
+        // Posicionar spotlight
+        spotlight.style.left = (rect.left - padding) + 'px';
+        spotlight.style.top = (rect.top - padding) + 'px';
+        spotlight.style.width = (rect.width + padding * 2) + 'px';
+        spotlight.style.height = (rect.height + padding * 2) + 'px';
+        spotlight.classList.add('active');
+
+        // Posicionar cuadro de información
+        const boxRect = tutorialBox.getBoundingClientRect();
+        let left, top;
+
+        switch(boxPosition) {
+            case 'right':
+                left = rect.right + 20;
+                top = rect.top + (rect.height / 2) - (boxRect.height / 2);
+                break;
+            case 'left':
+                left = rect.left - boxRect.width - 20;
+                top = rect.top + (rect.height / 2) - (boxRect.height / 2);
+                break;
+            case 'top':
+                left = rect.left + (rect.width / 2) - (boxRect.width / 2);
+                top = rect.top - boxRect.height - 20;
+                break;
+            case 'bottom':
+                left = rect.left + (rect.width / 2) - (boxRect.width / 2);
+                top = rect.bottom + 20;
+                break;
+            default:
+                left = window.innerWidth / 2 - boxRect.width / 2;
+                top = window.innerHeight / 2 - boxRect.height / 2;
+        }
+
+        // Ajustar si se sale de la pantalla
+        left = Math.max(10, Math.min(left, window.innerWidth - boxRect.width - 10));
+        top = Math.max(10, Math.min(top, window.innerHeight - boxRect.height - 10));
+
+        tutorialBox.style.left = left + 'px';
+        tutorialBox.style.top = top + 'px';
+    },
+
+    next() {
+        const steps = this.tutorials[this.currentTutorialType];
+        if (this.currentStep < steps.length - 1) {
+            this.showStep(this.currentStep + 1);
+        } else {
+            this.finish();
+        }
+    },
+
+    prev() {
+        if (this.currentStep > 0) {
+            this.showStep(this.currentStep - 1);
+        }
+    },
+
+    skip() {
+        this.finish();
+    },
+
+    finish() {
+        this.active = false;
+        document.getElementById('tutorial-overlay').classList.add('hidden');
+        document.getElementById('tutorial-box').classList.add('hidden');
+        document.getElementById('tutorial-spotlight').classList.remove('active');
+
+        // Si terminó el tutorial básico, preguntar si quiere ver el avanzado
+        if (this.currentTutorialType === 'basic') {
+            setTimeout(async () => {
+                const verAvanzado = await Popup.show({
+                    title: "Tutorial Básico Completado",
+                    html: `
+                        <p>¡Excelente! Has completado el tutorial básico.</p>
+                        <p>¿Quieres ver el tutorial avanzado para conocer todas las herramientas?</p>
+                    `,
+                    showCancel: true,
+                    okText: "Ver tutorial avanzado",
+                    cancelText: "Empezar a usar la app"
+                });
+
+                if (verAvanzado) {
+                    setTimeout(() => Tutorial.start('advanced'), 300);
+                }
+            }, 500);
+        }
+    },
+
+    // Detectar acciones del usuario
+    detectAction(actionType) {
+        if (!this.active) return;
+
+        const currentStep = this.tutorials[this.currentTutorialType][this.currentStep];
+        if (currentStep.action === actionType && !this.actionCompleted) {
+            this.actionCompleted = true;
+            // Auto-avanzar después de 1 segundo
+            setTimeout(() => {
+                if (this.active && this.actionCompleted) {
+                    this.next();
+                }
+            }, 1000);
+        }
+    }
+};
+
+// ==============================
+// EVENTOS DEL TUTORIAL
+// ==============================
+function initTutorialEvents() {
+    // Botón de ayuda - inicia directamente el tutorial básico
+    document.getElementById('help-btn').onclick = () => {
+        if (!Tutorial.active) {
+            Tutorial.start('basic');
+        }
+    };
+
+    // Navegación del tutorial
+    document.getElementById('tutorial-next').onclick = () => Tutorial.next();
+    document.getElementById('tutorial-prev').onclick = () => Tutorial.prev();
+    document.getElementById('tutorial-skip').onclick = () => Tutorial.skip();
+
+    // Navegación con teclas de flechas
+    window.addEventListener('keydown', (e) => {
+        if (Tutorial.active) {
+            if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                e.preventDefault();
+                Tutorial.next();
+            } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                Tutorial.prev();
+            }
+        }
+    });
+
+    // Reposicionar al cambiar tamaño de ventana
+    window.addEventListener('resize', () => {
+        if (Tutorial.active) {
+            const step = Tutorial.tutorials[Tutorial.currentTutorialType][Tutorial.currentStep];
+            Tutorial.positionSpotlight(step.target, step.position);
+        }
+    });
+}
+
+// ==============================
+// INTEGRACIÓN CON EVENTOS EXISTENTES
+// ==============================
+const originalToggle = Players.toggle;
+Players.toggle = function(e) {
+    Tutorial.detectAction('playerToggle');
+    return originalToggle.call(this, e);
+};
+
+const originalShowTeam = Players.showTeam;
+Players.showTeam = function(team) {
+    Tutorial.detectAction('playerToggle');
+    return originalShowTeam.call(this, team);
+};
+
+const originalAddFrame = document.getElementById("add-frame");
+if (originalAddFrame) {
+    const originalOnClick = originalAddFrame.onclick;
+    document.getElementById("add-frame").onclick = function(e) {
+        Tutorial.detectAction('frameAction');
+        return originalOnClick ? originalOnClick.call(this, e) : null;
+    };
+}
+
+const originalNextFrame = document.getElementById("next-frame");
+if (originalNextFrame) {
+    const originalOnClick = originalNextFrame.onclick;
+    document.getElementById("next-frame").onclick = function(e) {
+        Tutorial.detectAction('frameAction');
+        return originalOnClick ? originalOnClick.call(this, e) : null;
+    };
+}
+
+const originalMouseUp = CanvasEvents.handleMouseUp;
+CanvasEvents.handleMouseUp = function() {
+    if (state.dragTarget && state.dragTarget.type === "players") {
+        Tutorial.detectAction('playerMove');
+    }
+    return originalMouseUp.call(this);
+};
+
 // Iniciar la aplicación
 init();
+
+// Inicializar eventos del tutorial después de init
+initTutorialEvents();

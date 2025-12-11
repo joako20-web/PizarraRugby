@@ -553,4 +553,281 @@ button.active {
     }
 }
 
+/* ========================================
+   SISTEMA DE TUTORIAL
+   ======================================== */
+
+/* Botón de ayuda flotante */
+.help-button {
+    position: fixed;
+    bottom: 10px;
+    right: 80px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: #0068ff;
+    color: white;
+    border: 3px solid #fff;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 104, 255, 0.5);
+    z-index: 1001;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    margin: 0;
+}
+
+.help-button:hover {
+    background: #1c7cff;
+    transform: scale(1.1);
+    box-shadow: 0 6px 16px rgba(0, 104, 255, 0.7);
+}
+
+/* En móvil, mover para no tapar otros elementos */
+@media (max-width: 1024px) {
+    .help-button {
+        bottom: 10px;
+        right: 10px;
+        width: 45px;
+        height: 45px;
+        font-size: 24px;
+    }
+}
+
+/* Botón de borrar elementos seleccionados */
+.delete-button {
+    position: fixed;
+    bottom: 75px;
+    right: 10px;
+    width: auto;
+    min-width: 100px;
+    padding: 8px 16px;
+    background: #ff3333;
+    color: white;
+    border: 2px solid #fff;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(255, 51, 51, 0.5);
+    z-index: 1001;
+    transition: all 0.3s ease;
+}
+
+.delete-button:hover {
+    background: #ff5555;
+    box-shadow: 0 6px 16px rgba(255, 51, 51, 0.7);
+    transform: translateY(-2px);
+}
+
+.delete-button.hidden {
+    display: none;
+}
+
+/* En móvil, ajustar posición */
+@media (max-width: 1024px) {
+    .delete-button {
+        bottom: 70px;
+        right: 10px;
+        min-width: 90px;
+        padding: 7px 14px;
+        font-size: 13px;
+    }
+}
+
+/* Overlay oscuro del tutorial - ahora con box-shadow desde spotlight */
+#tutorial-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    z-index: 9998;
+    pointer-events: none;
+}
+
+#tutorial-overlay.hidden {
+    display: none;
+}
+
+/* Spotlight - área resaltada */
+#tutorial-spotlight {
+    position: fixed;
+    border: 4px solid #00ff88;
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.75),
+                0 0 20px #00ff88,
+                inset 0 0 20px rgba(0, 255, 136, 0.3);
+    z-index: 9999;
+    pointer-events: none;
+    border-radius: 8px;
+    transition: all 0.4s ease;
+    display: none;
+}
+
+#tutorial-spotlight.active {
+    display: block;
+}
+
+/* Cuadro de información del tutorial */
+#tutorial-box {
+    position: fixed;
+    background: #1c2631;
+    border: 2px solid #00ff88;
+    border-radius: 12px;
+    padding: 20px;
+    max-width: 400px;
+    width: 90%;
+    color: white;
+    box-shadow: 0 0 30px rgba(0, 255, 136, 0.5);
+    z-index: 10000;
+    animation: tutorial-slide-in 0.3s ease-out;
+}
+
+#tutorial-box.hidden {
+    display: none;
+}
+
+@keyframes tutorial-slide-in {
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+#tutorial-content h3 {
+    margin: 0 0 10px 0;
+    color: #00ff88;
+    font-size: 18px;
+}
+
+#tutorial-content p {
+    margin: 0 0 15px 0;
+    line-height: 1.5;
+    font-size: 14px;
+}
+
+#tutorial-navigation {
+    display: flex;
+    gap: 8px;
+    justify-content: space-between;
+}
+
+#tutorial-navigation button {
+    flex: 1;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #444;
+    background: #2c3948;
+    color: white;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+#tutorial-navigation button .btn-label {
+    font-size: 12px;
+}
+
+#tutorial-navigation button .btn-arrow {
+    font-size: 16px;
+    font-weight: bold;
+}
+
+#tutorial-navigation button:hover {
+    background: #3c4d61;
+}
+
+#tutorial-skip {
+    background: #ff3333 !important;
+}
+
+#tutorial-skip:hover {
+    background: #ff5555 !important;
+}
+
+#tutorial-next {
+    background: #0068ff !important;
+}
+
+#tutorial-next:hover {
+    background: #1c7cff !important;
+}
+
+#tutorial-prev {
+    background: #2c3948 !important;
+}
+
+#tutorial-prev:hover {
+    background: #3c4d61 !important;
+}
+
+/* Responsive para móviles */
+@media (max-width: 768px) {
+    #tutorial-box {
+        max-width: calc(100% - 20px);
+        padding: 15px;
+    }
+
+    #tutorial-content h3 {
+        font-size: 16px;
+    }
+
+    #tutorial-content p {
+        font-size: 13px;
+    }
+
+    #tutorial-navigation {
+        flex-direction: column;
+    }
+
+    #tutorial-navigation button {
+        width: 100%;
+    }
+}
+
+/* ========================================
+   SISTEMA DE NOTIFICACIONES
+   ======================================== */
+
+.notification {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-100px);
+    background-color: #dc3545;
+    color: white;
+    padding: 15px 30px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 10000;
+    opacity: 0;
+    transition: all 0.3s ease;
+    pointer-events: none;
+    text-align: center;
+    max-width: 90%;
+}
+
+.notification.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
+
+.notification.hidden {
+    display: block;
+}
 
