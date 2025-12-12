@@ -1996,6 +1996,13 @@ const Tutorial = {
                 position: "right"
             },
             {
+                title: "Herramienta: Escudos",
+                text: "Asigna escudos a los jugadores. Puedes colocarlo apuntando a donde sea. El escudo se vincula a la ficha y se mueve con ella",
+                target: "#mode-shield",
+                action: null,
+                position: "right"
+            },
+            {
                 title: "Controles del Balón",
                 text: "El botón 'Mostrar / ocultar balón' te permite controlar la visibilidad del balón en cada frame. Útil para simular diferentes fases de juego.",
                 target: "#toggle-ball",
