@@ -1960,7 +1960,7 @@ const Tutorial = {
             },
             {
                 title: "4. Reproducir y Exportar",
-                text: "Usa '▶ Reproducir' para ver tu animación. El botón 'Exportar WebM HD' te permite guardar la animación como video. ¡Ya puedes crear tus jugadas!",
+                text: "Usa '▶ Reproducir' para ver tu animación. El botón 'Exportar' te permite guardar la animación como video. ¡Ya puedes crear tus jugadas!",
                 target: "#playback-controls",
                 action: null,
                 position: "left"
