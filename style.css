@@ -769,6 +769,47 @@ button.active {
 }
 
 /* ========================================
+   CONFIGURACIÓN DE CAMPO
+   ======================================== */
+
+.field-type-selector {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 8px;
+}
+
+.field-type-btn {
+    flex: 1;
+    padding: 8px;
+    background: #2c3948;
+    border: 2px solid #444;
+    border-radius: 6px;
+    cursor: pointer;
+    color: white;
+    font-size: 13px;
+    transition: all 0.2s;
+}
+
+.field-type-btn.active {
+    background: #0068ff;
+    border-color: #fff;
+}
+
+.field-type-btn:hover:not(.active) {
+    background: #3c4d61;
+}
+
+.field-info {
+    text-align: center;
+    padding: 6px;
+    background: #1a2330;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #aaa;
+    margin-top: 8px;
+}
+
+/* ========================================
    SISTEMA DE NOTIFICACIONES
    ======================================== */
 

@@ -76,7 +76,14 @@ const state = {
 
     // Textos y flechas
     selectedText: null,
-    selectedArrow: null
+    selectedArrow: null,
+
+    // Field configuration
+    fieldConfig: {
+        type: "full",        // "full" or "half"
+        orientation: "horizontal",  // "horizontal" or "vertical"
+        halfSide: "top"      // "top" or "bottom" (only for type="half")
+    }
 };
 
 // Canvas
@@ -108,10 +115,11 @@ const Utils = {
         const scaleX = canvas.width / r.width;
         const scaleY = canvas.height / r.height;
 
-        return {
-            x: (clientX - r.left) * scaleX,
-            y: (clientY - r.top) * scaleY
-        };
+        const canvasX = (clientX - r.left) * scaleX;
+        const canvasY = (clientY - r.top) * scaleY;
+
+        // Transformar a coordenadas lógicas del campo
+        return FieldTransform.fromCanvas(canvasX, canvasY);
     },
 
     getZoneBounds(zone) {
@@ -130,6 +138,23 @@ const Utils = {
             p.number === number &&
             p.visible
         );
+    }
+};
+
+// ==============================
+// TRANSFORMACIÓN DE COORDENADAS
+// ==============================
+const FieldTransform = {
+    // Since we no longer rotate the canvas and draw fields directly in the correct orientation,
+    // these transformations simply return the coordinates as-is.
+    // The field rendering functions handle the orientation differences internally.
+
+    toCanvas(logicalX, logicalY) {
+        return { x: logicalX, y: logicalY };
+    },
+
+    fromCanvas(canvasX, canvasY) {
+        return { x: canvasX, y: canvasY };
     }
 };
 
@@ -319,6 +344,48 @@ function clearAllSelections() {
     state.selectedArrow = null;
     UI.updateDeleteButton();
 }
+function resetBoardForFieldChange() {
+    // Vaciar frames
+    state.frames = [];
+    state.currentFrameIndex = 0;
+
+    // Crear frame limpio
+    const f = Frame.create();
+
+    // Reset balón
+    f.ball.visible = true;
+    f.ball.x = canvas.width / 2;
+
+    if (state.fieldConfig.type === "half") {
+        // Balón en medio campo REAL
+        f.ball.y = state.fieldConfig.halfSide === "top"
+            ? CONFIG.MARGIN_Y + (canvas.height - CONFIG.MARGIN_Y * 2)
+            : CONFIG.MARGIN_Y;
+    } else {
+        // Campo completo
+        f.ball.y = canvas.height / 2;
+    }
+
+    state.frames.push(f);
+
+    // Limpiar selecciones
+    state.selectedPlayers.clear();
+    state.selectedZone = null;
+    state.selectedText = null;
+    state.selectedArrow = null;
+    state.selectedShield = null;
+
+    // Sincronizar UI
+    if (typeof Players !== "undefined") {
+        Players.syncToggles();
+    }
+
+    if (typeof Animation !== "undefined") {
+        Animation.updateUI();
+    }
+
+    Renderer.drawFrame();
+}
 
 function deleteSelectedElement() {
     const f = Utils.getCurrentFrame();
@@ -352,17 +419,96 @@ function deleteSelectedElement() {
 }
 
 function getPlayerInitialPosition(team, playerNumber) {
-    const { fieldWidth } = Utils.fieldDims();
-    const xSide = team === "A"
-        ? CONFIG.MARGIN_X + fieldWidth * CONFIG.TEAM_A_POSITION
-        : CONFIG.MARGIN_X + fieldWidth * CONFIG.TEAM_B_POSITION;
-    const yTop = CONFIG.MARGIN_Y + CONFIG.PANEL_Y_TOP;
+    const w = canvas.width;
+    const h = canvas.height;
+    const cfg = state.fieldConfig;
 
+    const marginX = CONFIG.MARGIN_X;
+    const marginY = CONFIG.MARGIN_Y;
+
+    const fieldWidth = w - CONFIG.MARGIN_X * 2;
+    const fieldHeight = h - CONFIG.MARGIN_Y * 2;
+
+    // ============================
+    // MITAD DE CAMPO (VERTICAL)
+    // ============================
+    if (cfg.type === "half") {
+
+        // Distribución horizontal
+        const spacing = fieldWidth / (CONFIG.NUM_PLAYERS + 1);
+        const x = marginX + spacing * playerNumber;
+
+        // Proporciones reales
+        const P5  = 5 / 50;
+        const P40 = 40 / 50;
+
+        // Misma zona de ensayo que drawHalfField
+        const inGoalHeight = fieldHeight * 0.12;
+
+        // Línea de ensayo REAL (origen 0 m)
+        const tryLineY = cfg.halfSide === "bottom"
+            ? marginY + fieldHeight - inGoalHeight
+            : marginY + inGoalHeight;
+
+        // Dirección hacia el centro del campo
+        const dir = cfg.halfSide === "bottom" ? -1 : 1;
+
+        let y;
+
+        if (cfg.halfSide === "bottom") {
+            // Ensayo abajo
+            y = team === "A"
+                // AZUL sobre 40 m
+                ? tryLineY + dir * fieldHeight * P40
+                // ROJO sobre 5 m
+                : tryLineY + dir * fieldHeight * P5;
+        } else {
+            // Ensayo arriba (simétrico)
+            y = team === "A"
+                ? tryLineY + dir * fieldHeight * P40
+                : tryLineY + dir * fieldHeight * P5;
+        }
+
+        return { x, y };
+    }
+
+    // ============================
+    // CAMPO COMPLETO – HORIZONTAL
+    // ============================
+    if (cfg.type === "full" && cfg.orientation === "horizontal") {
+        const xSide = team === "A"
+            ? marginX + fieldWidth * CONFIG.TEAM_A_POSITION
+            : marginX + fieldWidth * CONFIG.TEAM_B_POSITION;
+
+        const y = marginY + CONFIG.PANEL_Y_TOP +
+                  (playerNumber - 1) * CONFIG.PLAYER_SPACING;
+
+        return { x: xSide, y };
+    }
+
+    // ============================
+    // CAMPO COMPLETO – VERTICAL
+    // ============================
+    if (cfg.type === "full" && cfg.orientation === "vertical") {
+        const spacing = fieldWidth / (CONFIG.NUM_PLAYERS + 1);
+        const x = marginX + spacing * playerNumber;
+
+        const y = team === "A"
+            ? marginY + 40
+            : marginY + fieldHeight - 40;
+
+        return { x, y };
+    }
+
+    // Fallback
     return {
-        x: xSide,
-        y: yTop + (playerNumber - 1) * CONFIG.PLAYER_SPACING
+        x: w / 2,
+        y: h / 2
     };
 }
+
+
+
 
 // ==============================
 // RENDERIZADO
@@ -370,33 +516,52 @@ function getPlayerInitialPosition(team, playerNumber) {
 const Renderer = {
     // === Field Drawing ===
     drawPitch() {
+        ctx.save();
         ctx.setLineDash([]);
+
+        const cfg = state.fieldConfig;
         const w = canvas.width;
         const h = canvas.height;
-        const { fieldWidth, fieldHeight } = Utils.fieldDims();
 
-        const inGoal = fieldWidth * 0.07;
-        const xTryLeft = CONFIG.MARGIN_X + inGoal;
-        const xTryRight = CONFIG.MARGIN_X + fieldWidth - inGoal;
-
-        // Césped
+        // Draw grass background
         const grass = ctx.createLinearGradient(0, 0, 0, h);
         grass.addColorStop(0, "#0b7c39");
         grass.addColorStop(1, "#0a6d33");
         ctx.fillStyle = grass;
         ctx.fillRect(0, 0, w, h);
 
-        // Zonas de ensayo
-        ctx.fillStyle = "#064d24";
-        ctx.fillRect(CONFIG.MARGIN_X, CONFIG.MARGIN_Y, inGoal, fieldHeight);
-        ctx.fillRect(xTryRight, CONFIG.MARGIN_Y, inGoal, fieldHeight);
+        // Draw field based on configuration
+        if (cfg.type === "half") {
+            this.drawHalfField();
+        } else if (cfg.orientation === "vertical") {
+            this.drawFullFieldVertical();
+        } else {
+            this.drawFullField();
+        }
 
-        // Borde exterior
+        ctx.restore();
+    },
+
+    drawFullField() {
+        const { fieldWidth, fieldHeight } = Utils.fieldDims();
+        const marginX = CONFIG.MARGIN_X;
+        const marginY = CONFIG.MARGIN_Y;
+
+        const inGoal = fieldWidth * 0.07;
+        const xTryLeft = marginX + inGoal;
+        const xTryRight = marginX + fieldWidth - inGoal;
+
+        // Try zones
+        ctx.fillStyle = "#064d24";
+        ctx.fillRect(marginX, marginY, inGoal, fieldHeight);
+        ctx.fillRect(xTryRight, marginY, inGoal, fieldHeight);
+
+        // Field border
         ctx.strokeStyle = "#ffffff";
         ctx.lineWidth = 3;
-        ctx.strokeRect(CONFIG.MARGIN_X, CONFIG.MARGIN_Y, fieldWidth, fieldHeight);
+        ctx.strokeRect(marginX, marginY, fieldWidth, fieldHeight);
 
-        // Líneas verticales
+        // Vertical lines
         const mainField = fieldWidth - inGoal * 2;
         const lines = {
             xTryLeft,
@@ -414,8 +579,8 @@ const Renderer = {
             ctx.setLineDash(dash);
             ctx.lineWidth = width;
             ctx.beginPath();
-            ctx.moveTo(x, CONFIG.MARGIN_Y);
-            ctx.lineTo(x, CONFIG.MARGIN_Y + fieldHeight);
+            ctx.moveTo(x, marginY);
+            ctx.lineTo(x, marginY + fieldHeight);
             ctx.stroke();
         };
 
@@ -429,12 +594,12 @@ const Renderer = {
         drawVertical(lines.x10R, [14, 10]);
         drawVertical(lines.xMid, [], 3);
 
-        // Líneas horizontales
+        // Horizontal lines
         const yLines = [
-            CONFIG.MARGIN_Y + fieldHeight * 0.05,
-            CONFIG.MARGIN_Y + fieldHeight * 0.25,
-            CONFIG.MARGIN_Y + fieldHeight * 0.75,
-            CONFIG.MARGIN_Y + fieldHeight * 0.95
+            marginY + fieldHeight * 0.05,
+            marginY + fieldHeight * 0.25,
+            marginY + fieldHeight * 0.75,
+            marginY + fieldHeight * 0.95
         ];
 
         ctx.setLineDash([20, 14]);
@@ -449,6 +614,183 @@ const Renderer = {
 
         ctx.setLineDash([]);
     },
+
+    drawFullFieldVertical() {
+        // For vertical field: try zones at top/bottom, scaled to fit canvas
+        const w = canvas.width;
+        const h = canvas.height;
+
+        // Original field dimensions (horizontal)
+        const originalWidth = w - CONFIG.MARGIN_X * 2;
+        const originalHeight = h - CONFIG.MARGIN_Y * 2;
+
+        // For vertical: swap width/height but scale to fit
+        // Use full height (800), calculate width proportionally
+        const fieldHeight = h - CONFIG.MARGIN_Y * 2;
+        const fieldWidth = fieldHeight * (originalHeight / originalWidth);
+
+        // Center horizontally
+        const marginX = (w - fieldWidth) / 2;
+        const marginY = CONFIG.MARGIN_Y;
+
+        const inGoal = fieldHeight * 0.07;
+        const yTryTop = marginY + inGoal;
+        const yTryBottom = marginY + fieldHeight - inGoal;
+
+        // Try zones (top and bottom)
+        ctx.fillStyle = "#064d24";
+        ctx.fillRect(marginX, marginY, fieldWidth, inGoal);
+        ctx.fillRect(marginX, yTryBottom, fieldWidth, inGoal);
+
+        // Field border
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 3;
+        ctx.strokeRect(marginX, marginY, fieldWidth, fieldHeight);
+
+        // Horizontal lines (now they run across the field)
+        const mainField = fieldHeight - inGoal * 2;
+        const lines = {
+            yTryTop,
+            yTryBottom,
+            y5T: yTryTop + mainField * 0.05,
+            y22T: yTryTop + mainField * 0.22,
+            yMid: yTryTop + mainField * 0.50,
+            y10T: yTryTop + mainField * 0.40,
+            y10B: yTryTop + mainField * 0.60,
+            y22B: yTryTop + mainField * 0.78,
+            y5B: yTryTop + mainField * 0.95
+        };
+
+        const drawHorizontal = (y, dash = [], width = 2) => {
+            ctx.setLineDash(dash);
+            ctx.lineWidth = width;
+            ctx.beginPath();
+            ctx.moveTo(marginX, y);
+            ctx.lineTo(marginX + fieldWidth, y);
+            ctx.stroke();
+        };
+
+        drawHorizontal(lines.yTryTop, [], 3);
+        drawHorizontal(lines.yTryBottom, [], 3);
+        drawHorizontal(lines.y5T, [20, 14]);
+        drawHorizontal(lines.y5B, [20, 14]);
+        drawHorizontal(lines.y22T);
+        drawHorizontal(lines.y22B);
+        drawHorizontal(lines.y10T, [14, 10]);
+        drawHorizontal(lines.y10B, [14, 10]);
+        drawHorizontal(lines.yMid, [], 3);
+
+        // Vertical lines (now perpendicular to play direction)
+        const xLines = [
+            marginX + fieldWidth * 0.05,
+            marginX + fieldWidth * 0.25,
+            marginX + fieldWidth * 0.75,
+            marginX + fieldWidth * 0.95
+        ];
+
+        ctx.setLineDash([20, 14]);
+        ctx.lineWidth = 2;
+
+        xLines.forEach(x => {
+            ctx.beginPath();
+            ctx.moveTo(x, yTryTop);
+            ctx.lineTo(x, yTryBottom);
+            ctx.stroke();
+        });
+
+        ctx.setLineDash([]);
+    },
+
+drawHalfField() {
+    const w = canvas.width;
+    const h = canvas.height;
+    const cfg = state.fieldConfig;
+
+    const marginX = CONFIG.MARGIN_X;
+    const marginY = CONFIG.MARGIN_Y;
+
+    const fieldWidth = w - CONFIG.MARGIN_X * 2;
+    const fieldHeight = h - CONFIG.MARGIN_Y * 2;
+
+    // Proporciones reales sobre 50 metros
+    const P_5   = 5  / 50;   // 0.10
+    const P_22  = 22 / 50;   // 0.44
+    const P_40  = 40 / 50;   // 0.80
+    const P_MID = 1.0;       // 50 / 50
+
+    // Dibujo de borde completo
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 3;
+    ctx.strokeRect(marginX, marginY, fieldWidth, fieldHeight);
+
+    // Zona de ensayo
+    const inGoalHeight = fieldHeight * 0.12; // visual, no reglamentaria
+    ctx.fillStyle = "#064d24";
+
+    if (cfg.halfSide === "top") {
+        ctx.fillRect(marginX, marginY, fieldWidth, inGoalHeight);
+    } else {
+        ctx.fillRect(
+            marginX,
+            marginY + fieldHeight - inGoalHeight,
+            fieldWidth,
+            inGoalHeight
+        );
+    }
+
+    const drawLine = (y, dash = [], width = 2) => {
+        ctx.setLineDash(dash);
+        ctx.lineWidth = width;
+        ctx.beginPath();
+        ctx.moveTo(marginX, y);
+        ctx.lineTo(marginX + fieldWidth, y);
+        ctx.stroke();
+    };
+
+    // Cálculo de líneas según mitad visible
+    const base = cfg.halfSide === "top"
+        ? marginY + inGoalHeight
+        : marginY + fieldHeight - inGoalHeight;
+
+    const dir = cfg.halfSide === "top" ? 1 : -1;
+
+    // Línea de ensayo
+    drawLine(base, [], 3);
+
+    // 5 m
+    drawLine(base + dir * fieldHeight * P_5, [20,14]);
+
+    // 22 m
+    drawLine(base + dir * fieldHeight * P_22);
+
+    // 40 m
+    drawLine(base + dir * fieldHeight * P_40, [14,10]);
+
+    // Medio campo
+    drawLine(
+        cfg.halfSide === "top"
+            ? marginY + fieldHeight
+            : marginY,
+        [],
+        3
+    );
+
+    // Líneas verticales (5 m y touch)
+    ctx.setLineDash([20,14]);
+    ctx.lineWidth = 2;
+
+    const xLines = [0.05, 0.25, 0.75, 0.95];
+    xLines.forEach(p => {
+        const x = marginX + fieldWidth * p;
+        ctx.beginPath();
+        ctx.moveTo(x, marginY);
+        ctx.lineTo(x, marginY + fieldHeight);
+        ctx.stroke();
+    });
+
+    ctx.setLineDash([]);
+}
+,
 
     // === Game Elements ===
     drawRugbyBall(b) {
@@ -919,12 +1261,20 @@ const Scrum = {
     async place(x, y) {
         const choice = await Popup.selectScrumTeam();
         if (!choice) return;
-        
-        const f = Utils.getCurrentFrame();
 
-        const spacingY = 40;
-        const rowX = 32;
-        const pack = 35;
+        const f = Utils.getCurrentFrame();
+        const cfg = state.fieldConfig;
+
+        // Adapt spacing based on configuration
+        let spacingY = 40;
+        let rowX = 32;
+        let pack = 35;
+
+        // For half field, reduce spacing
+        if (cfg.type === "half") {
+            pack = 25;
+            rowX = 28;
+        }
 
         const setPlayer = (team, num, px, py) => {
             const p = f.players.find(a => a.team === team && a.number === num);
@@ -934,6 +1284,21 @@ const Scrum = {
             p.y = py;
         };
 
+        // Apply formation based on orientation
+        if (cfg.type === "full" && cfg.orientation === "horizontal") {
+            // Horizontal field
+            this.placeHorizontalScrum(x, y, choice, setPlayer, spacingY, rowX, pack);
+        } else {
+            // Vertical field (full vertical or half field which is always vertical)
+            this.placeVerticalScrum(x, y, choice, setPlayer, spacingY, rowX, pack);
+        }
+
+        Players.syncToggles();
+        Renderer.drawFrame();
+        Mode.set("move");
+    },
+
+    placeHorizontalScrum(x, y, choice, setPlayer, spacingY, rowX, pack) {
         if (choice === "A" || choice === "AB") {
             const bx = x - pack;
             const cy = y;
@@ -959,10 +1324,37 @@ const Scrum = {
             setPlayer("B", 6, bx + rowX, cy + spacingY * 1.5);
             setPlayer("B", 8, bx + rowX * 2, cy);
         }
+    },
 
-        Players.syncToggles();
-        Renderer.drawFrame();
-        Mode.set("move");
+    placeVerticalScrum(x, y, choice, setPlayer, spacingX, rowY, pack) {
+        // Rotated 90°: spacing is now horizontal
+        if (choice === "A" || choice === "AB") {
+            const by = y - pack;
+            const cx = x;
+
+            setPlayer("A", 1, cx - spacingX, by);
+            setPlayer("A", 2, cx, by);
+            setPlayer("A", 3, cx + spacingX, by);
+            setPlayer("A", 6, cx - spacingX * 1.5, by - rowY);
+            setPlayer("A", 4, cx - spacingX * 0.5, by - rowY);
+            setPlayer("A", 5, cx + spacingX * 0.5, by - rowY);
+            setPlayer("A", 7, cx + spacingX * 1.5, by - rowY);
+            setPlayer("A", 8, cx, by - rowY * 2);
+        }
+
+        if (choice === "B" || choice === "AB") {
+            const by = y + pack;
+            const cx = x;
+
+            setPlayer("B", 3, cx - spacingX, by);
+            setPlayer("B", 2, cx, by);
+            setPlayer("B", 1, cx + spacingX, by);
+            setPlayer("B", 7, cx - spacingX * 1.5, by + rowY);
+            setPlayer("B", 5, cx - spacingX * 0.5, by + rowY);
+            setPlayer("B", 4, cx + spacingX * 0.5, by + rowY);
+            setPlayer("B", 6, cx + spacingX * 1.5, by + rowY);
+            setPlayer("B", 8, cx, by + rowY * 2);
+        }
     }
 };
 
@@ -1705,6 +2097,79 @@ function initEvents() {
     document.getElementById("play-animation").onclick = () => Animation.play();
     document.getElementById("stop-animation").onclick = () => Animation.stop();
     document.getElementById("export-webm").onclick = () => Animation.exportWebM();
+
+    // Field Configuration Helper Functions
+    function updateFieldTypeButtons() {
+        const fullBtn = document.getElementById("field-type-full");
+        const halfBtn = document.getElementById("field-type-half");
+
+        if (state.fieldConfig.type === "full") {
+            fullBtn.classList.add("active");
+            halfBtn.classList.remove("active");
+        } else {
+            fullBtn.classList.remove("active");
+            halfBtn.classList.add("active");
+        }
+    }
+
+    function updateFieldConfigInfo() {
+        const info = document.getElementById("field-config-info");
+        const cfg = state.fieldConfig;
+
+        let text = "";
+
+        if (cfg.type === "full") {
+            text = cfg.orientation === "horizontal" ? "Campo Completo - Horizontal" : "Campo Completo - Vertical";
+        } else {
+            text = cfg.halfSide === "top" ? "Mitad Campo - Ensayo Superior" : "Mitad Campo - Ensayo Inferior";
+        }
+
+        info.textContent = text;
+    }
+
+    // Field Configuration
+    document.getElementById("field-type-full").onclick = () => {
+        state.fieldConfig.type = "full";
+        state.fieldConfig.orientation = "horizontal";  // Reset to horizontal
+        resetBoardForFieldChange();
+        updateFieldTypeButtons();
+        updateFieldConfigInfo();
+        Renderer.drawFrame();
+    };
+
+    document.getElementById("field-type-half").onclick = () => {
+    state.fieldConfig.type = "half";
+    state.fieldConfig.halfSide = "top";
+    resetBoardForFieldChange();
+    const f = Utils.getCurrentFrame();
+
+    // Colocar balón en medio campo
+    f.ball.x = canvas.width / 2;
+    f.ball.y = CONFIG.MARGIN_Y + (canvas.height - CONFIG.MARGIN_Y * 2);
+    f.ball.visible = true;
+
+    updateFieldTypeButtons();
+    updateFieldConfigInfo();
+    Renderer.drawFrame();
+};
+
+
+    document.getElementById("rotate-field-btn").onclick = () => {
+    if (state.fieldConfig.type === "full") {
+        state.fieldConfig.orientation =
+            state.fieldConfig.orientation === "horizontal"
+                ? "vertical"
+                : "horizontal";
+    } else {
+        state.fieldConfig.halfSide =
+            state.fieldConfig.halfSide === "top"
+                ? "bottom"
+                : "top";
+    }
+
+    resetBoardForFieldChange();
+};
+
 
     // Flechas
     document.querySelectorAll("#arrow-menu button").forEach(btn => {
