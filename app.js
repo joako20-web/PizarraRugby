@@ -344,48 +344,6 @@ function clearAllSelections() {
     state.selectedArrow = null;
     UI.updateDeleteButton();
 }
-function resetBoardForFieldChange() {
-    // Vaciar frames
-    state.frames = [];
-    state.currentFrameIndex = 0;
-
-    // Crear frame limpio
-    const f = Frame.create();
-
-    // Reset balón
-    f.ball.visible = true;
-    f.ball.x = canvas.width / 2;
-
-    if (state.fieldConfig.type === "half") {
-        // Balón en medio campo REAL
-        f.ball.y = state.fieldConfig.halfSide === "top"
-            ? CONFIG.MARGIN_Y + (canvas.height - CONFIG.MARGIN_Y * 2)
-            : CONFIG.MARGIN_Y;
-    } else {
-        // Campo completo
-        f.ball.y = canvas.height / 2;
-    }
-
-    state.frames.push(f);
-
-    // Limpiar selecciones
-    state.selectedPlayers.clear();
-    state.selectedZone = null;
-    state.selectedText = null;
-    state.selectedArrow = null;
-    state.selectedShield = null;
-
-    // Sincronizar UI
-    if (typeof Players !== "undefined") {
-        Players.syncToggles();
-    }
-
-    if (typeof Animation !== "undefined") {
-        Animation.updateUI();
-    }
-
-    Renderer.drawFrame();
-}
 
 function deleteSelectedElement() {
     const f = Utils.getCurrentFrame();
@@ -2131,7 +2089,6 @@ function initEvents() {
     document.getElementById("field-type-full").onclick = () => {
         state.fieldConfig.type = "full";
         state.fieldConfig.orientation = "horizontal";  // Reset to horizontal
-        resetBoardForFieldChange();
         updateFieldTypeButtons();
         updateFieldConfigInfo();
         Renderer.drawFrame();
@@ -2140,7 +2097,7 @@ function initEvents() {
     document.getElementById("field-type-half").onclick = () => {
     state.fieldConfig.type = "half";
     state.fieldConfig.halfSide = "top";
-    resetBoardForFieldChange();
+
     const f = Utils.getCurrentFrame();
 
     // Colocar balón en medio campo
@@ -2155,21 +2112,23 @@ function initEvents() {
 
 
     document.getElementById("rotate-field-btn").onclick = () => {
-    if (state.fieldConfig.type === "full") {
-        state.fieldConfig.orientation =
-            state.fieldConfig.orientation === "horizontal"
-                ? "vertical"
-                : "horizontal";
-    } else {
-        state.fieldConfig.halfSide =
-            state.fieldConfig.halfSide === "top"
-                ? "bottom"
-                : "top";
-    }
+        if (state.fieldConfig.type === "full") {
+            // Rotate full field: horizontal ↔ vertical
+            state.fieldConfig.orientation = state.fieldConfig.orientation === "horizontal" ? "vertical" : "horizontal";
+        } else {
+            // Switch visible half: top ↔ bottom
+            state.fieldConfig.halfSide = state.fieldConfig.halfSide === "top" ? "bottom" : "top";
+        }
+        // Reposicionar balón al medio campo
+        const f = Utils.getCurrentFrame();
+        f.ball.x = canvas.width / 2;
+        f.ball.y = state.fieldConfig.halfSide === "top"
+        ? CONFIG.MARGIN_Y + (canvas.height - CONFIG.MARGIN_Y * 2)
+        : CONFIG.MARGIN_Y;
 
-    resetBoardForFieldChange();
-};
-
+        updateFieldConfigInfo();
+        Renderer.drawFrame();
+    };
 
     // Flechas
     document.querySelectorAll("#arrow-menu button").forEach(btn => {
