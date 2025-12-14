@@ -424,16 +424,67 @@ function getPlayerInitialPosition(team, playerNumber) {
     const h = canvas.height;
     const cfg = state.fieldConfig;
 
-    const marginX = CONFIG.MARGIN_X;
-    const marginY = CONFIG.MARGIN_Y;
+    // ============================
+    // CAMPO COMPLETO – HORIZONTAL
+    // ============================
+    if (cfg.type === "full" && cfg.orientation === "horizontal") {
+        // Usar los mismos cálculos que drawFullField()
+        const minMargin = 20;
+        const aspectRatio = 3 / 2;
 
-    const fieldWidth = w - CONFIG.MARGIN_X * 2;
-    const fieldHeight = h - CONFIG.MARGIN_Y * 2;
+        let fieldWidth = w - minMargin * 2;
+        let fieldHeight = fieldWidth / aspectRatio;
+
+        if (fieldHeight > h - minMargin * 2) {
+            fieldHeight = h - minMargin * 2;
+            fieldWidth = fieldHeight * aspectRatio;
+        }
+
+        const marginX = (w - fieldWidth) / 2;
+        const marginY = (h - fieldHeight) / 2;
+
+        const xSide = team === "A"
+            ? marginX + fieldWidth * CONFIG.TEAM_A_POSITION
+            : marginX + fieldWidth * CONFIG.TEAM_B_POSITION;
+
+        const y = marginY + CONFIG.PANEL_Y_TOP +
+                  (playerNumber - 1) * CONFIG.PLAYER_SPACING;
+
+        return { x: xSide, y };
+    }
+
+    // ============================
+    // CAMPO COMPLETO – VERTICAL
+    // ============================
+    if (cfg.type === "full" && cfg.orientation === "vertical") {
+        // Usar los mismos cálculos que drawFullFieldVertical()
+        const verticalMarginY = 10;
+        const originalWidth = 1200 - CONFIG.MARGIN_X * 2;
+        const originalHeight = 800 - CONFIG.MARGIN_Y * 2;
+
+        const fieldHeight = h - verticalMarginY * 2;
+        const fieldWidth = fieldHeight * (originalHeight / originalWidth);
+        const marginX = (w - fieldWidth) / 2;
+        const marginY = verticalMarginY;
+
+        const spacing = fieldWidth / (CONFIG.NUM_PLAYERS + 1);
+        const x = marginX + spacing * playerNumber;
+
+        const y = team === "A"
+            ? marginY + 40
+            : marginY + fieldHeight - 40;
+
+        return { x, y };
+    }
 
     // ============================
     // MITAD DE CAMPO (VERTICAL)
     // ============================
     if (cfg.type === "half") {
+        const marginX = CONFIG.MARGIN_X;
+        const marginY = CONFIG.MARGIN_Y;
+        const fieldWidth = w - CONFIG.MARGIN_X * 2;
+        const fieldHeight = h - CONFIG.MARGIN_Y * 2;
 
         // Distribución horizontal
         const spacing = fieldWidth / (CONFIG.NUM_PLAYERS + 1);
@@ -469,34 +520,6 @@ function getPlayerInitialPosition(team, playerNumber) {
                 ? tryLineY + dir * fieldHeight * P40
                 : tryLineY + dir * fieldHeight * P5;
         }
-
-        return { x, y };
-    }
-
-    // ============================
-    // CAMPO COMPLETO – HORIZONTAL
-    // ============================
-    if (cfg.type === "full" && cfg.orientation === "horizontal") {
-        const xSide = team === "A"
-            ? marginX + fieldWidth * CONFIG.TEAM_A_POSITION
-            : marginX + fieldWidth * CONFIG.TEAM_B_POSITION;
-
-        const y = marginY + CONFIG.PANEL_Y_TOP +
-                  (playerNumber - 1) * CONFIG.PLAYER_SPACING;
-
-        return { x: xSide, y };
-    }
-
-    // ============================
-    // CAMPO COMPLETO – VERTICAL
-    // ============================
-    if (cfg.type === "full" && cfg.orientation === "vertical") {
-        const spacing = fieldWidth / (CONFIG.NUM_PLAYERS + 1);
-        const x = marginX + spacing * playerNumber;
-
-        const y = team === "A"
-            ? marginY + 40
-            : marginY + fieldHeight - 40;
 
         return { x, y };
     }
@@ -544,9 +567,22 @@ const Renderer = {
     },
 
     drawFullField() {
-        const { fieldWidth, fieldHeight } = Utils.fieldDims();
-        const marginX = CONFIG.MARGIN_X;
-        const marginY = CONFIG.MARGIN_Y;
+        // Mantener relación de aspecto 3:2 para campo horizontal
+        const minMargin = 20;
+        const aspectRatio = 3 / 2; // ancho / alto
+
+        let fieldWidth = canvas.width - minMargin * 2;
+        let fieldHeight = fieldWidth / aspectRatio;
+
+        // Si la altura excede el canvas, ajustar por altura
+        if (fieldHeight > canvas.height - minMargin * 2) {
+            fieldHeight = canvas.height - minMargin * 2;
+            fieldWidth = fieldHeight * aspectRatio;
+        }
+
+        // Centrar el campo en el canvas
+        const marginX = (canvas.width - fieldWidth) / 2;
+        const marginY = (canvas.height - fieldHeight) / 2;
 
         const inGoal = fieldWidth * 0.07;
         const xTryLeft = marginX + inGoal;
@@ -621,18 +657,21 @@ const Renderer = {
         const w = canvas.width;
         const h = canvas.height;
 
-        // Original field dimensions (horizontal)
-        const originalWidth = w - CONFIG.MARGIN_X * 2;
-        const originalHeight = h - CONFIG.MARGIN_Y * 2;
+        // Use minimal margins for vertical field to maximize height usage
+        const verticalMarginY = 10;  // Margen mínimo arriba/abajo
+        const verticalMarginX = 20;  // Margen mínimo a los lados
 
-        // For vertical: swap width/height but scale to fit
-        // Use full height (800), calculate width proportionally
-        const fieldHeight = h - CONFIG.MARGIN_Y * 2;
+        // Original field dimensions (horizontal reference)
+        const originalWidth = 1200 - CONFIG.MARGIN_X * 2;
+        const originalHeight = 800 - CONFIG.MARGIN_Y * 2;
+
+        // For vertical: use almost full height
+        const fieldHeight = h - verticalMarginY * 2;
         const fieldWidth = fieldHeight * (originalHeight / originalWidth);
 
         // Center horizontally
         const marginX = (w - fieldWidth) / 2;
-        const marginY = CONFIG.MARGIN_Y;
+        const marginY = verticalMarginY;
 
         const inGoal = fieldHeight * 0.07;
         const yTryTop = marginY + inGoal;
@@ -1475,6 +1514,143 @@ const Players = {
 };
 
 // ==============================
+// FORMACIONES
+// ==============================
+const Formations = {
+    STORAGE_KEY: 'rugby-formations',
+
+    getAll() {
+        const stored = localStorage.getItem(this.STORAGE_KEY);
+        return stored ? JSON.parse(stored) : {};
+    },
+
+    async save(name) {
+        if (!name || name.trim() === '') {
+            await Popup.show({
+                title: "Error",
+                html: "Por favor, ingresa un nombre para la formación",
+                showCancel: false
+            });
+            return;
+        }
+
+        const f = Utils.getCurrentFrame();
+        const visiblePlayers = f.players.filter(p => p.visible);
+
+        if (visiblePlayers.length === 0) {
+            await Popup.show({
+                title: "Error",
+                html: "No hay jugadores visibles para guardar",
+                showCancel: false
+            });
+            return;
+        }
+
+        // Guardar solo las posiciones de jugadores visibles
+        const formation = {
+            name: name.trim(),
+            date: new Date().toISOString(),
+            fieldConfig: { ...state.fieldConfig },
+            players: visiblePlayers.map(p => ({
+                team: p.team,
+                number: p.number,
+                x: p.x,
+                y: p.y
+            }))
+        };
+
+        const formations = this.getAll();
+        formations[name.trim()] = formation;
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(formations));
+
+        this.updateSelector();
+        await Popup.show({
+            title: "Guardado",
+            html: `Formación "<strong>${name}</strong>" guardada correctamente`,
+            showCancel: false
+        });
+    },
+
+    async load(name) {
+        const formations = this.getAll();
+        const formation = formations[name];
+
+        if (!formation) {
+            await Popup.show({
+                title: "Error",
+                html: "Formación no encontrada",
+                showCancel: false
+            });
+            return;
+        }
+
+        const f = Utils.getCurrentFrame();
+
+        // Ocultar todos los jugadores primero
+        f.players.forEach(p => p.visible = false);
+
+        // Cargar las posiciones guardadas
+        formation.players.forEach(saved => {
+            const player = f.players.find(p => p.team === saved.team && p.number === saved.number);
+            if (player) {
+                player.x = saved.x;
+                player.y = saved.y;
+                player.visible = true;
+            }
+        });
+
+        Players.syncToggles();
+        Players.updateTeamButtons();
+        Renderer.drawFrame();
+        await Popup.show({
+            title: "Cargado",
+            html: `Formación "<strong>${name}</strong>" cargada correctamente`,
+            showCancel: false
+        });
+    },
+
+    async delete(name) {
+        const confirmed = await Popup.show({
+            title: "Confirmar eliminación",
+            html: `¿Estás seguro de que quieres eliminar la formación "<strong>${name}</strong>"?`,
+            showCancel: true,
+            okText: "Eliminar",
+            cancelText: "Cancelar"
+        });
+
+        if (!confirmed) {
+            return;
+        }
+
+        const formations = this.getAll();
+        delete formations[name];
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(formations));
+
+        this.updateSelector();
+        await Popup.show({
+            title: "Eliminado",
+            html: `Formación "<strong>${name}</strong>" eliminada correctamente`,
+            showCancel: false
+        });
+    },
+
+    updateSelector() {
+        const selector = document.getElementById('formation-selector');
+        const formations = this.getAll();
+        const names = Object.keys(formations).sort();
+
+        // Limpiar y agregar opciones
+        selector.innerHTML = '<option value="">-- Seleccionar formación --</option>';
+        names.forEach(name => {
+            const option = document.createElement('option');
+            option.value = name;
+            option.textContent = name;
+            selector.appendChild(option);
+        });
+    }
+};
+
+// ==============================
 // MODOS
 // ==============================
 const Mode = {
@@ -2174,6 +2350,43 @@ function initEvents() {
         Renderer.drawFrame();
     };
 
+    // Formaciones
+    document.getElementById("save-formation-btn").onclick = async () => {
+        const name = await Popup.prompt("Nombre de la formación", "Ej: Ataque 1");
+        if (name) {
+            await Formations.save(name);
+        }
+    };
+
+    document.getElementById("load-formation-btn").onclick = async () => {
+        const selector = document.getElementById("formation-selector");
+        const name = selector.value;
+        if (name) {
+            await Formations.load(name);
+        } else {
+            await Popup.show({
+                title: "Seleccionar formación",
+                html: "Por favor, selecciona una formación de la lista",
+                showCancel: false
+            });
+        }
+    };
+
+    document.getElementById("delete-formation-btn").onclick = async () => {
+        const selector = document.getElementById("formation-selector");
+        const name = selector.value;
+        if (name) {
+            await Formations.delete(name);
+            selector.value = "";
+        } else {
+            await Popup.show({
+                title: "Seleccionar formación",
+                html: "Por favor, selecciona una formación de la lista",
+                showCancel: false
+            });
+        }
+    };
+
     // Flechas
     document.querySelectorAll("#arrow-menu button").forEach(btn => {
         btn.onclick = () => {
@@ -2306,6 +2519,33 @@ function isMobileDevice() {
     return hasTouchScreen && isSmallScreen;
 }
 
+function resizeCanvas() {
+    const mainContainer = document.getElementById("main");
+    const rect = mainContainer.getBoundingClientRect();
+
+    // Establecer el tamaño del canvas al tamaño del contenedor
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+
+    // Reposicionar el balón al centro del canvas
+    if (state.frames.length > 0) {
+        const f = Utils.getCurrentFrame();
+        if (f.ball) {
+            f.ball.x = canvas.width / 2;
+            if (state.fieldConfig.type === "half") {
+                f.ball.y = state.fieldConfig.halfSide === "top"
+                    ? canvas.height - 50
+                    : 50;
+            } else {
+                f.ball.y = canvas.height / 2;
+            }
+        }
+    }
+
+    // Redibujar
+    Renderer.drawFrame();
+}
+
 function handleResize() {
     const sidebar = document.getElementById("sidebar");
     const rightPanel = document.getElementById("right-panel");
@@ -2313,60 +2553,26 @@ function handleResize() {
     const mobileRightMenuBtn = document.getElementById("mobile-right-menu-btn");
     const overlay = document.getElementById("mobile-overlay");
 
-    // Solo redimensionar en móviles
     if (isMobileDevice()) {
         // MODO MÓVIL
-
-        // Mostrar botones de menú móvil
         mobileMenuBtn.style.display = "block";
         mobileRightMenuBtn.style.display = "block";
 
-        // Ocultar paneles laterales (quitar clase show si está)
         sidebar.classList.remove("show");
         rightPanel.classList.remove("show");
         overlay.classList.remove("show");
-
-        // Redimensionar canvas
-        const maxWidth = window.innerWidth - 10;
-        const maxHeight = window.innerHeight - 80;
-
-        // Mantener la proporción 3:2 del canvas (1200x800)
-        const aspectRatio = 1200 / 800;
-
-        let newWidth = maxWidth;
-        let newHeight = maxWidth / aspectRatio;
-
-        // Si la altura calculada es mayor que el máximo disponible, ajustar por altura
-        if (newHeight > maxHeight) {
-            newHeight = maxHeight;
-            newWidth = newHeight * aspectRatio;
-        }
-
-        // Actualizar el tamaño del canvas manteniendo las proporciones internas
-        const scaleX = newWidth / 1200;
-        const scaleY = newHeight / 800;
-        const scale = Math.min(scaleX, scaleY);
-
-        canvas.style.width = (1200 * scale) + 'px';
-        canvas.style.height = (800 * scale) + 'px';
-
-        Renderer.drawFrame();
     } else {
         // MODO DESKTOP
-
-        // Ocultar botones de menú móvil
         mobileMenuBtn.style.display = "none";
         mobileRightMenuBtn.style.display = "none";
 
-        // Asegurar que paneles estén visibles en desktop
         sidebar.classList.remove("show");
         rightPanel.classList.remove("show");
         overlay.classList.remove("show");
-
-        // En desktop, mantener tamaño original del canvas
-        canvas.style.width = '';
-        canvas.style.height = '';
     }
+
+    // Redimensionar canvas para ambos modos
+    resizeCanvas();
 }
 
 // ==============================
@@ -2378,6 +2584,7 @@ function init() {
     Animation.updateUI();
     Renderer.drawFrame();
     Players.syncToggles();
+    Formations.updateSelector();
     initEvents();
 
     // Ajustar tamaño inicial para móviles

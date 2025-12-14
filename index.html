@@ -87,7 +87,7 @@
          ======================================== -->
     <div id="main">
         <!-- Canvas donde se dibuja el campo de rugby -->
-        <canvas id="pitch" width="1200" height="800"></canvas>
+        <canvas id="pitch"></canvas>
     </div>
 <div id="zone-color-panel" class="hidden">
     <div class="zcp-title">Color de la zona</div>
@@ -153,13 +153,32 @@
             Campo Completo - Horizontal
         </div>
     </div>
+
+    <!-- Formations Panel -->
+    <div class="panel">
+        <h3>Formaciones</h3>
+
+        <!-- Save formation button -->
+        <button id="save-formation-btn">💾 Guardar Formación</button>
+
+        <!-- Load formation selector -->
+        <select id="formation-selector">
+            <option value="">-- Seleccionar formación --</option>
+        </select>
+
+        <!-- Load and delete buttons -->
+        <div class="formation-actions">
+            <button id="load-formation-btn">📂 Cargar</button>
+            <button id="delete-formation-btn">🗑️ Eliminar</button>
+        </div>
+    </div>
 </div>
 
     <!-- Overlay para móvil -->
     <div id="mobile-overlay"></div>
 
     <!-- Indicador de versión -->
-    <div id="version-indicator">v1.10.0</div>
+    <div id="version-indicator">v1.15.2</div>
 
     <!-- Sistema de notificaciones -->
     <div id="notification" class="notification hidden"></div>
