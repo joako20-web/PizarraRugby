@@ -336,6 +336,49 @@ const UI = {
 // ==============================
 // HELPER FUNCTIONS
 // ==============================
+function resetBoardForFieldChange() {
+    // Vaciar frames
+    state.frames = [];
+    state.currentFrameIndex = 0;
+
+    // Crear frame limpio
+    const f = Frame.create();
+
+    // Reset balón
+    f.ball.visible = true;
+    f.ball.x = canvas.width / 2;
+
+    if (state.fieldConfig.type === "half") {
+        // Balón en medio campo REAL
+        f.ball.y = state.fieldConfig.halfSide === "top"
+            ? CONFIG.MARGIN_Y + (canvas.height - CONFIG.MARGIN_Y * 2)
+            : CONFIG.MARGIN_Y;
+    } else {
+        // Campo completo
+        f.ball.y = canvas.height / 2;
+    }
+
+    state.frames.push(f);
+
+    // Limpiar selecciones
+    state.selectedPlayers.clear();
+    state.selectedZone = null;
+    state.selectedText = null;
+    state.selectedArrow = null;
+    state.selectedShield = null;
+
+    // Sincronizar UI
+    if (typeof Players !== "undefined") {
+        Players.syncToggles();
+    }
+
+    if (typeof Animation !== "undefined") {
+        Animation.updateUI();
+    }
+
+    Renderer.drawFrame();
+}
+
 function clearAllSelections() {
     state.selectedPlayers.clear();
     state.selectedShield = null;
@@ -2089,6 +2132,7 @@ function initEvents() {
     document.getElementById("field-type-full").onclick = () => {
         state.fieldConfig.type = "full";
         state.fieldConfig.orientation = "horizontal";  // Reset to horizontal
+        resetBoardForFieldChange();
         updateFieldTypeButtons();
         updateFieldConfigInfo();
         Renderer.drawFrame();
@@ -2097,7 +2141,7 @@ function initEvents() {
     document.getElementById("field-type-half").onclick = () => {
     state.fieldConfig.type = "half";
     state.fieldConfig.halfSide = "top";
-
+    resetBoardForFieldChange();
     const f = Utils.getCurrentFrame();
 
     // Colocar balón en medio campo
@@ -2125,7 +2169,7 @@ function initEvents() {
         f.ball.y = state.fieldConfig.halfSide === "top"
         ? CONFIG.MARGIN_Y + (canvas.height - CONFIG.MARGIN_Y * 2)
         : CONFIG.MARGIN_Y;
-
+        resetBoardForFieldChange();
         updateFieldConfigInfo();
         Renderer.drawFrame();
     };
