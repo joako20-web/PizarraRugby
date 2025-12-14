@@ -10,7 +10,27 @@ const CONFIG = {
     PLAYER_RADIUS: 20,
     BALL_RX: 24,
     BALL_RY: 16,
-    KICK_ARC_HEIGHT: 60
+    KICK_ARC_HEIGHT: 60,
+
+    // Text and label fonts
+    FONT_TEXT: "36px Arial",
+    FONT_ZONE_LABEL: "14px Arial",
+
+    // Shield dimensions
+    SHIELD_WIDTH: 16,
+    SHIELD_HEIGHT: 24,
+
+    // Arrow properties
+    ARROW_HEAD_SIZE: 14,
+
+    // Player positioning
+    PLAYER_SPACING: 45,
+    PANEL_Y_TOP: 40,
+    TEAM_A_POSITION: 0.15,
+    TEAM_B_POSITION: 0.85,
+
+    // Selection color
+    SELECTION_COLOR: "#00ff88"
 };
 
 // ==============================
@@ -70,14 +90,14 @@ const Utils = {
     getCurrentFrame() {
         return state.frames[state.currentFrameIndex];
     },
-    
+
     fieldDims() {
         return {
             fieldWidth: canvas.width - CONFIG.MARGIN_X * 2,
             fieldHeight: canvas.height - CONFIG.MARGIN_Y * 2
         };
     },
-    
+
     canvasPos(e) {
         const r = canvas.getBoundingClientRect();
         // Soporte para eventos touch
@@ -92,6 +112,24 @@ const Utils = {
             x: (clientX - r.left) * scaleX,
             y: (clientY - r.top) * scaleY
         };
+    },
+
+    getZoneBounds(zone) {
+        return {
+            left: Math.min(zone.x1, zone.x2),
+            top: Math.min(zone.y1, zone.y2),
+            width: Math.abs(zone.x2 - zone.x1),
+            height: Math.abs(zone.y2 - zone.y1)
+        };
+    },
+
+    findPlayerByTeamNumber(team, number, frame = null) {
+        const f = frame || this.getCurrentFrame();
+        return f.players.find(p =>
+            p.team === team &&
+            p.number === number &&
+            p.visible
+        );
     }
 };
 
@@ -271,9 +309,66 @@ const UI = {
 };
 
 // ==============================
+// HELPER FUNCTIONS
+// ==============================
+function clearAllSelections() {
+    state.selectedPlayers.clear();
+    state.selectedShield = null;
+    state.selectedZone = null;
+    state.selectedText = null;
+    state.selectedArrow = null;
+    UI.updateDeleteButton();
+}
+
+function deleteSelectedElement() {
+    const f = Utils.getCurrentFrame();
+    let deleted = false;
+
+    if (state.selectedShield) {
+        f.trainingShields = f.trainingShields.filter(s => s !== state.selectedShield);
+        state.selectedShield = null;
+        deleted = true;
+    }
+    if (state.selectedZone) {
+        state.zones = state.zones.filter(z => z !== state.selectedZone);
+        state.selectedZone = null;
+        deleted = true;
+    }
+    if (state.selectedText) {
+        f.texts = f.texts.filter(t => t !== state.selectedText);
+        state.selectedText = null;
+        deleted = true;
+    }
+    if (state.selectedArrow) {
+        f.arrows = f.arrows.filter(a => a !== state.selectedArrow);
+        state.selectedArrow = null;
+        deleted = true;
+    }
+
+    if (deleted) {
+        UI.updateDeleteButton();
+        Renderer.drawFrame();
+    }
+}
+
+function getPlayerInitialPosition(team, playerNumber) {
+    const { fieldWidth } = Utils.fieldDims();
+    const xSide = team === "A"
+        ? CONFIG.MARGIN_X + fieldWidth * CONFIG.TEAM_A_POSITION
+        : CONFIG.MARGIN_X + fieldWidth * CONFIG.TEAM_B_POSITION;
+    const yTop = CONFIG.MARGIN_Y + CONFIG.PANEL_Y_TOP;
+
+    return {
+        x: xSide,
+        y: yTop + (playerNumber - 1) * CONFIG.PLAYER_SPACING
+    };
+}
+
+// ==============================
 // RENDERIZADO
 // ==============================
 const Renderer = {
+    // === Field Drawing ===
     drawPitch() {
         ctx.setLineDash([]);
         const w = canvas.width;
@@ -355,6 +450,7 @@ const Renderer = {
         ctx.setLineDash([]);
     },
 
+    // === Game Elements ===
     drawRugbyBall(b) {
         if (!b.visible) return;
 
@@ -371,30 +467,35 @@ const Renderer = {
         ctx.restore();
     },
 
+    // === Arrow Drawing ===
+    drawArrowHead(x, y, angle, isSelected) {
+        const headSize = CONFIG.ARROW_HEAD_SIZE;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(
+            x - headSize * Math.cos(angle - Math.PI / 6),
+            y - headSize * Math.sin(angle - Math.PI / 6)
+        );
+        ctx.lineTo(
+            x - headSize * Math.cos(angle + Math.PI / 6),
+            y - headSize * Math.sin(angle + Math.PI / 6)
+        );
+        ctx.closePath();
+        ctx.fillStyle = isSelected ? CONFIG.SELECTION_COLOR : "white";
+        ctx.fill();
+    },
+
     drawNormalArrow(a) {
         const isSelected = a === state.selectedArrow;
-        ctx.strokeStyle = isSelected ? "#00ff88" : "white";
+        ctx.strokeStyle = isSelected ? CONFIG.SELECTION_COLOR : "white";
         ctx.lineWidth = isSelected ? 4 : 3;
         ctx.beginPath();
         ctx.moveTo(a.x1, a.y1);
         ctx.lineTo(a.x2, a.y2);
         ctx.stroke();
 
-        const head = 14;
-        const ang = Math.atan2(a.y2 - a.y1, a.x2 - a.x1);
-
-        ctx.beginPath();
-        ctx.moveTo(a.x2, a.y2);
-        ctx.lineTo(
-            a.x2 - head * Math.cos(ang - Math.PI / 6),
-            a.y2 - head * Math.sin(ang - Math.PI / 6)
-        );
-        ctx.lineTo(
-            a.x2 - head * Math.cos(ang + Math.PI / 6),
-            a.y2 - head * Math.sin(ang + Math.PI / 6)
-        );
-        ctx.fillStyle = isSelected ? "#00ff88" : "white";
-        ctx.fill();
+        const angle = Math.atan2(a.y2 - a.y1, a.x2 - a.x1);
+        this.drawArrowHead(a.x2, a.y2, angle, isSelected);
     },
 
     drawKickArrow(a) {
@@ -402,7 +503,7 @@ const Renderer = {
         const mx = (a.x1 + a.x2) / 2;
         const my = (a.y1 + a.y2) / 2 - state.kickArcHeight;
 
-        ctx.strokeStyle = isSelected ? "#00ff88" : "yellow";
+        ctx.strokeStyle = isSelected ? CONFIG.SELECTION_COLOR : "yellow";
         ctx.lineWidth = isSelected ? 4 : 3;
 
         ctx.beginPath();
@@ -414,32 +515,31 @@ const Renderer = {
         const qx = (1 - t) * (1 - t) * a.x1 + 2 * (1 - t) * t * mx + t * t * a.x2;
         const qy = (1 - t) * (1 - t) * a.y1 + 2 * (1 - t) * t * my + t * t * a.y2;
 
-        const ang = Math.atan2(a.y2 - qy, a.x2 - qx);
-        const head = 14;
+        const angle = Math.atan2(a.y2 - qy, a.x2 - qx);
 
+        // Draw head with yellow fill for kick arrows
+        const headSize = CONFIG.ARROW_HEAD_SIZE;
         ctx.beginPath();
         ctx.moveTo(a.x2, a.y2);
         ctx.lineTo(
-            a.x2 - head * Math.cos(ang - Math.PI / 6),
-            a.y2 - head * Math.sin(ang - Math.PI / 6)
+            a.x2 - headSize * Math.cos(angle - Math.PI / 6),
+            a.y2 - headSize * Math.sin(angle - Math.PI / 6)
         );
         ctx.lineTo(
-            a.x2 - head * Math.cos(ang + Math.PI / 6),
-            a.y2 - head * Math.sin(ang + Math.PI / 6)
+            a.x2 - headSize * Math.cos(angle + Math.PI / 6),
+            a.y2 - headSize * Math.sin(angle + Math.PI / 6)
         );
         ctx.closePath();
-        ctx.fillStyle = isSelected ? "#00ff88" : "yellow";
+        ctx.fillStyle = isSelected ? CONFIG.SELECTION_COLOR : "yellow";
         ctx.fill();
     },
 
+    // === Zones and Text ===
     drawZones() {
         const list = state.pendingZone ? [...state.zones, state.pendingZone] : state.zones;
 
         list.forEach(z => {
-            const left = Math.min(z.x1, z.x2);
-            const top = Math.min(z.y1, z.y2);
-            const w = Math.abs(z.x2 - z.x1);
-            const h = Math.abs(z.y2 - z.y1);
+            const { left, top, width: w, height: h } = Utils.getZoneBounds(z);
 
             ctx.save();
             ctx.fillStyle = z.color || "#ffffff";
@@ -456,7 +556,7 @@ const Renderer = {
                 const labelX = left + z.labelOffsetX * w;
                 const labelY = top + z.labelOffsetY * h;
 
-                ctx.font = "36px Arial";
+                ctx.font = CONFIG.FONT_TEXT;
                 ctx.fillStyle = "white";
                 ctx.textAlign = "center";
                 ctx.textBaseline = "middle";
@@ -492,7 +592,7 @@ const Renderer = {
     drawTexts(f) {
         f.texts.forEach(t => {
             const isSelected = t === state.selectedText;
-            ctx.font = "36px Arial";
+            ctx.font = CONFIG.FONT_TEXT;
             ctx.textAlign = "center";
             ctx.textBaseline = "top";
 
@@ -505,16 +605,17 @@ const Renderer = {
                 ctx.fillStyle = "rgba(0, 255, 136, 0.3)";
                 ctx.fillRect(t.x - textWidth / 2 - 5, t.y - 5, textWidth + 10, textHeight + 10);
 
-                ctx.strokeStyle = "#00ff88";
+                ctx.strokeStyle = CONFIG.SELECTION_COLOR;
                 ctx.lineWidth = 2;
                 ctx.strokeRect(t.x - textWidth / 2 - 5, t.y - 5, textWidth + 10, textHeight + 10);
             }
 
-            ctx.fillStyle = isSelected ? "#00ff88" : "white";
+            ctx.fillStyle = isSelected ? CONFIG.SELECTION_COLOR : "white";
             ctx.fillText(t.text, t.x, t.y);
         });
     },
 
+    // === Main Render ===
     drawFrame() {
         this.drawPitch();
         this.drawZones();
@@ -582,11 +683,7 @@ const Renderer = {
         // Escudos de entrenamiento
         f.trainingShields.forEach(shield => {
             // Encontrar el jugador asociado
-            const player = f.players.find(p =>
-                p.team === shield.team &&
-                p.number === shield.number &&
-                p.visible
-            );
+            const player = Utils.findPlayerByTeamNumber(shield.team, shield.number, f);
 
             if (!player) return;
 
@@ -594,8 +691,8 @@ const Renderer = {
             const distance = player.radius + 8; // Distancia desde el centro del jugador
             const shieldX = player.x + Math.cos(shield.angle) * distance;
             const shieldY = player.y + Math.sin(shield.angle) * distance;
-            const shieldWidth = 16; // Ancho del rectángulo (ahora más estrecho)
-            const shieldHeight = 24; // Alto del rectángulo (ahora más largo)
+            const shieldWidth = CONFIG.SHIELD_WIDTH;
+            const shieldHeight = CONFIG.SHIELD_HEIGHT;
 
             // Dibujar el rectángulo amarillo (rotado 90 grados para que el lado largo esté pegado a la ficha)
             ctx.save();
@@ -625,6 +722,7 @@ const Renderer = {
         }
     },
 
+    // === Animation Interpolation ===
     drawInterpolatedFrame(a, b, t) {
         this.drawPitch();
         this.drawZones();
@@ -710,11 +808,8 @@ const HitTest = {
     zoneHitTest(x, y) {
         for (let i = state.zones.length - 1; i >= 0; i--) {
             const z = state.zones[i];
-            const left = Math.min(z.x1, z.x2);
-            const top = Math.min(z.y1, z.y2);
-            const w = Math.abs(z.x2 - z.x1);
-            const h = Math.abs(z.y2 - z.y1);
-            if (x >= left && x <= left + w && y >= top && y <= top + h) {
+            const { left, top, width, height } = Utils.getZoneBounds(z);
+            if (x >= left && x <= left + width && y >= top && y <= top + height) {
                 return z;
             }
         }
@@ -723,7 +818,7 @@ const HitTest = {
 
     findTextAt(x, y) {
         const f = Utils.getCurrentFrame();
-        ctx.font = "36px Arial";
+        ctx.font = CONFIG.FONT_TEXT;
 
         for (let t of f.texts) {
             const w = ctx.measureText(t.text).width;
@@ -744,16 +839,12 @@ const HitTest = {
 
     findShieldAt(x, y) {
         const f = Utils.getCurrentFrame();
-        const shieldWidth = 16;
-        const shieldHeight = 24;
+        const shieldWidth = CONFIG.SHIELD_WIDTH;
+        const shieldHeight = CONFIG.SHIELD_HEIGHT;
 
         for (let shield of f.trainingShields) {
             // Encontrar el jugador asociado
-            const player = f.players.find(p =>
-                p.team === shield.team &&
-                p.number === shield.number &&
-                p.visible
-            );
+            const player = Utils.findPlayerByTeamNumber(shield.team, shield.number, f);
 
             if (!player) continue;
 
@@ -896,18 +987,12 @@ const Players = {
             }
         } else {
             // Si no todos están visibles, mostrarlos
-            const xSide = team === "A"
-                ? CONFIG.MARGIN_X + fieldWidth * 0.15
-                : CONFIG.MARGIN_X + fieldWidth * 0.85;
-
-            const spacing = 45;
-            const yTop = CONFIG.MARGIN_Y + 40;
-
             for (let n = 1; n <= CONFIG.NUM_PLAYERS; n++) {
                 const p = f.players.find(pl => pl.team === team && pl.number === n);
+                const pos = getPlayerInitialPosition(team, n);
                 p.visible = true;
-                p.x = xSide;
-                p.y = yTop + (n - 1) * spacing;
+                p.x = pos.x;
+                p.y = pos.y;
             }
         }
 
@@ -969,17 +1054,9 @@ const Players = {
         p.visible = !p.visible;
 
         if (p.visible && p.x === null) {
-            const { fieldWidth } = Utils.fieldDims();
-
-            const xSide = team === "A"
-                ? CONFIG.MARGIN_X + fieldWidth * 0.15
-                : CONFIG.MARGIN_X + fieldWidth * 0.85;
-
-            const spacing = 45;
-            const yTop = CONFIG.MARGIN_Y + 40;
-
-            p.x = xSide;
-            p.y = yTop + (num - 1) * spacing;
+            const pos = getPlayerInitialPosition(team, num);
+            p.x = pos.x;
+            p.y = pos.y;
         }
 
         const selector = `.player-toggle[data-team="${team}"][data-number="${num}"]`;
@@ -1193,13 +1270,10 @@ const CanvasEvents = {
             }
 
             if (state.pendingZone) {
-                const left = Math.min(state.pendingZone.x1, state.pendingZone.x2);
-                const top = Math.min(state.pendingZone.y1, state.pendingZone.y2);
-                const w = Math.abs(state.pendingZone.x2 - state.pendingZone.x1);
-                const h = Math.abs(state.pendingZone.y2 - state.pendingZone.y1);
+                const { left, top, width, height } = Utils.getZoneBounds(state.pendingZone);
 
-                state.pendingZone.labelOffsetX = (pos.x - left) / w;
-                state.pendingZone.labelOffsetY = (pos.y - top) / h;
+                state.pendingZone.labelOffsetX = (pos.x - left) / width;
+                state.pendingZone.labelOffsetY = (pos.y - top) / height;
 
                 state.zones.push(state.pendingZone);
                 state.pendingZone = null;
@@ -1256,6 +1330,7 @@ const CanvasEvents = {
                 state.selectedZone = null;
                 state.selectedText = null;
                 state.selectedArrow = null;
+                state.selectedPlayers.clear();
                 UI.updateDeleteButton();
                 Renderer.drawFrame();
                 return;
@@ -1268,6 +1343,7 @@ const CanvasEvents = {
                 state.selectedShield = null;
                 state.selectedZone = null;
                 state.selectedText = null;
+                state.selectedPlayers.clear();
                 UI.updateDeleteButton();
                 Renderer.drawFrame();
                 return;
@@ -1280,6 +1356,7 @@ const CanvasEvents = {
                 state.selectedShield = null;
                 state.selectedText = null;
                 state.selectedArrow = null;
+                state.selectedPlayers.clear();
 
                 if (!z.locked) {
                     state.draggingZone = true;
@@ -1300,6 +1377,7 @@ const CanvasEvents = {
                 state.selectedShield = null;
                 state.selectedZone = null;
                 state.selectedArrow = null;
+                state.selectedPlayers.clear();
                 state.dragTarget = { type: "text", obj: t };
                 state.dragOffsetX = pos.x - t.x;
                 state.dragOffsetY = pos.y - t.y;
@@ -1339,13 +1417,14 @@ const CanvasEvents = {
             }
 
             if (!e.ctrlKey) {
-                state.selectedPlayers.clear();
+                clearAllSelections();
+            } else {
+                state.selectedShield = null;
+                state.selectedZone = null;
+                state.selectedText = null;
+                state.selectedArrow = null;
+                UI.updateDeleteButton();
             }
-            state.selectedShield = null;
-            state.selectedZone = null;
-            state.selectedText = null;
-            state.selectedArrow = null;
-            UI.updateDeleteButton();
             state.selectingBox = true;
             state.selectBoxStart = pos;
             state.selectBoxEnd = pos;
@@ -1396,12 +1475,7 @@ const CanvasEvents = {
 
         // Si estamos arrastrando un escudo, actualizar su ángulo
         if (state.draggingShield) {
-            const f = Utils.getCurrentFrame();
-            const player = f.players.find(p =>
-                p.team === state.draggingShield.team &&
-                p.number === state.draggingShield.number &&
-                p.visible
-            );
+            const player = Utils.findPlayerByTeamNumber(state.draggingShield.team, state.draggingShield.number);
 
             if (player) {
                 const dx = pos.x - player.x;
@@ -1413,16 +1487,15 @@ const CanvasEvents = {
         }
 
         if (state.draggingZone && state.selectedZone && !state.selectedZone.locked) {
-            const w = Math.abs(state.selectedZone.x2 - state.selectedZone.x1);
-            const h = Math.abs(state.selectedZone.y2 - state.selectedZone.y1);
+            const { width, height } = Utils.getZoneBounds(state.selectedZone);
 
             const newLeft = pos.x - state.zoneDragOffset.x;
             const newTop = pos.y - state.zoneDragOffset.y;
 
             state.selectedZone.x1 = newLeft;
             state.selectedZone.y1 = newTop;
-            state.selectedZone.x2 = newLeft + w;
-            state.selectedZone.y2 = newTop + h;
+            state.selectedZone.x2 = newLeft + width;
+            state.selectedZone.y2 = newTop + height;
 
             Renderer.drawFrame();
             return;
@@ -1575,93 +1648,17 @@ function initEvents() {
 
     window.addEventListener("keydown", e => {
         if (e.key === "Escape") {
-            state.selectedPlayers.clear();
-            state.selectedShield = null;
-            state.selectedZone = null;
-            state.selectedText = null;
-            state.selectedArrow = null;
-            UI.updateDeleteButton();
+            clearAllSelections();
             Renderer.drawFrame();
         }
 
-        // Borrar con teclas Delete o Supr
         if (e.key === "Delete" || e.key === "Supr") {
-            const f = Utils.getCurrentFrame();
-            let deleted = false;
-
-            // Borrar escudo seleccionado
-            if (state.selectedShield) {
-                f.trainingShields = f.trainingShields.filter(s => s !== state.selectedShield);
-                state.selectedShield = null;
-                deleted = true;
-            }
-
-            // Borrar zona seleccionada
-            if (state.selectedZone) {
-                state.zones = state.zones.filter(z => z !== state.selectedZone);
-                state.selectedZone = null;
-                deleted = true;
-            }
-
-            // Borrar texto seleccionado
-            if (state.selectedText) {
-                f.texts = f.texts.filter(t => t !== state.selectedText);
-                state.selectedText = null;
-                deleted = true;
-            }
-
-            // Borrar flecha seleccionada
-            if (state.selectedArrow) {
-                f.arrows = f.arrows.filter(a => a !== state.selectedArrow);
-                state.selectedArrow = null;
-                deleted = true;
-            }
-
-            if (deleted) {
-                UI.updateDeleteButton();
-                Renderer.drawFrame();
-            }
+            deleteSelectedElement();
         }
     });
 
     // Botón de borrar
-    document.getElementById("delete-btn").onclick = () => {
-        const f = Utils.getCurrentFrame();
-        let deleted = false;
-
-        // Borrar escudo seleccionado
-        if (state.selectedShield) {
-            f.trainingShields = f.trainingShields.filter(s => s !== state.selectedShield);
-            state.selectedShield = null;
-            deleted = true;
-        }
-
-        // Borrar zona seleccionada
-        if (state.selectedZone) {
-            state.zones = state.zones.filter(z => z !== state.selectedZone);
-            state.selectedZone = null;
-            deleted = true;
-        }
-
-        // Borrar texto seleccionado
-        if (state.selectedText) {
-            f.texts = f.texts.filter(t => t !== state.selectedText);
-            state.selectedText = null;
-            deleted = true;
-        }
-
-        // Borrar flecha seleccionada
-        if (state.selectedArrow) {
-            f.arrows = f.arrows.filter(a => a !== state.selectedArrow);
-            state.selectedArrow = null;
-            deleted = true;
-        }
-
-        if (deleted) {
-            UI.updateDeleteButton();
-            Renderer.drawFrame();
-        }
-    };
+    document.getElementById("delete-btn").onclick = deleteSelectedElement;
 
     // Frames
     document.getElementById("add-frame").onclick = () => {

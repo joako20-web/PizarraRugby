@@ -123,36 +123,6 @@ button.active {
    INFORMACIÓN Y SELECTORES
    ======================================== */
 
-/* Información de la línea de tiempo */
-#timeline-info {
-    text-align: center;
-    margin-top: 6px;
-    font-size: 13px;
-}
-
-/* Contenedor del selector de jugador */
-.player-selector {
-    display: flex;
-    gap: 6px;
-    margin-bottom: 6px;
-}
-
-/* Menú desplegable dentro del selector */
-.player-selector select {
-    flex: 1;
-    padding: 4px;
-    border-radius: 6px;
-    border: 1px solid #333;
-    background: #1f2a3a;
-    color: #fff;
-    font-size: 13px;
-}
-
-/* Botones dentro del selector de jugador */
-.player-selector button {
-    flex: 1;
-}
-
 /* Separador visual */
 .sep {
     margin: 8px 0;
