@@ -1,30 +1,106 @@
 // ==============================
-// CONFIGURACIÓN GENERAL
+// CONFIGURACIÓN GENERAL - v2.1.0
+// Todas las constantes centralizadas para fácil modificación
 // ==============================
 const CONFIG = {
+    // ============================================
+    // JUGADORES
+    // ============================================
     NUM_PLAYERS: 15,
-    INTERP_DURATION: 1600,
-    INTERP_STEPS: 24,
-    MARGIN_X: 60,
-    MARGIN_Y: 50,
     PLAYER_RADIUS: 20,
-    BALL_RX: 24,
-    BALL_RY: 16,
+    PLAYER_SPACING: 50,
+
+    // ============================================
+    // ANIMACIÓN
+    // ============================================
+    INTERP_DURATION: 1600,      // Duración de transición entre frames (ms)
+    INTERP_STEPS: 24,            // Pasos de interpolación
+
+    // ============================================
+    // CAMPO Y MÁRGENES
+    // ============================================
+    MARGIN_X: 60,                // Margen horizontal
+    MARGIN_Y: 50,                // Margen vertical
+    VERTICAL_MARGIN_Y: 10,       // Margen adicional para campo vertical
+    MIN_MARGIN: 20,              // Margen mínimo
+
+    // ============================================
+    // BALÓN
+    // ============================================
+    BALL_RX: 24,                 // Radio X del balón (elipse)
+    BALL_RY: 16,                 // Radio Y del balón (elipse)
+
+    // ============================================
+    // ESCUDOS DE ENTRENAMIENTO
+    // ============================================
+    SHIELD_WIDTH: 16,
+    SHIELD_HEIGHT: 24,
+    SHIELD_DISTANCE: 8,          // Distancia del escudo al jugador
+
+    // ============================================
+    // FLECHAS
+    // ============================================
+    ARROW_HEAD_SIZE: 14,
     KICK_ARC_HEIGHT: 60,
 
-    // Text and label fonts
+    // ============================================
+    // MELÉ (Scrum)
+    // ============================================
+    SCRUM: {
+        SPACING: 50,             // Espaciado entre filas (campo completo)
+        ROW_OFFSET: 42,          // Offset horizontal de filas
+        PACK_OFFSET: 45,         // Offset del pack
+        SPACING_HALF: 25,        // Espaciado para medio campo
+        ROW_OFFSET_HALF: 28,     // Offset de filas (medio campo)
+        PACK_OFFSET_HALF: 30     // Offset del pack (medio campo)
+    },
+
+    // ============================================
+    // LÍNEAS DEL CAMPO (Proporciones 0-1)
+    // ============================================
+    FIELD_LINES: {
+        FIVE_METER: 0.05,
+        TWENTY_TWO: 0.22,
+        MIDFIELD: 0.50,
+        TEN_METER_LEFT: 0.40,
+        TEN_METER_RIGHT: 0.60,
+        TWENTY_TWO_RIGHT: 0.78,
+        FIVE_METER_RIGHT: 0.95
+    },
+
+    // ============================================
+    // TEXTO Y FUENTES
+    // ============================================
     FONT_TEXT: "36px Arial",
     FONT_ZONE_LABEL: "14px Arial",
 
-    // Shield dimensions
-    SHIELD_WIDTH: 16,
-    SHIELD_HEIGHT: 24,
+    // ============================================
+    // UI Y TIEMPOS (ms)
+    // ============================================
+    UI_TIMING: {
+        NOTIFICATION_SHOW_DELAY: 10,
+        NOTIFICATION_HIDE_DELAY: 300,
+        RESIZE_DEBOUNCE: 100,
+        EXPORT_PAUSE_DURATION: 1500
+    },
 
-    // Arrow properties
-    ARROW_HEAD_SIZE: 14,
+    // ============================================
+    // RESPONSIVE
+    // ============================================
+    BREAKPOINT: {
+        MOBILE: 1024
+    },
 
-    // Player positioning
-    PLAYER_SPACING: 50,
+    // ============================================
+    // CANVAS Y DIBUJO
+    // ============================================
+    SELECTION_BOX_DASH: [6, 4],
+    HIT_THRESHOLD: 15,
+    ARROW_SAMPLE_STEP: 0.1,
+
+    // ============================================
+    // POSICIONAMIENTO DE EQUIPOS
+    // ============================================
     PANEL_Y_TOP: 45,
     TEAM_A_POSITION: 0.15,
     TEAM_B_POSITION: 0.85,
@@ -118,8 +194,7 @@ const Utils = {
         const canvasX = (clientX - r.left) * scaleX;
         const canvasY = (clientY - r.top) * scaleY;
 
-        // Transformar a coordenadas lógicas del campo
-        return FieldTransform.fromCanvas(canvasX, canvasY);
+        return { x: canvasX, y: canvasY };
     },
 
     getZoneBounds(zone) {
@@ -138,23 +213,20 @@ const Utils = {
             p.number === number &&
             p.visible
         );
-    }
-};
-
-// ==============================
-// TRANSFORMACIÓN DE COORDENADAS
-// ==============================
-const FieldTransform = {
-    // Since we no longer rotate the canvas and draw fields directly in the correct orientation,
-    // these transformations simply return the coordinates as-is.
-    // The field rendering functions handle the orientation differences internally.
-
-    toCanvas(logicalX, logicalY) {
-        return { x: logicalX, y: logicalY };
     },
 
-    fromCanvas(canvasX, canvasY) {
-        return { x: canvasX, y: canvasY };
+    /**
+     * Calcula la posición de un escudo de entrenamiento
+     * @param {Object} player - Objeto del jugador
+     * @param {Object} shield - Objeto del escudo
+     * @returns {{x: number, y: number}} Posición del escudo
+     */
+    getShieldPosition(player, shield) {
+        const distance = player.radius + CONFIG.SHIELD_DISTANCE;
+        return {
+            x: player.x + Math.cos(shield.angle) * distance,
+            y: player.y + Math.sin(shield.angle) * distance
+        };
     }
 };
 
@@ -170,14 +242,14 @@ const Notificacion = {
         // Esperar un frame para que se aplique el display antes de animar
         setTimeout(() => {
             notif.classList.add("show");
-        }, 10);
+        }, CONFIG.UI_TIMING.NOTIFICATION_SHOW_DELAY);
 
         // Ocultar después de la duración especificada
         setTimeout(() => {
             notif.classList.remove("show");
             setTimeout(() => {
                 notif.classList.add("hidden");
-            }, 300); // Esperar a que termine la animación
+            }, CONFIG.UI_TIMING.NOTIFICATION_HIDE_DELAY);
         }, duracion);
     }
 };
@@ -560,10 +632,13 @@ function getPlayerInitialPosition(team, playerNumber) {
 
 
 // ==============================
-// RENDERIZADO
+// RENDERIZADO - Sistema de renderizado del canvas
 // ==============================
 const Renderer = {
-    // === Field Drawing ===
+    /**
+     * Dibuja el campo de rugby según la configuración actual
+     * Delega a drawFullField, drawFullFieldVertical o drawHalfField
+     */
     drawPitch() {
         ctx.save();
         ctx.setLineDash([]);
@@ -1106,9 +1181,9 @@ drawHalfField() {
             if (!player) return;
 
             // Calcular la posición del escudo basado en el ángulo
-            const distance = player.radius + 8; // Distancia desde el centro del jugador
-            const shieldX = player.x + Math.cos(shield.angle) * distance;
-            const shieldY = player.y + Math.sin(shield.angle) * distance;
+            const shieldPos = Utils.getShieldPosition(player, shield);
+            const shieldX = shieldPos.x;
+            const shieldY = shieldPos.y;
             const shieldWidth = CONFIG.SHIELD_WIDTH;
             const shieldHeight = CONFIG.SHIELD_HEIGHT;
 
@@ -1271,9 +1346,9 @@ const HitTest = {
             if (!player) continue;
 
             // Calcular la posición del escudo
-            const distance = player.radius + 8;
-            const shieldX = player.x + Math.cos(shield.angle) * distance;
-            const shieldY = player.y + Math.sin(shield.angle) * distance;
+            const shieldPos = Utils.getShieldPosition(player, shield);
+            const shieldX = shieldPos.x;
+            const shieldY = shieldPos.y;
 
             // Rotar el punto de clic para verificarlo en el espacio local del escudo
             const dx = x - shieldX;
@@ -1346,14 +1421,15 @@ const Scrum = {
         const cfg = state.fieldConfig;
 
         // Adapt spacing based on configuration
-        let spacingY = 50;
-        let rowX = 42;
-        let pack = 45;
+        let spacingY = CONFIG.SCRUM.SPACING;
+        let rowX = CONFIG.SCRUM.ROW_OFFSET;
+        let pack = CONFIG.SCRUM.PACK_OFFSET;
 
         // For half field, reduce spacing
         if (cfg.type === "half") {
-            pack = 25;
-            rowX = 28;
+            spacingY = CONFIG.SCRUM.SPACING_HALF;
+            rowX = CONFIG.SCRUM.ROW_OFFSET_HALF;
+            pack = CONFIG.SCRUM.PACK_OFFSET_HALF;
         }
 
         const setPlayer = (team, num, px, py) => {
@@ -1800,14 +1876,7 @@ const Animation = {
         for (let i = 0; i < state.frames.length - 1; i++) {
             if (state.cancelPlay) break;
 
-            const a = state.frames[i];
-            const b = state.frames[i + 1];
-
-            for (let s = 0; s <= CONFIG.INTERP_STEPS; s++) {
-                if (state.cancelPlay) break;
-                Renderer.drawInterpolatedFrame(a, b, s / CONFIG.INTERP_STEPS);
-                await new Promise(r => setTimeout(r, CONFIG.INTERP_DURATION / CONFIG.INTERP_STEPS));
-            }
+            await this._interpolateBetweenFrames(state.frames[i], state.frames[i + 1]);
 
             state.currentFrameIndex = i + 1;
             this.updateUI();
@@ -1822,6 +1891,26 @@ const Animation = {
 
     stop() {
         state.cancelPlay = true;
+    },
+
+    /**
+     * Interpola y dibuja los frames entre dos frames dados
+     * @param {Object} frameA - Frame inicial
+     * @param {Object} frameB - Frame final
+     * @returns {Promise<void>}
+     * @private
+     */
+    async _interpolateBetweenFrames(frameA, frameB) {
+        for (let step = 0; step <= CONFIG.INTERP_STEPS; step++) {
+            if (state.cancelPlay) break;
+
+            const t = step / CONFIG.INTERP_STEPS;
+            Renderer.drawInterpolatedFrame(frameA, frameB, t);
+
+            await new Promise(resolve =>
+                setTimeout(resolve, CONFIG.INTERP_DURATION / CONFIG.INTERP_STEPS)
+            );
+        }
     },
 
 async exportWebM() {
@@ -1881,12 +1970,7 @@ async exportWebM() {
 
     // Animación
     for (let i = 0; i < state.frames.length - 1; i++) {
-        const a = state.frames[i];
-        const b = state.frames[i + 1];
-        for (let s = 0; s <= CONFIG.INTERP_STEPS; s++) {
-            Renderer.drawInterpolatedFrame(a, b, s / CONFIG.INTERP_STEPS);
-            await new Promise(r => setTimeout(r, CONFIG.INTERP_DURATION / CONFIG.INTERP_STEPS));
-        }
+        await this._interpolateBetweenFrames(state.frames[i], state.frames[i + 1]);
     }
 
     // Pausa final de 1.5 segundos
@@ -1908,6 +1992,11 @@ async exportWebM() {
 // EVENTOS DEL CANVAS
 // ==============================
 const CanvasEvents = {
+    /**
+     * Maneja el evento de clic del mouse/touch en el canvas
+     * Delega a diferentes handlers según el modo activo
+     * @param {Event} e - Evento del mouse/touch
+     */
     async handleMouseDown(e) {
         const pos = Utils.canvasPos(e);
         const f = Utils.getCurrentFrame();
