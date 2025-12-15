@@ -23,10 +23,10 @@ body {
 
 /* Barra lateral izquierda */
 #sidebar {
-    width: 320px;
+    width: 240px;
     background: #141b24;
     padding: 0px;
-    overflow-y: auto; 
+    overflow-y: auto;
     border-right: 1px solid #222;
 }
 
@@ -38,6 +38,15 @@ body {
     align-items: center;
     padding: 10px;
     overflow: hidden;
+}
+
+/* Panel lateral derecho */
+#right-panel {
+    width: 240px;
+    background: #141b24;
+    padding: 15px;
+    overflow-y: auto;
+    border-left: 1px solid #222;
 }
 
 /* Campo de juego */
@@ -405,10 +414,10 @@ button.active {
     /* Sidebar oculto por defecto en móvil */
     #sidebar {
         position: fixed;
-        left: -320px;
+        left: -240px;
         top: 0;
         height: 100vh;
-        width: 320px;
+        width: 240px;
         z-index: 999;
         transition: left 0.3s ease;
         box-shadow: 2px 0 10px rgba(0,0,0,0.5);
@@ -421,10 +430,10 @@ button.active {
     /* Panel derecho oculto por defecto en móvil */
     #right-panel {
         position: fixed;
-        right: -320px;
+        right: -240px;
         top: 0;
         height: 100vh;
-        width: 300px;
+        width: 240px;
         background: #141b24;
         padding: 15px;
         overflow-y: auto;

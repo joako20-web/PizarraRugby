@@ -24,8 +24,8 @@ const CONFIG = {
     ARROW_HEAD_SIZE: 14,
 
     // Player positioning
-    PLAYER_SPACING: 45,
-    PANEL_Y_TOP: 40,
+    PLAYER_SPACING: 50,
+    PANEL_Y_TOP: 45,
     TEAM_A_POSITION: 0.15,
     TEAM_B_POSITION: 0.85,
 
@@ -336,6 +336,31 @@ const UI = {
 // ==============================
 // HELPER FUNCTIONS
 // ==============================
+
+// Función para limitar coordenadas Y en modo mitad de campo
+function clampYToPlayableArea(y) {
+    if (state.fieldConfig.type !== "half") {
+        return y; // No limitar en campo completo
+    }
+
+    const marginY = CONFIG.MARGIN_Y;
+    const fieldHeight = canvas.height - CONFIG.MARGIN_Y * 2;
+    const inGoalHeight = fieldHeight * 0.12;
+
+    // Calcular límites de la zona jugable (sin incluir zona de ensayo)
+    if (state.fieldConfig.halfSide === "top") {
+        // Zona de ensayo arriba: limitar desde marginY + inGoalHeight
+        const minY = marginY + inGoalHeight;
+        const maxY = marginY + fieldHeight;
+        return Math.max(minY, Math.min(maxY, y));
+    } else {
+        // Zona de ensayo abajo: limitar hasta marginY + fieldHeight - inGoalHeight
+        const minY = marginY;
+        const maxY = marginY + fieldHeight - inGoalHeight;
+        return Math.max(minY, Math.min(maxY, y));
+    }
+}
+
 function resetBoardForFieldChange() {
     // Vaciar frames
     state.frames = [];
@@ -815,7 +840,7 @@ drawHalfField() {
         3
     );
 
-    // Líneas verticales (5 m y touch)
+    // Líneas verticales (5 m y touch) - solo en zona jugable, no en ensayo
     ctx.setLineDash([20,14]);
     ctx.lineWidth = 2;
 
@@ -823,8 +848,14 @@ drawHalfField() {
     xLines.forEach(p => {
         const x = marginX + fieldWidth * p;
         ctx.beginPath();
-        ctx.moveTo(x, marginY);
-        ctx.lineTo(x, marginY + fieldHeight);
+        // Dibujar solo desde la línea de ensayo hasta el medio campo
+        if (cfg.halfSide === "top") {
+            ctx.moveTo(x, marginY + inGoalHeight);
+            ctx.lineTo(x, marginY + fieldHeight);
+        } else {
+            ctx.moveTo(x, marginY);
+            ctx.lineTo(x, marginY + fieldHeight - inGoalHeight);
+        }
         ctx.stroke();
     });
 
@@ -1044,8 +1075,13 @@ drawHalfField() {
         f.players.forEach(p => {
             if (!p.visible) return;
 
+            // Usar fichas más grandes en campo completo horizontal
+            const radius = (state.fieldConfig.type === "full" && state.fieldConfig.orientation === "horizontal")
+                ? p.radius * 1.2    
+                : p.radius;
+
             ctx.beginPath();
-            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
             ctx.fillStyle = p.team === "A" ? "#1e88ff" : "#ff3333";
             ctx.fill();
 
@@ -1170,7 +1206,11 @@ const HitTest = {
         const f = Utils.getCurrentFrame();
         for (let p of f.players) {
             if (!p.visible) continue;
-            if (Math.hypot(pos.x - p.x, pos.y - p.y) < p.radius) {
+            // Usar el mismo radio aumentado que en el dibujo
+            const radius = (state.fieldConfig.type === "full" && state.fieldConfig.orientation === "horizontal")
+                ? p.radius * 1.5
+                : p.radius;
+            if (Math.hypot(pos.x - p.x, pos.y - p.y) < radius) {
                 return p;
             }
         }
@@ -1306,9 +1346,9 @@ const Scrum = {
         const cfg = state.fieldConfig;
 
         // Adapt spacing based on configuration
-        let spacingY = 40;
-        let rowX = 32;
-        let pack = 35;
+        let spacingY = 50;
+        let rowX = 42;
+        let pack = 45;
 
         // For half field, reduce spacing
         if (cfg.type === "half") {
@@ -1586,6 +1626,36 @@ const Formations = {
 
         const f = Utils.getCurrentFrame();
 
+        // Restaurar configuración del campo si existe
+        if (formation.fieldConfig) {
+            state.fieldConfig = { ...formation.fieldConfig };
+
+            // Actualizar UI de configuración del campo
+            const fullBtn = document.getElementById("field-type-full");
+            const halfBtn = document.getElementById("field-type-half");
+
+            if (state.fieldConfig.type === "full") {
+                fullBtn.classList.add("active");
+                halfBtn.classList.remove("active");
+            } else {
+                fullBtn.classList.remove("active");
+                halfBtn.classList.add("active");
+            }
+
+            // Actualizar info de configuración
+            const info = document.getElementById("field-config-info");
+            const cfg = state.fieldConfig;
+            let text = "";
+
+            if (cfg.type === "full") {
+                text = cfg.orientation === "horizontal" ? "Campo Completo - Horizontal" : "Campo Completo - Vertical";
+            } else {
+                text = cfg.halfSide === "top" ? "Mitad de Campo - Superior" : "Mitad de Campo - Inferior";
+            }
+
+            info.textContent = text;
+        }
+
         // Ocultar todos los jugadores primero
         f.players.forEach(p => p.visible = false);
 
@@ -1638,14 +1708,37 @@ const Formations = {
         const selector = document.getElementById('formation-selector');
         const formations = this.getAll();
         const names = Object.keys(formations).sort();
+        const currentConfig = state.fieldConfig;
 
         // Limpiar y agregar opciones
         selector.innerHTML = '<option value="">-- Seleccionar formación --</option>';
         names.forEach(name => {
-            const option = document.createElement('option');
-            option.value = name;
-            option.textContent = name;
-            selector.appendChild(option);
+            const formation = formations[name];
+
+            // Filtrar solo formaciones que coincidan con la configuración actual
+            if (formation.fieldConfig) {
+                const cfg = formation.fieldConfig;
+                let matches = false;
+
+                // Verificar si coincide la configuración
+                if (currentConfig.type === cfg.type) {
+                    if (currentConfig.type === "full") {
+                        // Para campo completo, verificar orientación
+                        matches = currentConfig.orientation === cfg.orientation;
+                    } else {
+                        // Para mitad de campo, verificar el lado
+                        matches = currentConfig.halfSide === cfg.halfSide;
+                    }
+                }
+
+                // Solo agregar si coincide
+                if (matches) {
+                    const option = document.createElement('option');
+                    option.value = name;
+                    option.textContent = name;
+                    selector.appendChild(option);
+                }
+            }
         });
     }
 };
@@ -2004,13 +2097,18 @@ const CanvasEvents = {
         // Modo flechas
         if (state.mode === "draw" || state.mode === "kick") {
             if (!state.arrowStart) {
-                state.arrowStart = pos;
+                // Limitar el punto de inicio para que no esté en zona de ensayo
+                state.arrowStart = {
+                    x: pos.x,
+                    y: clampYToPlayableArea(pos.y)
+                };
             } else {
+                // Limitar ambos puntos para que no estén en zona de ensayo
                 f.arrows.push({
                     x1: state.arrowStart.x,
-                    y1: state.arrowStart.y,
+                    y1: clampYToPlayableArea(state.arrowStart.y),
                     x2: pos.x,
-                    y2: pos.y,
+                    y2: clampYToPlayableArea(pos.y),
                     type: state.mode === "kick" ? "kick" : "normal"
                 });
                 state.arrowStart = null;
@@ -2078,9 +2176,9 @@ const CanvasEvents = {
 
             state.previewArrow = {
                 x1: state.arrowStart.x,
-                y1: state.arrowStart.y,
+                y1: clampYToPlayableArea(state.arrowStart.y),
                 x2: pos.x,
-                y2: pos.y,
+                y2: clampYToPlayableArea(pos.y),
                 type: state.mode === "kick" ? "kick" : "normal"
             };
 
@@ -2311,6 +2409,7 @@ function initEvents() {
         resetBoardForFieldChange();
         updateFieldTypeButtons();
         updateFieldConfigInfo();
+        Formations.updateSelector();
         Renderer.drawFrame();
     };
 
@@ -2327,6 +2426,7 @@ function initEvents() {
 
     updateFieldTypeButtons();
     updateFieldConfigInfo();
+    Formations.updateSelector();
     Renderer.drawFrame();
 };
 
@@ -2347,6 +2447,7 @@ function initEvents() {
         : CONFIG.MARGIN_Y;
         resetBoardForFieldChange();
         updateFieldConfigInfo();
+        Formations.updateSelector();
         Renderer.drawFrame();
     };
 
