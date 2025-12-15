@@ -3,7 +3,7 @@
 // ==============================
 const CONFIG = {
     NUM_PLAYERS: 15,
-    INTERP_DURATION: 950,
+    INTERP_DURATION: 1600,
     INTERP_STEPS: 24,
     MARGIN_X: 60,
     MARGIN_Y: 50,
@@ -1793,6 +1793,10 @@ const Animation = {
         state.isPlaying = true;
         state.cancelPlay = false;
 
+        // Guardar y limpiar todas las líneas de trayectoria temporalmente
+        const savedTrailLines = state.frames.map(f => f.trailLines);
+        state.frames.forEach(f => f.trailLines = []);
+
         for (let i = 0; i < state.frames.length - 1; i++) {
             if (state.cancelPlay) break;
 
@@ -1809,6 +1813,8 @@ const Animation = {
             this.updateUI();
         }
 
+        // Restaurar las líneas de trayectoria
+        state.frames.forEach((f, i) => f.trailLines = savedTrailLines[i]);
         Renderer.drawFrame();
         state.isPlaying = false;
         state.cancelPlay = false;
@@ -1828,18 +1834,31 @@ async exportWebM() {
     const nombre = await Popup.prompt("Nombre del archivo:", "Mi animacion");
     if (!nombre) return;
 
-    const fileName = nombre + ".webm";
+    const fileName = nombre + ".mp4";
 
     const stream = canvas.captureStream(30);
     const chunks = [];
+
+    // Intentar usar formato MP4 compatible, con fallback a WebM
+    let mimeType = "video/webm;codecs=vp9";
+    let videoType = "video/webm";
+
+    if (MediaRecorder.isTypeSupported("video/mp4")) {
+        mimeType = "video/mp4";
+        videoType = "video/mp4";
+    } else if (MediaRecorder.isTypeSupported("video/webm;codecs=h264")) {
+        mimeType = "video/webm;codecs=h264";
+        videoType = "video/mp4";
+    }
+
     const rec = new MediaRecorder(stream, {
-        mimeType: "video/webm;codecs=vp9",
+        mimeType: mimeType,
         videoBitsPerSecond: 8000000
     });
 
     rec.ondataavailable = e => chunks.push(e.data);
     rec.onstop = () => {
-        const blob = new Blob(chunks, { type: "video/webm" });
+        const blob = new Blob(chunks, { type: videoType });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
@@ -1848,8 +1867,19 @@ async exportWebM() {
         URL.revokeObjectURL(url);
     };
 
+    // Guardar y limpiar todas las líneas de trayectoria temporalmente
+    const savedTrailLines = state.frames.map(f => f.trailLines);
+    state.frames.forEach(f => f.trailLines = []);
+
     rec.start();
 
+    // Pausa inicial de 1.5 segundos - comenzar desde el primer frame
+    state.currentFrameIndex = 0;
+    this.updateUI();
+    Renderer.drawFrame();
+    await new Promise(r => setTimeout(r, 1500));
+
+    // Animación
     for (let i = 0; i < state.frames.length - 1; i++) {
         const a = state.frames[i];
         const b = state.frames[i + 1];
@@ -1859,12 +1889,17 @@ async exportWebM() {
         }
     }
 
+    // Pausa final de 1.5 segundos
     state.currentFrameIndex = state.frames.length - 1;
     this.updateUI();
     Renderer.drawFrame();
-    await new Promise(r => setTimeout(r, 500));
+    await new Promise(r => setTimeout(r, 1500));
 
     rec.stop();
+
+    // Restaurar las líneas de trayectoria
+    state.frames.forEach((f, i) => f.trailLines = savedTrailLines[i]);
+    Renderer.drawFrame();
 }
 
 };
