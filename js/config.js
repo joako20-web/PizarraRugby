@@ -12,6 +12,7 @@ export const CONFIG = {
     // ============================================
     NUM_PLAYERS: 15,
     PLAYER_RADIUS: 20,
+    PLAYER_SPACING: 50,     // Espaciado entre jugadores
 
     // ============================================
     // ANIMACIÓN
@@ -36,9 +37,15 @@ export const CONFIG = {
     // ============================================
     // ESCUDOS DE ENTRENAMIENTO
     // ============================================
-    SHIELD_WIDTH: 50,       // Ancho del escudo
-    SHIELD_HEIGHT: 20,      // Alto del escudo
+    SHIELD_WIDTH: 16,       // Ancho del escudo
+    SHIELD_HEIGHT: 24,      // Alto del escudo
     SHIELD_DISTANCE: 8,     // Distancia del escudo al jugador
+
+    // ============================================
+    // FLECHAS
+    // ============================================
+    ARROW_HEAD_SIZE: 14,    // Tamaño de la punta de la flecha
+    KICK_ARC_HEIGHT: 60,    // Altura del arco para kicks
 
     // ============================================
     // LÍNEAS DEL CAMPO (Proporciones 0-1)
@@ -92,7 +99,25 @@ export const CONFIG = {
     // ============================================
     SELECTION_BOX_DASH: [6, 4],  // Patrón de línea discontinua para caja de selección
     HIT_THRESHOLD: 15,            // Umbral de detección de clic (píxeles)
-    ARROW_SAMPLE_STEP: 0.1        // Paso de muestreo para detección en flechas
+    ARROW_SAMPLE_STEP: 0.1,       // Paso de muestreo para detección en flechas
+
+    // ============================================
+    // TEXTO Y FUENTES
+    // ============================================
+    FONT_TEXT: "36px Arial",      // Fuente para textos en el canvas
+    FONT_ZONE_LABEL: "14px Arial", // Fuente para etiquetas de zonas
+
+    // ============================================
+    // POSICIONAMIENTO DE EQUIPOS
+    // ============================================
+    PANEL_Y_TOP: 45,              // Posición Y del panel superior
+    TEAM_A_POSITION: 0.15,        // Posición relativa del equipo A (15%)
+    TEAM_B_POSITION: 0.85,        // Posición relativa del equipo B (85%)
+
+    // ============================================
+    // SELECCIÓN
+    // ============================================
+    SELECTION_COLOR: "#00ff88"    // Color de selección
 };
 
 /**
