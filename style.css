@@ -200,6 +200,7 @@ button.active {
 .color-2 { background: #ff3333; }
 .color-3 { background: #ffd000; }
 .color-4 { background: #00cc66; }
+.color-5 { background: #ff9100; }
 
 #zone-color-panel.hidden {
     display: none;

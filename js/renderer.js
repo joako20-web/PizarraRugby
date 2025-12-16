@@ -56,10 +56,10 @@ export const Renderer = {
     },
 
     /**
-     * Dibuja un frame interpolado para animación
+     * Dibuja un frame interpolado para animaciï¿½n
      * @param {Object} frameA - Frame inicial
      * @param {Object} frameB - Frame final
-     * @param {number} t - Factor de interpolación (0-1)
+     * @param {number} t - Factor de interpolaciï¿½n (0-1)
      */
     drawInterpolatedFrame(frameA, frameB, t) {
         if (!canvas || !ctx) return;
@@ -79,7 +79,7 @@ export const Renderer = {
         state.canvas.zones.forEach(zone => {
             const bounds = getZoneBounds(zone);
 
-            // Dibujo del rectángulo de la zona
+            // Dibujo del rectï¿½ngulo de la zona
             ctx.globalAlpha = 0.3;
             ctx.fillStyle = zone.color;
             ctx.fillRect(bounds.left, bounds.top, bounds.width, bounds.height);
@@ -101,7 +101,7 @@ export const Renderer = {
     },
 
     /**
-     * Dibuja las líneas de trayectoria
+     * Dibuja las lï¿½neas de trayectoria
      * @param {Object} frame - Frame actual
      */
     drawTrailLines(frame) {
@@ -177,7 +177,7 @@ export const Renderer = {
         const dist = Math.sqrt(dx * dx + dy * dy);
         const arcHeight = arrow.arcHeight || CONFIG.KICK_ARC_HEIGHT;
 
-        // Control point para la curva cuadrática
+        // Control point para la curva cuadrï¿½tica
         const midX = (arrow.x1 + arrow.x2) / 2;
         const midY = (arrow.y1 + arrow.y2) / 2;
         const perpX = -dy / dist;
@@ -227,7 +227,7 @@ export const Renderer = {
     },
 
     /**
-     * Dibuja la línea de trail activa durante el drag
+     * Dibuja la lï¿½nea de trail activa durante el drag
      */
     drawActiveDragTrail() {
         // Implementar si es necesario
@@ -244,7 +244,7 @@ export const Renderer = {
             const isSelected = state.selection.players.has(p);
             const color = p.team === "A" ? COLORS.TEAM_A : COLORS.TEAM_B;
 
-            // Círculo del jugador
+            // Cï¿½rculo del jugador
             ctx.fillStyle = color;
             ctx.strokeStyle = isSelected ? CONFIG.SELECTION_COLOR : "#ffffff";
             ctx.lineWidth = isSelected ? 4 : 2;
@@ -254,7 +254,7 @@ export const Renderer = {
             ctx.fill();
             ctx.stroke();
 
-            // Número del jugador
+            // Nï¿½mero del jugador
             ctx.fillStyle = "#ffffff";
             ctx.font = "bold 14px Arial";
             ctx.textAlign = "center";
@@ -294,8 +294,8 @@ export const Renderer = {
     },
 
     /**
-     * Dibuja el balón
-     * @param {Object} ball - Objeto del balón
+     * Dibuja el balï¿½n
+     * @param {Object} ball - Objeto del balï¿½n
      */
     drawBall(ball) {
         if (!ball || !ball.visible) return;
@@ -311,7 +311,7 @@ export const Renderer = {
     },
 
     /**
-     * Dibuja la caja de selección
+     * Dibuja la caja de selecciï¿½n
      */
     drawSelectionBox() {
         if (!state.interaction.selectingBox || !state.interaction.selectBoxStart || !state.interaction.selectBoxEnd) return;
@@ -334,10 +334,10 @@ export const Renderer = {
     },
 
     /**
-     * Dibuja jugadores interpolados para animación
+     * Dibuja jugadores interpolados para animaciï¿½n
      * @param {Object} frameA - Frame inicial
      * @param {Object} frameB - Frame final
-     * @param {number} t - Factor de interpolación (0-1)
+     * @param {number} t - Factor de interpolaciï¿½n (0-1)
      */
     drawInterpolatedPlayers(frameA, frameB, t) {
         frameB.players.forEach((pB, i) => {
@@ -367,10 +367,10 @@ export const Renderer = {
     },
 
     /**
-     * Dibuja balón interpolado para animación
-     * @param {Object} ballA - Balón en frame A
-     * @param {Object} ballB - Balón en frame B
-     * @param {number} t - Factor de interpolación (0-1)
+     * Dibuja balï¿½n interpolado para animaciï¿½n
+     * @param {Object} ballA - Balï¿½n en frame A
+     * @param {Object} ballB - Balï¿½n en frame B
+     * @param {number} t - Factor de interpolaciï¿½n (0-1)
      */
     drawInterpolatedBall(ballA, ballB, t) {
         if (!ballB.visible) return;

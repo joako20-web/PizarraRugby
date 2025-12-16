@@ -104,16 +104,14 @@ export const CONFIG = {
     // ============================================
     // TEXTO Y FUENTES
     // ============================================
-    FONT_TEXT: "36px Arial",      // Fuente para textos en el canvas
-    FONT_ZONE_LABEL: "14px Arial", // Fuente para etiquetas de zonas
-
+    FONT_TEXT: "36px Oswald",      // Fuente para textos en el canvas
+    FONT_ZONE_LABEL: "14px Oswald", // Fuente para etiquetas de zonas
     // ============================================
     // POSICIONAMIENTO DE EQUIPOS
     // ============================================
     PANEL_Y_TOP: 45,              // Posición Y del panel superior
     TEAM_A_POSITION: 0.15,        // Posición relativa del equipo A (15%)
     TEAM_B_POSITION: 0.85,        // Posición relativa del equipo B (85%)
-
     // ============================================
     // SELECCIÓN
     // ============================================
@@ -142,6 +140,7 @@ export const COLORS = {
         BLUE: "#00aaff",
         RED: "#ff3333",
         YELLOW: "#ffd000",
-        GREEN: "#00cc66"
+        GREEN: "#00cc66",
+        ORANGE: "#ff9100ff"
     }
 };
