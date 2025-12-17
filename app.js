@@ -1,6 +1,17 @@
+/**
+ * ================================================================
+ * PIZARRA RUGBY v2.2.0
+ * ================================================================
+ * Herramienta táctica profesional para diseño y animación de jugadas
+ * 
+ * @version 2.2.0
+ * @license MIT
+ * @see README.md
+ * ================================================================
+ */
+
 // ==============================
-// CONFIGURACIÓN GENERAL - v2.1.0
-// Todas las constantes centralizadas para fácil modificación
+// CONFIGURACIÓN GENERAL
 // ==============================
 const CONFIG = {
     // ============================================
@@ -115,13 +126,13 @@ const CONFIG = {
 const state = {
     // Modo actual
     mode: "move",
-    
+
     // Frames y animación
     frames: [],
     currentFrameIndex: 0,
     isPlaying: false,
     cancelPlay: false,
-    
+
     // Drag & selección
     dragTarget: null,
     dragOffsetX: 0,
@@ -130,12 +141,12 @@ const state = {
     selectingBox: false,
     selectBoxStart: null,
     selectBoxEnd: null,
-    
+
     // Flechas
     arrowStart: null,
     previewArrow: null,
     kickArcHeight: CONFIG.KICK_ARC_HEIGHT,
-    
+
     // Zonas
     zones: [],
     zoneStart: null,
@@ -309,7 +320,7 @@ const Popup = {
             title,
             html: `<input id="popup-input" type="text" placeholder="${placeholder}">`
         });
-        
+
         if (!ok) return null;
         const val = document.getElementById("popup-input").value.trim();
         return val === "" ? null : val;
@@ -545,7 +556,7 @@ function getPlayerInitialPosition(team, playerNumber) {
             : marginX + fieldWidth * CONFIG.TEAM_B_POSITION;
 
         const y = marginY + CONFIG.PANEL_Y_TOP +
-                  (playerNumber - 1) * CONFIG.PLAYER_SPACING;
+            (playerNumber - 1) * CONFIG.PLAYER_SPACING;
 
         return { x: xSide, y };
     }
@@ -588,7 +599,7 @@ function getPlayerInitialPosition(team, playerNumber) {
         const x = marginX + spacing * playerNumber;
 
         // Proporciones reales
-        const P5  = 5 / 50;
+        const P5 = 5 / 50;
         const P40 = 40 / 50;
 
         // Misma zona de ensayo que drawHalfField
@@ -841,102 +852,102 @@ const Renderer = {
         ctx.setLineDash([]);
     },
 
-drawHalfField() {
-    const w = canvas.width;
-    const h = canvas.height;
-    const cfg = state.fieldConfig;
+    drawHalfField() {
+        const w = canvas.width;
+        const h = canvas.height;
+        const cfg = state.fieldConfig;
 
-    const marginX = CONFIG.MARGIN_X;
-    const marginY = CONFIG.MARGIN_Y;
+        const marginX = CONFIG.MARGIN_X;
+        const marginY = CONFIG.MARGIN_Y;
 
-    const fieldWidth = w - CONFIG.MARGIN_X * 2;
-    const fieldHeight = h - CONFIG.MARGIN_Y * 2;
+        const fieldWidth = w - CONFIG.MARGIN_X * 2;
+        const fieldHeight = h - CONFIG.MARGIN_Y * 2;
 
-    // Proporciones reales sobre 50 metros
-    const P_5   = 5  / 50;   // 0.10
-    const P_22  = 22 / 50;   // 0.44
-    const P_40  = 40 / 50;   // 0.80
-    const P_MID = 1.0;       // 50 / 50
+        // Proporciones reales sobre 50 metros
+        const P_5 = 5 / 50;   // 0.10
+        const P_22 = 22 / 50;   // 0.44
+        const P_40 = 40 / 50;   // 0.80
+        const P_MID = 1.0;       // 50 / 50
 
-    // Dibujo de borde completo
-    ctx.strokeStyle = "#ffffff";
-    ctx.lineWidth = 3;
-    ctx.strokeRect(marginX, marginY, fieldWidth, fieldHeight);
+        // Dibujo de borde completo
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 3;
+        ctx.strokeRect(marginX, marginY, fieldWidth, fieldHeight);
 
-    // Zona de ensayo
-    const inGoalHeight = fieldHeight * 0.12; // visual, no reglamentaria
-    ctx.fillStyle = "#064d24";
+        // Zona de ensayo
+        const inGoalHeight = fieldHeight * 0.12; // visual, no reglamentaria
+        ctx.fillStyle = "#064d24";
 
-    if (cfg.halfSide === "top") {
-        ctx.fillRect(marginX, marginY, fieldWidth, inGoalHeight);
-    } else {
-        ctx.fillRect(
-            marginX,
-            marginY + fieldHeight - inGoalHeight,
-            fieldWidth,
-            inGoalHeight
-        );
-    }
-
-    const drawLine = (y, dash = [], width = 2) => {
-        ctx.setLineDash(dash);
-        ctx.lineWidth = width;
-        ctx.beginPath();
-        ctx.moveTo(marginX, y);
-        ctx.lineTo(marginX + fieldWidth, y);
-        ctx.stroke();
-    };
-
-    // Cálculo de líneas según mitad visible
-    const base = cfg.halfSide === "top"
-        ? marginY + inGoalHeight
-        : marginY + fieldHeight - inGoalHeight;
-
-    const dir = cfg.halfSide === "top" ? 1 : -1;
-
-    // Línea de ensayo
-    drawLine(base, [], 3);
-
-    // 5 m
-    drawLine(base + dir * fieldHeight * P_5, [20,14]);
-
-    // 22 m
-    drawLine(base + dir * fieldHeight * P_22);
-
-    // 40 m
-    drawLine(base + dir * fieldHeight * P_40, [14,10]);
-
-    // Medio campo
-    drawLine(
-        cfg.halfSide === "top"
-            ? marginY + fieldHeight
-            : marginY,
-        [],
-        3
-    );
-
-    // Líneas verticales (5 m y touch) - solo en zona jugable, no en ensayo
-    ctx.setLineDash([20,14]);
-    ctx.lineWidth = 2;
-
-    const xLines = [0.05, 0.25, 0.75, 0.95];
-    xLines.forEach(p => {
-        const x = marginX + fieldWidth * p;
-        ctx.beginPath();
-        // Dibujar solo desde la línea de ensayo hasta el medio campo
         if (cfg.halfSide === "top") {
-            ctx.moveTo(x, marginY + inGoalHeight);
-            ctx.lineTo(x, marginY + fieldHeight);
+            ctx.fillRect(marginX, marginY, fieldWidth, inGoalHeight);
         } else {
-            ctx.moveTo(x, marginY);
-            ctx.lineTo(x, marginY + fieldHeight - inGoalHeight);
+            ctx.fillRect(
+                marginX,
+                marginY + fieldHeight - inGoalHeight,
+                fieldWidth,
+                inGoalHeight
+            );
         }
-        ctx.stroke();
-    });
 
-    ctx.setLineDash([]);
-}
-,
+        const drawLine = (y, dash = [], width = 2) => {
+            ctx.setLineDash(dash);
+            ctx.lineWidth = width;
+            ctx.beginPath();
+            ctx.moveTo(marginX, y);
+            ctx.lineTo(marginX + fieldWidth, y);
+            ctx.stroke();
+        };
+
+        // Cálculo de líneas según mitad visible
+        const base = cfg.halfSide === "top"
+            ? marginY + inGoalHeight
+            : marginY + fieldHeight - inGoalHeight;
+
+        const dir = cfg.halfSide === "top" ? 1 : -1;
+
+        // Línea de ensayo
+        drawLine(base, [], 3);
+
+        // 5 m
+        drawLine(base + dir * fieldHeight * P_5, [20, 14]);
+
+        // 22 m
+        drawLine(base + dir * fieldHeight * P_22);
+
+        // 40 m
+        drawLine(base + dir * fieldHeight * P_40, [14, 10]);
+
+        // Medio campo
+        drawLine(
+            cfg.halfSide === "top"
+                ? marginY + fieldHeight
+                : marginY,
+            [],
+            3
+        );
+
+        // Líneas verticales (5 m y touch) - solo en zona jugable, no en ensayo
+        ctx.setLineDash([20, 14]);
+        ctx.lineWidth = 2;
+
+        const xLines = [0.05, 0.25, 0.75, 0.95];
+        xLines.forEach(p => {
+            const x = marginX + fieldWidth * p;
+            ctx.beginPath();
+            // Dibujar solo desde la línea de ensayo hasta el medio campo
+            if (cfg.halfSide === "top") {
+                ctx.moveTo(x, marginY + inGoalHeight);
+                ctx.lineTo(x, marginY + fieldHeight);
+            } else {
+                ctx.moveTo(x, marginY);
+                ctx.lineTo(x, marginY + fieldHeight - inGoalHeight);
+            }
+            ctx.stroke();
+        });
+
+        ctx.setLineDash([]);
+    }
+    ,
 
     // === Game Elements ===
     drawRugbyBall(b) {
@@ -1152,7 +1163,7 @@ drawHalfField() {
 
             // Usar fichas más grandes en campo completo horizontal
             const radius = (state.fieldConfig.type === "full" && state.fieldConfig.orientation === "horizontal")
-                ? p.radius * 1.2    
+                ? p.radius * 1.2
                 : p.radius;
 
             ctx.beginPath();
@@ -1913,78 +1924,78 @@ const Animation = {
         }
     },
 
-async exportWebM() {
-    if (state.frames.length < 2) {
-        Notificacion.show("No puedes exportar un video con un solo frame. Añade más frames para crear una animación.");
-        return;
+    async exportWebM() {
+        if (state.frames.length < 2) {
+            Notificacion.show("No puedes exportar un video con un solo frame. Añade más frames para crear una animación.");
+            return;
+        }
+
+        // Pedir nombre
+        const nombre = await Popup.prompt("Nombre del archivo:", "Mi animacion");
+        if (!nombre) return;
+
+        const fileName = nombre + ".mp4";
+
+        const stream = canvas.captureStream(30);
+        const chunks = [];
+
+        // Intentar usar formato MP4 compatible, con fallback a WebM
+        let mimeType = "video/webm;codecs=vp9";
+        let videoType = "video/webm";
+
+        if (MediaRecorder.isTypeSupported("video/mp4")) {
+            mimeType = "video/mp4";
+            videoType = "video/mp4";
+        } else if (MediaRecorder.isTypeSupported("video/webm;codecs=h264")) {
+            mimeType = "video/webm;codecs=h264";
+            videoType = "video/mp4";
+        }
+
+        const rec = new MediaRecorder(stream, {
+            mimeType: mimeType,
+            videoBitsPerSecond: 8000000
+        });
+
+        rec.ondataavailable = e => chunks.push(e.data);
+        rec.onstop = () => {
+            const blob = new Blob(chunks, { type: videoType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = fileName;
+            a.click();
+            URL.revokeObjectURL(url);
+        };
+
+        // Guardar y limpiar todas las líneas de trayectoria temporalmente
+        const savedTrailLines = state.frames.map(f => f.trailLines);
+        state.frames.forEach(f => f.trailLines = []);
+
+        rec.start();
+
+        // Pausa inicial de 1.5 segundos - comenzar desde el primer frame
+        state.currentFrameIndex = 0;
+        this.updateUI();
+        Renderer.drawFrame();
+        await new Promise(r => setTimeout(r, 1500));
+
+        // Animación
+        for (let i = 0; i < state.frames.length - 1; i++) {
+            await this._interpolateBetweenFrames(state.frames[i], state.frames[i + 1]);
+        }
+
+        // Pausa final de 1.5 segundos
+        state.currentFrameIndex = state.frames.length - 1;
+        this.updateUI();
+        Renderer.drawFrame();
+        await new Promise(r => setTimeout(r, 1500));
+
+        rec.stop();
+
+        // Restaurar las líneas de trayectoria
+        state.frames.forEach((f, i) => f.trailLines = savedTrailLines[i]);
+        Renderer.drawFrame();
     }
-
-    // Pedir nombre
-    const nombre = await Popup.prompt("Nombre del archivo:", "Mi animacion");
-    if (!nombre) return;
-
-    const fileName = nombre + ".mp4";
-
-    const stream = canvas.captureStream(30);
-    const chunks = [];
-
-    // Intentar usar formato MP4 compatible, con fallback a WebM
-    let mimeType = "video/webm;codecs=vp9";
-    let videoType = "video/webm";
-
-    if (MediaRecorder.isTypeSupported("video/mp4")) {
-        mimeType = "video/mp4";
-        videoType = "video/mp4";
-    } else if (MediaRecorder.isTypeSupported("video/webm;codecs=h264")) {
-        mimeType = "video/webm;codecs=h264";
-        videoType = "video/mp4";
-    }
-
-    const rec = new MediaRecorder(stream, {
-        mimeType: mimeType,
-        videoBitsPerSecond: 8000000
-    });
-
-    rec.ondataavailable = e => chunks.push(e.data);
-    rec.onstop = () => {
-        const blob = new Blob(chunks, { type: videoType });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = fileName;
-        a.click();
-        URL.revokeObjectURL(url);
-    };
-
-    // Guardar y limpiar todas las líneas de trayectoria temporalmente
-    const savedTrailLines = state.frames.map(f => f.trailLines);
-    state.frames.forEach(f => f.trailLines = []);
-
-    rec.start();
-
-    // Pausa inicial de 1.5 segundos - comenzar desde el primer frame
-    state.currentFrameIndex = 0;
-    this.updateUI();
-    Renderer.drawFrame();
-    await new Promise(r => setTimeout(r, 1500));
-
-    // Animación
-    for (let i = 0; i < state.frames.length - 1; i++) {
-        await this._interpolateBetweenFrames(state.frames[i], state.frames[i + 1]);
-    }
-
-    // Pausa final de 1.5 segundos
-    state.currentFrameIndex = state.frames.length - 1;
-    this.updateUI();
-    Renderer.drawFrame();
-    await new Promise(r => setTimeout(r, 1500));
-
-    rec.stop();
-
-    // Restaurar las líneas de trayectoria
-    state.frames.forEach((f, i) => f.trailLines = savedTrailLines[i]);
-    Renderer.drawFrame();
-}
 
 };
 
@@ -2538,21 +2549,21 @@ function initEvents() {
     };
 
     document.getElementById("field-type-half").onclick = () => {
-    state.fieldConfig.type = "half";
-    state.fieldConfig.halfSide = "top";
-    resetBoardForFieldChange();
-    const f = Utils.getCurrentFrame();
+        state.fieldConfig.type = "half";
+        state.fieldConfig.halfSide = "top";
+        resetBoardForFieldChange();
+        const f = Utils.getCurrentFrame();
 
-    // Colocar balón en medio campo
-    f.ball.x = canvas.width / 2;
-    f.ball.y = CONFIG.MARGIN_Y + (canvas.height - CONFIG.MARGIN_Y * 2);
-    f.ball.visible = true;
+        // Colocar balón en medio campo
+        f.ball.x = canvas.width / 2;
+        f.ball.y = CONFIG.MARGIN_Y + (canvas.height - CONFIG.MARGIN_Y * 2);
+        f.ball.visible = true;
 
-    updateFieldTypeButtons();
-    updateFieldConfigInfo();
-    Formations.updateSelector();
-    Renderer.drawFrame();
-};
+        updateFieldTypeButtons();
+        updateFieldConfigInfo();
+        Formations.updateSelector();
+        Renderer.drawFrame();
+    };
 
 
     document.getElementById("rotate-field-btn").onclick = () => {
@@ -2567,8 +2578,8 @@ function initEvents() {
         const f = Utils.getCurrentFrame();
         f.ball.x = canvas.width / 2;
         f.ball.y = state.fieldConfig.halfSide === "top"
-        ? CONFIG.MARGIN_Y + (canvas.height - CONFIG.MARGIN_Y * 2)
-        : CONFIG.MARGIN_Y;
+            ? CONFIG.MARGIN_Y + (canvas.height - CONFIG.MARGIN_Y * 2)
+            : CONFIG.MARGIN_Y;
         resetBoardForFieldChange();
         updateFieldConfigInfo();
         Formations.updateSelector();
@@ -2835,6 +2846,13 @@ const Tutorial = {
     tutorials: {
         basic: [
             {
+                title: "0. Configuración del Campo",
+                text: "Antes de empezar, elige el tipo de campo: 'Campo Completo' para ver todo el campo de rugby, o 'Mitad Campo' para enfocarte en una zona específica. Usa el botón de rotar para cambiar la orientación.",
+                target: ".field-type-selector",
+                action: null,
+                position: "right"
+            },
+            {
                 title: "1. Selección de Jugadores",
                 text: "En el menú izquierdo puedes seleccionar jugadores de cada equipo. Haz clic en los números para mostrar/ocultar jugadores en el campo. También puedes usar los botones 'Mostrar equipo azul/rojo' para colocar todo el equipo automáticamente.",
                 target: "#players-panels",
@@ -2866,52 +2884,73 @@ const Tutorial = {
         advanced: [
             {
                 title: "Herramienta: Flechas",
-                text: "El menú de flechas te permite dibujar dos tipos: flechas normales para indicar movimientos y flechas de patada con arco. Haz clic para marcar el inicio y el final de la flecha.",
+                text: "El menú de flechas te permite dibujar dos tipos: flechas normales para indicar movimientos y flechas de patada con arco. Haz clic para marcar el inicio y el final de la flecha. Mantén Shift presionado para ajustar la altura del arco en patadas.",
                 target: "#arrow-menu-container",
                 action: null,
                 position: "right"
             },
             {
                 title: "Herramienta: Texto",
-                text: "Añade anotaciones a tus jugadas. Haz clic en el campo para colocar texto explicativo. Puedes arrastrar el texto para reposicionarlo.",
+                text: "Añade anotaciones a tus jugadas. Haz clic en el campo para colocar texto explicativo. Puedes arrastrar el texto para reposicionarlo y hacer doble clic para editarlo.",
                 target: "#mode-text",
                 action: null,
                 position: "right"
             },
             {
                 title: "Herramienta: Melé",
-                text: "Posiciona automáticamente a los jugadores en formación de melé. Haz clic en el campo y elige qué equipo(s) participan. Los jugadores se colocarán en la formación correcta.",
+                text: "Posiciona automáticamente a los jugadores en formación de melé. Haz clic en el campo y elige qué equipo(s) participan. Los jugadores se colocarán en la formación correcta de 8 vs 8.",
                 target: "#mode-scrum",
                 action: null,
                 position: "right"
             },
             {
                 title: "Herramienta: Zonas",
-                text: "Crea zonas de colores en el campo para destacar áreas tácticas. Selecciona un color, dibuja el área y asígnale un nombre. Puedes bloquear/desbloquear zonas para evitar moverlas.",
+                text: "Crea zonas de colores en el campo para destacar áreas tácticas. Selecciona un color, dibuja el área haciendo dos clics (esquinas opuestas), asígnale un nombre y luego posiciona la etiqueta. Haz clic en el candado para bloquear/desbloquear zonas.",
                 target: "#mode-zone",
                 action: null,
                 position: "right"
             },
             {
                 title: "Herramienta: Escudos",
-                text: "Asigna escudos a los jugadores. Puedes colocarlo apuntando a donde sea. El escudo se vincula a la ficha y se mueve con ella",
+                text: "Asigna escudos de entrenamiento a los jugadores. Haz clic cerca de un jugador para crear el escudo, luego arrastra para ajustar la dirección. El escudo se mueve con el jugador al crear animaciones.",
                 target: "#mode-shield",
                 action: null,
                 position: "right"
             },
             {
+                title: "Gestión de Formaciones",
+                text: "Guarda configuraciones tácticas completas con el botón 'Guardar Formación'. Puedes cargar formaciones guardadas desde el selector y eliminarlas con el botón de papelera. Perfecto para reutilizar setups comunes.",
+                target: "#save-formation-btn",
+                action: null,
+                position: "right"
+            },
+            {
                 title: "Controles del Balón",
-                text: "El botón 'Mostrar / ocultar balón' te permite controlar la visibilidad del balón en cada frame. Útil para simular diferentes fases de juego.",
+                text: "El botón 'Mostrar / ocultar balón' te permite controlar la visibilidad del balón en cada frame. Útil para simular diferentes fases de juego. Arrastra el balón para reposicionarlo.",
                 target: "#toggle-ball",
                 action: null,
                 position: "right"
             },
             {
+                title: "Borrar Elementos",
+                text: "Selecciona cualquier elemento (jugador, flecha, texto, zona, escudo) y presiona la tecla 'Supr' o haz clic en el botón 'Borrar selección' para eliminarlo. 'Borrar flechas' elimina todas las flechas del frame actual.",
+                target: "#delete-btn",
+                action: null,
+                position: "right"
+            },
+            {
                 title: "Limpiar Tablero",
-                text: "Usa 'Borrar flechas' para eliminar solo las flechas del frame actual. 'Limpiar tablero' resetea completamente el frame: elimina jugadores, flechas, textos y trails.",
+                text: "'Limpiar tablero' resetea completamente el frame actual: oculta jugadores, elimina flechas, textos, escudos y trails. Mantiene las zonas intactas. Útil para empezar un nuevo setup desde cero.",
                 target: "#clear-board",
                 action: null,
                 position: "right"
+            },
+            {
+                title: "Atajos de Teclado",
+                text: "Usa 'Esc' para limpiar selecciones. 'Delete/Supr' para borrar elementos. 'Ctrl+Click' para selección múltiple. Estos atajos aceleran tu flujo de trabajo.",
+                target: "#pitch",
+                action: null,
+                position: "top"
             }
         ]
     },
@@ -2985,32 +3024,85 @@ const Tutorial = {
         // Posicionar cuadro de información
         const boxRect = tutorialBox.getBoundingClientRect();
         let left, top;
+        const margin = 30; // Mayor margen para evitar superposición
 
-        switch(boxPosition) {
+        switch (boxPosition) {
             case 'right':
-                left = rect.right + 20;
+                left = rect.right + margin;
                 top = rect.top + (rect.height / 2) - (boxRect.height / 2);
+                // Si se sale por la derecha, ponerlo arriba
+                if (left + boxRect.width > window.innerWidth - 10) {
+                    left = rect.left + (rect.width / 2) - (boxRect.width / 2);
+                    top = rect.top - boxRect.height - margin;
+                }
                 break;
             case 'left':
-                left = rect.left - boxRect.width - 20;
+                left = rect.left - boxRect.width - margin;
                 top = rect.top + (rect.height / 2) - (boxRect.height / 2);
+                // Si se sale por la izquierda, ponerlo arriba
+                if (left < 10) {
+                    left = rect.left + (rect.width / 2) - (boxRect.width / 2);
+                    top = rect.top - boxRect.height - margin;
+                }
                 break;
             case 'top':
                 left = rect.left + (rect.width / 2) - (boxRect.width / 2);
-                top = rect.top - boxRect.height - 20;
+                top = rect.top - boxRect.height - margin;
+                // Si se sale por arriba, ponerlo abajo
+                if (top < 10) {
+                    top = rect.bottom + margin;
+                }
                 break;
             case 'bottom':
                 left = rect.left + (rect.width / 2) - (boxRect.width / 2);
-                top = rect.bottom + 20;
+                top = rect.bottom + margin;
+                // Si se sale por abajo, ponerlo arriba
+                if (top + boxRect.height > window.innerHeight - 10) {
+                    top = rect.top - boxRect.height - margin;
+                }
                 break;
             default:
                 left = window.innerWidth / 2 - boxRect.width / 2;
                 top = window.innerHeight / 2 - boxRect.height / 2;
         }
 
-        // Ajustar si se sale de la pantalla
+        // Ajustar si se sale de la pantalla (con checks mejorados)
         left = Math.max(10, Math.min(left, window.innerWidth - boxRect.width - 10));
         top = Math.max(10, Math.min(top, window.innerHeight - boxRect.height - 10));
+
+        // Verificar que no se superponga con el spotlight
+        const spotlightRect = {
+            left: rect.left - padding,
+            right: rect.right + padding,
+            top: rect.top - padding,
+            bottom: rect.bottom + padding
+        };
+
+        const boxFinalRect = {
+            left: left,
+            right: left + boxRect.width,
+            top: top,
+            bottom: top + boxRect.height
+        };
+
+        // Si hay superposición, mover el box
+        if (!(boxFinalRect.right < spotlightRect.left ||
+            boxFinalRect.left > spotlightRect.right ||
+            boxFinalRect.bottom < spotlightRect.top ||
+            boxFinalRect.top > spotlightRect.bottom)) {
+            // Hay superposición, mover a la posición opuesta
+            if (boxPosition === 'right' || boxPosition === 'left') {
+                top = rect.bottom + margin;
+                if (top + boxRect.height > window.innerHeight - 10) {
+                    top = rect.top - boxRect.height - margin;
+                }
+            } else {
+                left = rect.right + margin;
+                if (left + boxRect.width > window.innerWidth - 10) {
+                    left = rect.left - boxRect.width - margin;
+                }
+            }
+        }
 
         tutorialBox.style.left = left + 'px';
         tutorialBox.style.top = top + 'px';
@@ -3121,13 +3213,13 @@ function initTutorialEvents() {
 // INTEGRACIÓN CON EVENTOS EXISTENTES
 // ==============================
 const originalToggle = Players.toggle;
-Players.toggle = function(e) {
+Players.toggle = function (e) {
     Tutorial.detectAction('playerToggle');
     return originalToggle.call(this, e);
 };
 
 const originalShowTeam = Players.showTeam;
-Players.showTeam = function(team) {
+Players.showTeam = function (team) {
     Tutorial.detectAction('playerToggle');
     return originalShowTeam.call(this, team);
 };
@@ -3135,7 +3227,7 @@ Players.showTeam = function(team) {
 const originalAddFrame = document.getElementById("add-frame");
 if (originalAddFrame) {
     const originalOnClick = originalAddFrame.onclick;
-    document.getElementById("add-frame").onclick = function(e) {
+    document.getElementById("add-frame").onclick = function (e) {
         Tutorial.detectAction('frameAction');
         return originalOnClick ? originalOnClick.call(this, e) : null;
     };
@@ -3144,14 +3236,14 @@ if (originalAddFrame) {
 const originalNextFrame = document.getElementById("next-frame");
 if (originalNextFrame) {
     const originalOnClick = originalNextFrame.onclick;
-    document.getElementById("next-frame").onclick = function(e) {
+    document.getElementById("next-frame").onclick = function (e) {
         Tutorial.detectAction('frameAction');
         return originalOnClick ? originalOnClick.call(this, e) : null;
     };
 }
 
 const originalMouseUp = CanvasEvents.handleMouseUp;
-CanvasEvents.handleMouseUp = function() {
+CanvasEvents.handleMouseUp = function () {
     if (state.dragTarget && state.dragTarget.type === "players") {
         Tutorial.detectAction('playerMove');
     }
@@ -3163,3 +3255,16 @@ init();
 
 // Inicializar eventos del tutorial después de init
 initTutorialEvents();
+
+// ==============================
+// ERROR HANDLING INTEGRATION
+// ==============================
+// El error handler se carga como módulo ES6 en index.html
+// y se expone globalmente como window.errorHandler
+// Aquí lo referenciamos para debugging
+if (window.errorHandler) {
+    console.log('✅ PizarraRugby v2.2.0 con Error Handling activo');
+    console.log('📊 Debug: errorHandler.getErrorHistory()');
+} else {
+    console.log('✅ PizarraRugby v2.2 .0 iniciado');
+}

@@ -124,7 +124,15 @@ button {
     border: 1px solid #333;
     border-radius: 6px;
     cursor: pointer;
+    color: white;
+    border: 1px solid #333;
+    border-radius: 6px;
+    cursor: pointer;
     font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
 }
 
 /* Estado activo de botones genéricos */
@@ -137,8 +145,26 @@ button.active {
    ======================================== */
 
 /* Separador visual */
+/* Separador visual */
 .sep {
     margin: 8px 0;
+}
+
+/* ========================================
+   ICONOS SVG
+   ======================================== */
+.icon {
+    width: 24px;
+    height: 24px;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.icon-sm {
+    width: 18px;
+    height: 18px;
+    display: inline-block;
+    vertical-align: middle;
 }
 
 /* ========================================
@@ -178,6 +204,7 @@ button.active {
     color: white;
     text-align: left;
 }
+
 /* ========================================
    PANEL FLOTANTE PARA ZONAS
    ======================================== */
@@ -196,11 +223,26 @@ button.active {
     text-align: center;
     box-shadow: 0 0 10px #000;
 }
-.color-1 { background: #00aaff; }
-.color-2 { background: #ff3333; }
-.color-3 { background: #ffd000; }
-.color-4 { background: #00cc66; }
-.color-5 { background: #ff9100; }
+
+.color-1 {
+    background: #00aaff;
+}
+
+.color-2 {
+    background: #ff3333;
+}
+
+.color-3 {
+    background: #ffd000;
+}
+
+.color-4 {
+    background: #00cc66;
+}
+
+.color-5 {
+    background: #ff9100;
+}
 
 #zone-color-panel.hidden {
     display: none;
@@ -225,15 +267,16 @@ button.active {
     cursor: pointer;
     border: 2px solid white;
 }
+
 /* ========= POPUP MODAL ========= */
 
 #popup-overlay {
     position: fixed;
-    left: 0; 
+    left: 0;
     top: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0,0,0,0.65);
+    background: rgba(0, 0, 0, 0.65);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -257,8 +300,15 @@ button.active {
 }
 
 @keyframes popup-fade {
-    from { transform: scale(0.85); opacity: 0; }
-    to   { transform: scale(1);   opacity: 1; }
+    from {
+        transform: scale(0.85);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
 }
 
 #popup-title {
@@ -312,6 +362,7 @@ button.active {
 #popup-cancel:hover {
     background: #3a4a5a;
 }
+
 /* ===== NUEVA BARRA MODERNA DE FRAMES ===== */
 
 #frame-bar {
@@ -335,6 +386,9 @@ button.active {
     cursor: pointer;
     color: white;
     font-size: 16px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .fb-btn:hover {
@@ -364,6 +418,9 @@ button.active {
     cursor: pointer;
     color: white;
     font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
 }
 
 .fb-action:hover {
@@ -379,7 +436,8 @@ button.active {
     display: none;
 }
 
-#mobile-menu-btn, #mobile-right-menu-btn {
+#mobile-menu-btn,
+#mobile-right-menu-btn {
     position: fixed;
     top: 10px;
     z-index: 1000;
@@ -392,6 +450,9 @@ button.active {
     font-size: 24px;
     cursor: pointer;
     padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 #mobile-menu-btn {
@@ -421,7 +482,7 @@ button.active {
         width: 240px;
         z-index: 999;
         transition: left 0.3s ease;
-        box-shadow: 2px 0 10px rgba(0,0,0,0.5);
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5);
     }
 
     #sidebar.show {
@@ -440,7 +501,7 @@ button.active {
         overflow-y: auto;
         z-index: 999;
         transition: right 0.3s ease;
-        box-shadow: -2px 0 10px rgba(0,0,0,0.5);
+        box-shadow: -2px 0 10px rgba(0, 0, 0, 0.5);
         border-left: 1px solid #222;
     }
 
@@ -500,7 +561,7 @@ button.active {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0,0,0,0.5);
+    background: rgba(0, 0, 0, 0.5);
     z-index: 998;
 }
 
@@ -644,8 +705,8 @@ button.active {
     position: fixed;
     border: 4px solid #00ff88;
     box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.75),
-                0 0 20px #00ff88,
-                inset 0 0 20px rgba(0, 255, 136, 0.3);
+        0 0 20px #00ff88,
+        inset 0 0 20px rgba(0, 255, 136, 0.3);
     z-index: 9999;
     pointer-events: none;
     border-radius: 8px;
@@ -681,6 +742,7 @@ button.active {
         transform: translateY(-20px);
         opacity: 0;
     }
+
     to {
         transform: translateY(0);
         opacity: 1;
@@ -889,3 +951,9 @@ button.active {
     display: block;
 }
 
+.notification.error-notification {
+    background: linear-gradient(135deg, #ff3333 0%, #cc0000 100%);
+    border-left: 4px solid #ff6666;
+    box-shadow: 0 4px 16px rgba(255, 51, 51, 0.4);
+    font-weight: bold;
+}
