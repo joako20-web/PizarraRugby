@@ -282,6 +282,269 @@ body {
     outline-color: #ffffff;
 }
 
+/* --- Settings Modal Premium Layout --- */
+.settings-container {
+    display: flex;
+    height: 450px;
+    gap: 0;
+    overflow: hidden;
+    /* Rounded corners clip */
+}
+
+.settings-sidebar {
+    width: 180px;
+    background: rgba(15, 23, 42, 0.4);
+    /* Subtle transparency */
+    border-right: 1px solid var(--border-color);
+    padding: 15px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    backdrop-filter: blur(5px);
+}
+
+.settings-content {
+    flex: 1;
+    padding: 25px;
+    overflow-y: auto;
+    background: rgba(30, 41, 59, 0.2);
+}
+
+/* Custom Scrollbar for settings */
+.settings-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.settings-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.settings-content::-webkit-scrollbar-thumb {
+    background: var(--bg-input);
+    border-radius: 4px;
+}
+
+.settings-content::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+}
+
+.settings-tab {
+    width: 100%;
+    text-align: left;
+    padding: 10px 15px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+}
+
+.settings-tab:hover {
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--text-primary);
+    transform: translateX(4px);
+}
+
+.settings-tab.active {
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+}
+
+.settings-tab svg {
+    opacity: 0.7;
+}
+
+.settings-tab.active svg {
+    opacity: 1;
+}
+
+/* Form Groups Polish */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Modern Inputs */
+.form-group input[type="text"],
+.form-group select {
+    width: 100%;
+    padding: 10px 12px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.form-group input[type="text"]:focus,
+.form-group select:focus {
+    border-color: var(--primary);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+/* Range Slider */
+.form-group input[type="range"] {
+    -webkit-appearance: none;
+    width: 100%;
+    background: transparent;
+    margin: 10px 0;
+    cursor: pointer;
+}
+
+.form-group input[type="range"]:focus {
+    outline: none;
+}
+
+.form-group input[type="range"]::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 8px;
+    background: var(--bg-input);
+    /* Should be lighter than bg */
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+}
+
+.form-group input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    height: 20px;
+    width: 20px;
+    border-radius: 50%;
+    background: var(--primary);
+    cursor: pointer;
+    margin-top: -7px;
+    /* Center thumb on track (8px height) -> -7px seems right for 20px thumb? (20-8)/2 = 6, so -6px? allow -7 for border */
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+    border: 2px solid #fff;
+    transition: transform 0.1s;
+}
+
+.form-group input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.1);
+    background: var(--primary-hover);
+}
+
+/* Firefox Styles */
+.form-group input[type="range"]::-moz-range-track {
+    width: 100%;
+    height: 8px;
+    background: var(--bg-input);
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+}
+
+.form-group input[type="range"]::-moz-range-thumb {
+    height: 20px;
+    width: 20px;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    background: var(--primary);
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+/* Color Input */
+.form-group input[type="color"] {
+    appearance: none;
+    border: none;
+    width: 100%;
+    height: 40px;
+    padding: 0;
+    background: transparent;
+    cursor: pointer;
+}
+
+.form-group input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+.form-group input[type="color"]::-webkit-color-swatch {
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+}
+
+/* Shortcuts List */
+.shortcuts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.shortcut-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    transition: border-color 0.2s;
+}
+
+.shortcut-item:hover {
+    border-color: var(--text-secondary);
+}
+
+.shortcut-item label {
+    font-size: 14px;
+    font-weight: 500;
+    margin: 0;
+}
+
+.shortcut-item button {
+    width: auto;
+    min-width: 80px;
+    padding: 6px 12px;
+    font-size: 13px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.shortcut-item button:hover {
+    background: var(--bg-input);
+}
+
+.shortcut-item button.is-active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
 /* --- Dropdowns --- */
 .dropdown {
     position: relative;
@@ -501,6 +764,28 @@ body {
     flex: 1;
 }
 
+/* --- Settings Modal Premium Layout --- */
+.settings-container {
+    display: flex;
+    width: 800px;
+    height: 600px;
+    gap: 0;
+    overflow: hidden;
+    /* Rounded corners clip */
+}
+
+.settings-sidebar {
+    width: 220px;
+    background: rgba(15, 23, 42, 0.4);
+    /* Subtle transparency */
+    border-right: 1px solid var(--border-color);
+    padding: 15px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    backdrop-filter: blur(5px);
+}
+
 /* --- Popups & Modals --- */
 .popup-overlay {
     position: fixed;
@@ -520,8 +805,9 @@ body {
     border: 1px solid var(--border-color);
     border-radius: 12px;
     padding: 20px;
-    width: 360px;
-    max-width: 90%;
+    width: auto;
+    min-width: 360px;
+    max-width: 95%;
     color: var(--text-primary);
     box-shadow: var(--shadow-md);
     animation: popup-fade 0.18s ease-out;
@@ -627,7 +913,7 @@ body {
 .help-btn {
     position: fixed;
     bottom: 10px;
-    right: 80px;
+    right: 20px;
     width: 50px;
     height: 50px;
     border-radius: 50%;

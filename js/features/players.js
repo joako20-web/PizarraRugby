@@ -141,15 +141,10 @@ export const Players = {
                 // "Justo al revés": Active = Neutral (On Field), Inactive = Colored (On Bench)
                 if (isActive) {
                     // Active (On Field) -> Standard Highlight or Neutral
-                    // We let CSS handle .is-active for border/shadow, but we force background to be "used" (maybe white/gray)
-                    // or just revert to CSS default for active?
-                    // Let's make it White with Colored Border/Text to show "Empty/Placed" logic? 
-                    // Or just standard "Active" look from CSS (Blue/Primary). 
-                    // But user wants "Justo al revés". My previous was: Active=Color.
-                    // So now: Active = DEFAULT CSS (or Gray).
-                    div.style.backgroundColor = "";
-                    div.style.color = "";
-                    div.style.borderColor = groupColorBorder(teamColor);
+                    // Ahora aplicamos también el color personalizado
+                    div.style.backgroundColor = teamColor;
+                    div.style.color = "#ffffff";
+                    div.style.borderColor = teamColor;
                 } else {
                     // Inactive (On Bench) -> Has the Token Color
                     div.style.backgroundColor = teamColor;

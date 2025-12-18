@@ -131,6 +131,120 @@ function updateFieldConfigInfo() {
     info.textContent = text;
 }
 
+async function resetApp() {
+    const confirm = await Popup.show({
+        title: "Resetear Todo",
+        html: "¿Estás seguro? Esto borrará <b>todo</b> el progreso actual y comenzará un nuevo proyecto desde cero.<br><br>Esta acción no se puede deshacer.",
+        okText: "Sí, borrar todo",
+        cancelText: "Cancelar"
+    });
+
+    if (confirm) {
+        // 1. Resetear Estado
+        state.frames = [];
+        state.currentFrameIndex = 0;
+        state.frames.push(Frame.create());
+        state.fieldConfig = {
+            type: "full",
+            orientation: "horizontal",
+            halfSide: "top"
+        };
+        state.zones = [];
+
+        // Limpiar selecciones
+        state.selectedPlayers.clear();
+        state.selectedZone = null;
+        state.selectedText = null;
+        state.selectedArrow = null;
+        state.selectedShield = null;
+        state.dragTarget = null;
+        state.previewArrow = null;
+        state.arrowStart = null;
+
+        // Resetear Settings a defaults
+        SETTINGS.TEAM_A_NAME = 'Equipo A';
+        SETTINGS.TEAM_B_NAME = 'Equipo B';
+        SETTINGS.TEAM_A_COLOR = '#0000ff';
+        SETTINGS.TEAM_B_COLOR = '#ff0000';
+        SETTINGS.THEME = 'dark';
+        SETTINGS.PLAYER_SCALE = 1.0;
+        SETTINGS.BALL_SCALE = 1.0;
+        SETTINGS.SHOW_NUMBERS = true;
+
+        SETTINGS.SHORTCUTS = {
+            MODE_MOVE: 'v',
+            MODE_TEXT: 't',
+            MODE_SCRUM: 's',
+            MODE_ARROW: 'a',
+            MODE_ZONE: 'z',
+            MODE_SHIELD: 'h',
+            ANIMATION_PLAY: 'Space'
+        };
+
+        // Limpiar settings de localStorage
+        localStorage.removeItem('rugby_settings');
+
+        // 2. Resetear Historial
+        History.clear();
+        History.push(); // Estado inicial limpio
+
+        // 3. Actualizar UI
+        // Resetear configuración de campo en UI
+        updateFieldTypeButtons();
+        updateFieldConfigInfo();
+
+        // Settings UI update
+        if (typeof SettingsUI !== "undefined") {
+            SettingsUI.applyTheme(SETTINGS.THEME); // Re-aplicar tema
+            SettingsUI.updateUI();
+            // Also need to re-apply team buttons generation as names changed
+            // updateUI calls Players.updateTeamButtons() internally so it should be fine.
+        }
+
+        // Resetear selectores de formaciones si es necesario
+        // (Formations module might need a reset or just update selector)
+        if (typeof Formations !== "undefined") Formations.updateSelector();
+
+        // Sincronizar UI de jugadores
+        if (typeof Players !== "undefined") {
+            Players.syncToggles();
+        }
+
+        // Sincronizar UI de animación
+        if (typeof Animation !== "undefined") {
+            Animation.updateUI();
+        }
+
+        UI.updateDeleteButton();
+        updateButtonTooltips(); // Refresh tooltips
+
+        // 4. Redibujar
+        resizeCanvas(); // Fuerza recalculo de dimensiones y redibujado
+
+        // Notificación opcional
+        if (typeof Notification !== "undefined") {
+            // Si hubiera sistema de notificaciones
+        }
+    }
+}
+
+function updateButtonTooltips() {
+    const s = SETTINGS.SHORTCUTS;
+    if (!s) return;
+
+    const setTooltip = (id, text, key) => {
+        const el = document.getElementById(id);
+        if (el) el.title = `${text} (${key})`;
+    };
+
+    setTooltip('mode-move', "Mover / Seleccionar", s.MODE_MOVE.toUpperCase());
+    setTooltip('mode-text', "Texto", s.MODE_TEXT.toUpperCase());
+    setTooltip('mode-scrum', "Melé", s.MODE_SCRUM.toUpperCase());
+    setTooltip('mode-arrow', "Flecha", s.MODE_ARROW.toUpperCase());
+    setTooltip('mode-zone', "Zonas", s.MODE_ZONE.toUpperCase());
+    setTooltip('mode-shield', "Escudo", s.MODE_SHIELD.toUpperCase());
+    setTooltip('play-animation', "Reproducir", s.ANIMATION_PLAY === 'Space' ? 'Espacio' : s.ANIMATION_PLAY.toUpperCase());
+}
 
 
 // ==============================
@@ -145,15 +259,44 @@ function initEvents() {
     if (btnUndo) btnUndo.onclick = () => History.undo();
     if (btnRedo) btnRedo.onclick = () => History.redo();
 
-    // Keyboard Shortcuts (Undo/Redo)
+    // Keyboard Shortcuts
     window.addEventListener("keydown", (e) => {
+        // Ignorar si estamos escribiendo en un input
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+        // Undo/Redo (Hardcoded standard)
         if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
             e.preventDefault();
             History.undo();
+            return;
         }
         if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'Z'))) {
             e.preventDefault();
             History.redo();
+            return;
+        }
+
+        // Custom Shortcuts
+        const key = e.key.toLowerCase();
+        const code = e.code;
+        const s = SETTINGS.SHORTCUTS;
+
+        if (!s) return; // Safety
+
+        if (key === s.MODE_MOVE.toLowerCase()) Mode.set("move");
+        if (key === s.MODE_TEXT.toLowerCase()) Mode.set("text");
+        if (key === s.MODE_SCRUM.toLowerCase()) Mode.set("scrum");
+        if (key === s.MODE_ARROW.toLowerCase()) Mode.set("draw"); // Arrow is draw mode
+        if (key === s.MODE_ZONE.toLowerCase()) Mode.set("zone");
+        if (key === s.MODE_SHIELD.toLowerCase()) Mode.set("shield");
+
+        if (code === 'Space' && s.ANIMATION_PLAY === 'Space') {
+            e.preventDefault(); // Evitar scroll
+            if (state.isPlaying) Animation.pause();
+            else Animation.play();
+        } else if (key === s.ANIMATION_PLAY.toLowerCase()) {
+            if (state.isPlaying) Animation.pause();
+            else Animation.play();
         }
     });
 
@@ -186,18 +329,35 @@ function initEvents() {
     canvas.addEventListener("dblclick", e => CanvasEvents.handleDoubleClick(e));
 
     window.addEventListener("keydown", e => {
+        // Global keys that are always active (unless input)
+        // Check for specific functional keys like Escape or Delete
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
         if (e.key === "Escape") {
-            clearAllSelections();
-            Renderer.drawFrame();
+            if (document.body.classList.contains('presentation-mode')) {
+                document.body.classList.remove('presentation-mode');
+                handleResize(); // trigger smooth resize logic via helper if needed or direct
+            } else {
+                clearAllSelections();
+                Renderer.drawFrame();
+            }
         }
 
         if (e.key === "Delete" || e.key === "Supr") {
             deleteSelectedElement();
         }
+
+        if (e.key === 'p' && !e.ctrlKey && !e.metaKey) {
+            togglePresentation();
+        }
     });
 
     // Botón de borrar
     document.getElementById("delete-btn").onclick = deleteSelectedElement;
+
+    // Botón de Resetear Todo
+    const btnReset = document.getElementById("btn-reset-app");
+    if (btnReset) btnReset.onclick = resetApp;
 
     // Frames
     document.getElementById("add-frame").onclick = () => {
@@ -676,12 +836,18 @@ function init() {
     Renderer.drawFrame();
     Players.syncToggles();
     Formations.updateSelector();
+
+    // Shortcuts Tooltips
+    updateButtonTooltips();
+    window.addEventListener('shortcuts-changed', () => updateButtonTooltips());
+
     // Configurar callback de restauración
     History.onStateRestored = () => {
         updateFieldTypeButtons();
         updateFieldConfigInfo();
         Formations.updateSelector();
         Renderer.drawFrame();
+        updateButtonTooltips();
     };
 
     History.init(); // Iniciar historial con estado base (y restaurar si existe)

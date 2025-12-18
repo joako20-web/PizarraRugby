@@ -6,5 +6,14 @@ export const SETTINGS = {
     THEME: 'dark', // 'dark' or 'light'
     PLAYER_SCALE: 1.0,
     SHOW_NUMBERS: true,
-    BALL_SCALE: 1.0
+    BALL_SCALE: 1.0,
+    SHORTCUTS: {
+        MODE_MOVE: 'v',
+        MODE_TEXT: 't',
+        MODE_SCRUM: 's',
+        MODE_ARROW: 'a',
+        MODE_ZONE: 'z',
+        MODE_SHIELD: 'h',
+        ANIMATION_PLAY: 'Space'
+    }
 };

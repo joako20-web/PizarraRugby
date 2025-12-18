@@ -148,5 +148,17 @@ export const History = {
             console.error('Failed to load session', e);
         }
         return false;
+    },
+
+    clear() {
+        this.stack = [];
+        this.currentIndex = -1;
+        this.active = false;
+        try {
+            localStorage.removeItem(this.STORAGE_KEY);
+        } catch (e) {
+            console.error('Failed to clear session', e);
+        }
+        this.updateButtonsUI();
     }
 };

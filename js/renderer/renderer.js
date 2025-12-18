@@ -629,11 +629,13 @@ export const Renderer = {
             ctx.fillStyle = p1.team === "A" ? SETTINGS.TEAM_A_COLOR : SETTINGS.TEAM_B_COLOR;
             ctx.fill();
 
-            ctx.fillStyle = "white";
-            ctx.font = "bold 14px Arial";
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.fillText(p1.number, x, y);
+            if (SETTINGS.SHOW_NUMBERS) {
+                ctx.fillStyle = "white";
+                ctx.font = "bold 14px Arial";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(p1.number, x, y);
+            }
         }
 
         b.arrows.forEach(a => {
