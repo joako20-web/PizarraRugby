@@ -142,6 +142,10 @@ export const Animation = {
             return;
         }
 
+        // Reset flags to ensure interpolation runs
+        state.cancelPlay = false;
+        state.isPaused = false;
+
         // Pedir nombre
         const nombre = await Popup.prompt("Nombre del archivo:", "Mi animacion");
         if (!nombre) return;
