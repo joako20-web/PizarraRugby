@@ -12,38 +12,108 @@ export const Animation = {
     updateUI() {
         const frameIndexEl = document.getElementById("current-frame-index");
         const totalFramesEl = document.getElementById("total-frames");
+        const playBtn = document.getElementById("play-animation");
+        const pauseBtn = document.getElementById("pause-animation");
 
         if (frameIndexEl) frameIndexEl.textContent = state.currentFrameIndex + 1;
         if (totalFramesEl) totalFramesEl.textContent = state.frames.length;
+
+        // Toggle buttons visibility based on state
+        if (state.isPlaying) {
+            if (playBtn) playBtn.classList.add("is-hidden");
+            if (pauseBtn) pauseBtn.classList.remove("is-hidden");
+        } else {
+            if (playBtn) playBtn.classList.remove("is-hidden");
+            if (pauseBtn) pauseBtn.classList.add("is-hidden");
+        }
     },
 
     async play() {
-        if (state.isPlaying || state.frames.length < 2) return;
+        if (state.isPlaying && !state.isPaused) return; // Already playing
+        if (state.frames.length < 2) return;
+
         state.isPlaying = true;
-        state.cancelPlay = false;
+        state.cancelPlay = false; // Reset cancel flag
+        state.isPaused = false; // Reset pause flag
 
-        // Guardar y limpiar todas las líneas de trayectoria temporalmente
-        const savedTrailLines = state.frames.map(f => f.trailLines);
-        state.frames.forEach(f => f.trailLines = []);
+        this.updateUI();
 
-        for (let i = 0; i < state.frames.length - 1; i++) {
+        // Guardar las líneas de trayectoria solo si empezamos desde el principio o no estábamos pausados
+        if (!state.isPaused && state.currentFrameIndex === 0) {
+            state.savedTrailLines = state.frames.map(f => f.trailLines);
+            state.frames.forEach(f => f.trailLines = []);
+        } else if (!state.savedTrailLines) {
+            // Fallback safety
+            state.savedTrailLines = state.frames.map(f => f.trailLines);
+            state.frames.forEach(f => f.trailLines = []);
+        }
+
+        // Determine start index:
+        // If paused, resume from current index.
+        // If finished or stopped, start from 0 (or current if user manually moved? usually 0 for full play)
+        // Let's assume 'Play' always plays from current Frame to end.
+        let startIndex = state.currentFrameIndex;
+        if (startIndex >= state.frames.length - 1) {
+            startIndex = 0;
+            state.currentFrameIndex = 0;
+        }
+
+        for (let i = startIndex; i < state.frames.length - 1; i++) {
             if (state.cancelPlay) break;
+            if (state.isPaused) break;
 
             await this._interpolateBetweenFrames(state.frames[i], state.frames[i + 1]);
 
-            state.currentFrameIndex = i + 1;
-            this.updateUI();
+            // Only increment if we finished the interpolation successfully (not canceled/paused mid-way)
+            if (!state.cancelPlay && !state.isPaused) {
+                state.currentFrameIndex = i + 1;
+                this.updateUI();
+            }
         }
 
-        // Restaurar las líneas de trayectoria
-        state.frames.forEach((f, i) => f.trailLines = savedTrailLines[i]);
-        Renderer.drawFrame();
-        state.isPlaying = false;
-        state.cancelPlay = false;
+        // If loop finished naturally (not paused/canceled)
+        if (!state.cancelPlay && !state.isPaused) {
+            this.stop(true); // Stop but reset to start? Or just stop at end?
+            // Usually stop resets or stays at end. Let's stay at end but reset state.
+            state.isPlaying = false;
+            // Restore trails
+            if (state.savedTrailLines) {
+                state.frames.forEach((f, i) => f.trailLines = state.savedTrailLines[i]);
+                state.savedTrailLines = null;
+            }
+            Renderer.drawFrame();
+            this.updateUI();
+        }
     },
 
-    stop() {
+    pause() {
+        if (state.isPlaying) {
+            state.isPaused = true;
+            state.isPlaying = false; // UI updates to "Play"
+            this.updateUI();
+        }
+    },
+
+    stop(finished = false) {
         state.cancelPlay = true;
+        state.isPlaying = false;
+        state.isPaused = false;
+
+        if (!finished) {
+            // If manually stopped, reset to 0 or leave at current?
+            // Usually Stop means Reset. Pause means Pause.
+            // But if we have only Play/Pause, maybe we don't need Stop button logic right now?
+            // The user asked to change Stop to Pause.
+            // But if we want a true Stop (Reset), we might need another button or double click?
+            // For now, Play/Pause toggle is the requested behavior.
+            // If we want to fully reset trails if stopped manually:
+            if (state.savedTrailLines) {
+                state.frames.forEach((f, i) => f.trailLines = state.savedTrailLines[i]);
+                state.savedTrailLines = null;
+            }
+            Renderer.drawFrame();
+        }
+        this.updateUI();
     },
 
     /**
@@ -55,7 +125,7 @@ export const Animation = {
      */
     async _interpolateBetweenFrames(frameA, frameB) {
         for (let step = 0; step <= CONFIG.INTERP_STEPS; step++) {
-            if (state.cancelPlay) break;
+            if (state.cancelPlay || state.isPaused) break;
 
             const t = step / CONFIG.INTERP_STEPS;
             Renderer.drawInterpolatedFrame(frameA, frameB, t);

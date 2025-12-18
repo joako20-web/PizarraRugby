@@ -1,4 +1,5 @@
 import { CONFIG } from "./core/config.js";
+import { SETTINGS } from "./core/settings.js";
 import { state } from "./core/state.js";
 import { canvas, ctx } from "./core/dom.js";
 import { Utils, clampYToPlayableArea, getPlayerInitialPosition, calculateFieldDimensions } from "./core/utils.js";
@@ -14,6 +15,7 @@ import { Tutorial } from "./features/tutorial.js";
 import { CanvasEvents } from "./features/canvasEvents.js";
 import { History } from "./features/history.js";
 import { Export } from "./features/export.js";
+import { SettingsUI } from "./features/settings-ui.js";
 
 
 function resetBoardForFieldChange() {
@@ -240,7 +242,8 @@ function initEvents() {
 
     // Animación
     document.getElementById("play-animation").onclick = () => Animation.play();
-    document.getElementById("stop-animation").onclick = () => Animation.stop();
+    const pauseBtn = document.getElementById("pause-animation");
+    if (pauseBtn) pauseBtn.onclick = () => Animation.pause();
     document.getElementById("export-webm").onclick = () => Animation.exportWebM();
     document.getElementById("export-image").onclick = () => Export.downloadImage();
 
@@ -301,6 +304,22 @@ function initEvents() {
             window.requestAnimationFrame(step);
         }
     });
+
+    // Theme Toggle - HANDLED BY SETTINGS UI NOW
+    // const updateThemeIcon = (isLight) => ...
+    // const toggleTheme = () => ...
+
+    // Bind to the new FAB - We can keep FAB functionality via SettingsUI or just redirect it
+    // REMOVED at user request
+
+
+    // Bind to the sidebar button - REMOVED
+    // const themeSidebar = document.getElementById("toggle-theme");
+    // if (themeSidebar) themeSidebar.onclick = toggleTheme;
+
+    // Load Theme Preference from localStorage - HANDLED BY SETTINGS UI
+    // const storedTheme = localStorage.getItem('pizarra_theme');
+    // ...
 
     // Field Configuration
     document.getElementById("field-type-full").onclick = () => {
@@ -649,7 +668,10 @@ function handleResize() {
 // ==============================
 function init() {
     state.frames.push(Frame.create());
-    Players.loadPanels();
+    SettingsUI.init(); // Initialize settings (loads from storage & creates button)
+    Players.loadPanels(); // Now this will use default or loaded names? Actually panels are hardcoded in HTML but titles updated by SettingsUI.init indirectly or we call updateUI.
+    SettingsUI.updateUI(); // Force update titles
+
     Animation.updateUI();
     Renderer.drawFrame();
     Players.syncToggles();

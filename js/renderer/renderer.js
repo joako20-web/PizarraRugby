@@ -2,11 +2,18 @@ import { CONFIG } from '../core/config.js';
 import { state } from '../core/state.js';
 import { canvas, ctx } from '../core/dom.js';
 import { Utils } from '../core/utils.js';
+import { SETTINGS } from '../core/settings.js';
 
 // ==============================
 // RENDERIZADO - Sistema de renderizado del canvas
 // ==============================
 export const Renderer = {
+    // ... (rest of the file until drawFrame)
+
+    // NOTE: Instead of replacing the whole file, I will target specific blocks to be safer.
+    // But the user tool requires me to be precise.
+    // I will replace the top imports first.
+
     /**
      * Dibuja el campo de rugby según la configuración actual
      * Delega a drawFullField, drawFullFieldVertical o drawHalfField
@@ -484,7 +491,7 @@ export const Renderer = {
 
         // Trails
         f.trailLines.forEach(tl => {
-            ctx.strokeStyle = tl.team === "A" ? "#7fb9ff" : "#ff7a7a";
+            ctx.strokeStyle = tl.team === "A" ? SETTINGS.TEAM_A_COLOR : SETTINGS.TEAM_B_COLOR;
             ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.moveTo(tl.x1, tl.y1);
@@ -522,14 +529,16 @@ export const Renderer = {
         f.players.forEach(p => {
             if (!p.visible) return;
 
-            // Usar fichas más grandes en campo completo horizontal
-            const radius = (state.fieldConfig.type === "full" && state.fieldConfig.orientation === "horizontal")
+            // Usar fichas más grandes en campo completo horizontal y aplicar escala de configuración
+            let radius = (state.fieldConfig.type === "full" && state.fieldConfig.orientation === "horizontal")
                 ? p.radius * 1.2
                 : p.radius;
 
+            radius *= SETTINGS.PLAYER_SCALE;
+
             ctx.beginPath();
             ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
-            ctx.fillStyle = p.team === "A" ? "#1e88ff" : "#ff3333";
+            ctx.fillStyle = p.team === "A" ? SETTINGS.TEAM_A_COLOR : SETTINGS.TEAM_B_COLOR;
             ctx.fill();
 
             if (state.selectedPlayers.has(p)) {
@@ -538,11 +547,13 @@ export const Renderer = {
                 ctx.stroke();
             }
 
-            ctx.fillStyle = "white";
-            ctx.font = "bold 14px Arial";
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.fillText(p.number, p.x, p.y);
+            if (SETTINGS.SHOW_NUMBERS) {
+                ctx.fillStyle = "white";
+                ctx.font = "bold 14px Arial";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(p.number, p.x, p.y);
+            }
         });
 
         // Escudos de entrenamiento
@@ -611,7 +622,7 @@ export const Renderer = {
 
             ctx.beginPath();
             ctx.arc(x, y, p1.radius, 0, Math.PI * 2);
-            ctx.fillStyle = p1.team === "A" ? "#1e88ff" : "#ff3333";
+            ctx.fillStyle = p1.team === "A" ? SETTINGS.TEAM_A_COLOR : SETTINGS.TEAM_B_COLOR;
             ctx.fill();
 
             ctx.fillStyle = "white";

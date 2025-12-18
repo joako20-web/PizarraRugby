@@ -1,6 +1,7 @@
 import { Utils, getPlayerInitialPosition } from '../core/utils.js';
 import { CONFIG } from '../core/config.js';
 import { Renderer } from '../renderer/renderer.js';
+import { SETTINGS } from '../core/settings.js';
 
 // ==============================
 // GESTIÓN DE JUGADORES
@@ -36,6 +37,7 @@ export const Players = {
         Renderer.drawFrame();
     },
 
+
     updateTeamButtons() {
         const f = Utils.getCurrentFrame();
 
@@ -45,7 +47,13 @@ export const Players = {
             .every(pl => pl.visible);
         const btnA = document.getElementById("show-team-a");
         if (btnA) {
-            btnA.textContent = allVisibleA ? "Ocultar equipo azul" : "Mostrar equipo azul";
+            const action = allVisibleA ? "Ocultar" : "Mostrar";
+            btnA.textContent = `${action} ${SETTINGS.TEAM_A_NAME}`;
+
+            // Revert styles to default CSS
+            btnA.style.backgroundColor = "";
+            btnA.style.color = "";
+            btnA.style.borderColor = "";
         }
 
         // Actualizar botón del equipo B
@@ -54,7 +62,13 @@ export const Players = {
             .every(pl => pl.visible);
         const btnB = document.getElementById("show-team-b");
         if (btnB) {
-            btnB.textContent = allVisibleB ? "Ocultar equipo rojo" : "Mostrar equipo rojo";
+            const action = allVisibleB ? "Ocultar" : "Mostrar";
+            btnB.textContent = `${action} ${SETTINGS.TEAM_B_NAME}`;
+
+            // Revert styles to default CSS
+            btnB.style.backgroundColor = "";
+            btnB.style.color = "";
+            btnB.style.borderColor = "";
         }
     },
 
@@ -104,11 +118,9 @@ export const Players = {
 
         const selector = `.player-toggle[data-team="${team}"][data-number="${num}"]`;
         const div = document.querySelector(selector);
-        if (div) {
-            div.classList.toggle("is-active", p.visible);
-        }
 
-        this.updateTeamButtons();
+        // We rely on syncToggles to handle UI state and colors consistently
+        this.syncToggles();
         Renderer.drawFrame();
     },
 
@@ -118,8 +130,35 @@ export const Players = {
             const team = div.dataset.team;
             const num = parseInt(div.dataset.number);
             const p = f.players.find(x => x.team === team && x.number === num);
+
             if (p) {
-                div.classList.toggle("is-active", p.visible);
+                const isActive = p.visible;
+                div.classList.toggle("is-active", isActive);
+
+                // Dynamic Coloring based on Settings
+                const teamColor = team === "A" ? SETTINGS.TEAM_A_COLOR : SETTINGS.TEAM_B_COLOR;
+
+                // "Justo al revés": Active = Neutral (On Field), Inactive = Colored (On Bench)
+                if (isActive) {
+                    // Active (On Field) -> Standard Highlight or Neutral
+                    // We let CSS handle .is-active for border/shadow, but we force background to be "used" (maybe white/gray)
+                    // or just revert to CSS default for active?
+                    // Let's make it White with Colored Border/Text to show "Empty/Placed" logic? 
+                    // Or just standard "Active" look from CSS (Blue/Primary). 
+                    // But user wants "Justo al revés". My previous was: Active=Color.
+                    // So now: Active = DEFAULT CSS (or Gray).
+                    div.style.backgroundColor = "";
+                    div.style.color = "";
+                    div.style.borderColor = groupColorBorder(teamColor);
+                } else {
+                    // Inactive (On Bench) -> Has the Token Color
+                    div.style.backgroundColor = teamColor;
+                    div.style.color = "#ffffff";
+                    div.style.borderColor = teamColor;
+                }
+
+                // Helper to determine border specific to team if needed
+                function groupColorBorder(c) { return c; }
             }
         });
         this.updateTeamButtons();

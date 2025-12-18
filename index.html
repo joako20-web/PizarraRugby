@@ -87,8 +87,6 @@
         <section class="panel">
             <h3 class="panel__title">Modos</h3>
 
-            <!-- Modo mover fichas (activo por defecto) -->
-            <!-- Nota: 'active' se cambia a 'is-active' via JS, pero lo pongo aquí si está hardcoded -->
             <!-- Control Historial -->
             <div class="history-controls" style="display: flex; gap: 10px; margin-bottom: 10px;">
                 <button id="btn-undo" class="btn btn--secondary" title="Deshacer (Ctrl+Z)" disabled>
@@ -138,9 +136,7 @@
 
             <!-- Botones de limpieza -->
             <button id="clear-board" class="btn btn--danger">Limpiar tablero</button>
-
         </section>
-
     </aside>
 
     <!-- ========================================
@@ -207,6 +203,7 @@
         <!-- Contenedor de reproducción y exportación (para tutorial) -->
         <div id="playback-controls" class="sidebar__group">
             <!-- Controles de reproducción -->
+            <!-- Controles de reproducción -->
             <button id="play-animation" class="btn btn--primary">
                 <svg class="icon icon--sm" viewBox="0 0 24 24" fill="currentColor">
                     <path fill-rule="evenodd"
@@ -214,12 +211,12 @@
                         clip-rule="evenodd" />
                 </svg> Reproducir
             </button>
-            <button id="stop-animation" class="btn btn--secondary">
+            <button id="pause-animation" class="btn btn--secondary is-hidden">
                 <svg class="icon icon--sm" viewBox="0 0 24 24" fill="currentColor">
                     <path fill-rule="evenodd"
-                        d="M4.5 7.5a3 3 0 0 1 3-3h9a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3h-9a3 3 0 0 1-3-3v-9Z"
+                        d="M6.75 5.25a.75.75 0 01.75-.75H9a.75.75 0 01.75.75v13.5a.75.75 0 01-.75.75H7.5a.75.75 0 01-.75-.75V5.25zm7.5 0A.75.75 0 0115 4.5h1.5a.75.75 0 01.75.75v13.5a.75.75 0 01-.75.75H15a.75.75 0 01-.75-.75V5.25z"
                         clip-rule="evenodd" />
-                </svg> Parar
+                </svg> Pausar
             </button>
 
             <!-- Exportación de video -->
@@ -235,6 +232,7 @@
                         d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
                 </svg> Modo Presentación
             </button>
+
         </div>
 
         <!-- Field Configuration Panel -->
@@ -317,6 +315,8 @@
                 d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
         </svg>
     </button>
+
+
 
     <!-- Botón de borrar elementos seleccionados -->
     <button id="delete-btn" class="delete-btn is-hidden" title="Borrar elemento seleccionado">Borrar</button>

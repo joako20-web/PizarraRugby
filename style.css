@@ -8,26 +8,95 @@
    ========================================================================== */
 
 /* ========================================
-   1. BASE
+   1. BASE & VARIABLES
    ======================================== */
+:root {
+    /* Color System - Dark Mode (Premium Slate) */
+    --bg-primary: #0f172a;
+    /* Slate 900 */
+    --bg-secondary: #1e293b;
+    /* Slate 800 */
+    --bg-panel: #334155;
+    /* Slate 700 */
+    --bg-input: #475569;
+    /* Slate 600 */
+    --bg-hover: #334155;
+    /* Slate 700 hover */
+
+    --text-primary: #f8fafc;
+    /* Slate 50 */
+    --text-secondary: #94a3b8;
+    /* Slate 400 */
+
+    --border-color: #334155;
+    /* Slate 700 */
+
+    --primary: #3b82f6;
+    /* Blue 500 */
+    --primary-hover: #2563eb;
+    /* Blue 600 */
+    --accent: #fbbf24;
+    /* Amber 400 (Gold) */
+    --danger: #ef4444;
+    /* Red 500 */
+    --success: #22c55e;
+    /* Green 500 */
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.light-theme {
+    /* Color System - Light Mode (Clean Paper) */
+    --bg-primary: #f1f5f9;
+    /* Slate 100 */
+    --bg-secondary: #ffffff;
+    /* White */
+    --bg-panel: #ffffff;
+    /* White Cards */
+    --bg-input: #f8fafc;
+    /* Slate 50 */
+    --bg-hover: #e2e8f0;
+    /* Slate 200 */
+
+    --text-primary: #0f172a;
+    /* Slate 900 */
+    --text-secondary: #64748b;
+    /* Slate 500 */
+
+    --border-color: #e2e8f0;
+    /* Slate 200 */
+
+    --primary: #3b82f6;
+    /* Blue 500 */
+    --primary-hover: #2563eb;
+    /* In light mode, increase shadow visibility for separation */
+    --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
 * {
     box-sizing: border-box;
     font-family: Arial, sans-serif;
 }
 
-/* Enable smooth transitions globally for layout changes */
+/* Enable smooth transitions globally for layout changes and colors */
+body,
 .sidebar,
 .main-content,
-.main-content__canvas {
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+.panel,
+.btn,
+.tutorial-box {
+    transition: background 0.3s ease, color 0.3s ease, transform 0.3s ease;
 }
 
 body {
     margin: 0;
     display: flex;
     height: 100vh;
-    background: #101820;
-    color: #fff;
+    background: var(--bg-primary);
+    color: var(--text-primary);
     overflow: hidden;
 }
 
@@ -36,17 +105,17 @@ body {
    ======================================== */
 .sidebar {
     width: 240px;
-    background: #141b24;
+    background: var(--bg-secondary);
     padding: 0;
     overflow-y: auto;
-    border-right: 1px solid #222;
+    border-right: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
 }
 
 .sidebar--right {
     border-right: none;
-    border-left: 1px solid #222;
+    border-left: 1px solid var(--border-color);
     padding: 15px;
 }
 
@@ -63,7 +132,7 @@ body {
 .main-content__canvas {
     background: #0d5e30;
     border-radius: 12px;
-    box-shadow: 0 0 22px #000;
+    box-shadow: var(--shadow-md);
     width: 100%;
     height: 100%;
 }
@@ -86,7 +155,7 @@ body {
 .panel {
     margin: 10px;
     padding: 10px;
-    border: 1px solid #222;
+    border: 1px solid var(--border-color);
     border-radius: 8px;
     background: transparent;
 }
@@ -95,7 +164,7 @@ body {
     margin-top: 0;
     font-size: 1.1em;
     margin-bottom: 10px;
-    color: #eee;
+    color: var(--text-primary);
 }
 
 .panel__player-selector {
@@ -115,9 +184,9 @@ body {
     width: 100%;
     padding: 8px;
     margin: 4px 0;
-    background: #1f2a3a;
-    color: white;
-    border: 1px solid #333;
+    background: var(--bg-panel);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
     border-radius: 6px;
     cursor: pointer;
     font-size: 13px;
@@ -125,16 +194,17 @@ body {
     align-items: center;
     justify-content: center;
     gap: 6px;
-    gap: 6px;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     transform: scale(1);
+    box-shadow: var(--shadow-sm);
 }
 
 .btn:hover {
-    background: #2a3b52;
+    background: var(--bg-hover);
     transform: translateY(-1px);
     filter: brightness(1.1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    box-shadow: var(--shadow-md);
+    border-color: var(--text-secondary);
 }
 
 .btn:active {
@@ -152,53 +222,64 @@ body {
 }
 
 .btn--action {
-    background: #2c3948;
+    background: var(--bg-input);
 }
 
 .btn--primary {
-    background: #0068ff;
-    border-color: #0056d6;
+    background: var(--primary);
+    border-color: var(--primary-hover);
+    color: #ffffff !important;
 }
 
 .btn--primary:hover {
-    background: #1c7cff;
+    background: var(--primary-hover);
 }
 
 .btn--secondary {
-    background: #444;
+    background: var(--bg-hover);
+    color: var(--text-primary);
 }
 
 .btn--danger {
-    background: #7a2020;
+    background: var(--danger);
     border-color: #5a1515;
+    color: #ffffff !important;
 }
 
 .btn--danger:hover {
-    background: #a32b2b;
+    background: #dc2626;
+    filter: brightness(1);
 }
 
-/* --- Player Token (Matches existing JS creation logic styling) --- */
+/* --- Player Token --- */
 .player-toggle {
     padding: 6px;
-    background: #1f2a3a;
-    border: 1px solid #333;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
     border-radius: 6px;
     text-align: center;
     cursor: pointer;
     font-size: 13px;
+    color: var(--text-primary);
 }
 
 .player-toggle.is-active {
-    background: #0068ff;
-    outline: 2px solid #fff;
+    background: var(--primary);
+    outline: 2px solid var(--text-primary);
+    color: #fff;
 }
 
 .player-toggle.red {
-    background: #5a2020;
+    background: #7f1d1d;
+    /* Dark Red base */
+    color: #ffffff;
+    border-color: #450a0a;
 }
 
 .player-toggle.red.is-active {
-    background: #ff3333;
+    background: var(--danger);
+    color: #ffffff !important;
+    outline-color: #ffffff;
 }
 
 /* --- Dropdowns --- */
@@ -211,8 +292,8 @@ body {
     position: absolute;
     top: 100%;
     left: 0;
-    background: #1f2a3a;
-    border: 1px solid #333;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
     padding: 5px;
     border-radius: 6px;
     width: 100%;
@@ -224,9 +305,9 @@ body {
     width: 100%;
     margin: 2px 0;
     padding: 6px;
-    background: #293546;
-    border: 1px solid #444;
-    color: white;
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
     text-align: left;
     cursor: pointer;
     display: block;
@@ -240,19 +321,19 @@ body {
     gap: 12px;
     padding: 8px 0;
     margin: 10px 0;
-    background: #1a2330;
-    border: 1px solid #333;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
     border-radius: 8px;
 }
 
 .frame-bar__btn {
     width: 36px;
     height: 32px;
-    background: #2c3948;
-    border: 1px solid #444;
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
     border-radius: 6px;
     cursor: pointer;
-    color: white;
+    color: var(--text-primary);
     font-size: 16px;
     display: flex;
     justify-content: center;
@@ -260,12 +341,12 @@ body {
 }
 
 .frame-bar__btn:hover {
-    background: #3c4d61;
+    background: var(--bg-hover);
 }
 
 .frame-bar__counter {
     font-size: 14px;
-    color: #ddd;
+    color: var(--text-secondary);
     text-align: center;
     min-width: 120px;
 }
@@ -280,11 +361,11 @@ body {
 .frame-actions__btn {
     width: auto;
     padding: 6px 12px;
-    background: #2c3948;
-    border: 1px solid #444;
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
     border-radius: 6px;
     cursor: pointer;
-    color: white;
+    color: var(--text-primary);
     font-size: 13px;
     display: flex;
     align-items: center;
@@ -301,24 +382,24 @@ body {
 .field-config__btn {
     flex: 1;
     padding: 6px;
-    background: #1f2a3a;
-    border: 1px solid #333;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
     border-radius: 4px;
-    color: #aaa;
+    color: var(--text-secondary);
     cursor: pointer;
     font-size: 12px;
 }
 
 .field-config__btn.is-active {
-    background: #0068ff;
-    color: white;
+    background: var(--primary);
+    color: #fff;
     border-color: #fff;
 }
 
 .field-config__info {
     margin-top: 8px;
     font-size: 12px;
-    color: #aaa;
+    color: var(--text-secondary);
     text-align: center;
     padding: 4px;
     background: rgba(0, 0, 0, 0.2);
@@ -331,20 +412,20 @@ body {
     top: 20px;
     left: 50%;
     transform: translateX(-50%);
-    background: #1f2a3a;
-    border: 1px solid #444;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
     border-radius: 8px;
     padding: 10px;
     z-index: 999;
     width: 220px;
     text-align: center;
-    box-shadow: 0 0 10px #000;
+    box-shadow: var(--shadow-md);
 }
 
 .color-picker__title {
     font-size: 14px;
     margin-bottom: 8px;
-    color: white;
+    color: var(--text-primary);
 }
 
 .color-picker__colors {
@@ -400,10 +481,15 @@ body {
     width: 100%;
     padding: 8px;
     margin: 8px 0;
-    background: #2c3948;
-    color: white;
-    border: 1px solid #444;
+    background: var(--bg-input);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
     border-radius: 6px;
+    outline: none;
+}
+
+.formation-selector:focus {
+    border-color: var(--primary);
 }
 
 .formation-actions {
@@ -430,14 +516,14 @@ body {
 }
 
 .popup-modal {
-    background: #1c2631;
-    border: 1px solid #333;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
     border-radius: 12px;
     padding: 20px;
     width: 360px;
     max-width: 90%;
-    color: white;
-    box-shadow: 0 0 20px black;
+    color: var(--text-primary);
+    box-shadow: var(--shadow-md);
     animation: popup-fade 0.18s ease-out;
 }
 
@@ -467,14 +553,14 @@ body {
     padding: 8px;
     border-radius: 6px;
     border: none;
-    background: #2c3948;
-    color: white;
+    background: var(--bg-input);
+    color: var(--text-primary);
     cursor: pointer;
     font-size: 14px;
 }
 
 .popup-modal__content button.choice:hover {
-    background: #3a4a5a;
+    background: var(--bg-hover);
 }
 
 .popup-modal__buttons {
@@ -510,6 +596,34 @@ body {
 }
 
 /* --- Help / Floating Buttons --- */
+.theme-btn {
+    position: fixed;
+    bottom: 10px;
+    left: 10px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--bg-panel);
+    color: var(--accent);
+    /* Sun/Moon color */
+    border: 2px solid var(--border-color);
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 1001;
+    transition: all 0.3s ease;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.theme-btn:hover {
+    transform: scale(1.1) rotate(15deg);
+    background: var(--bg-hover);
+    border-color: var(--text-primary);
+}
+
 .help-btn {
     position: fixed;
     bottom: 10px;
@@ -517,12 +631,13 @@ body {
     width: 50px;
     height: 50px;
     border-radius: 50%;
-    background: #0068ff;
+    background: var(--primary);
     color: white;
     border: 3px solid #fff;
     font-size: 28px;
     cursor: pointer;
-    box-shadow: 0 4px 12px rgba(0, 104, 255, 0.5);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.5);
+    /* Blue shadow */
     z-index: 1001;
     transition: all 0.3s ease;
     padding: 0;
@@ -586,10 +701,10 @@ body {
 
 .tutorial-spotlight {
     position: fixed;
-    border: 4px solid #00ff88;
+    border: 3px solid var(--accent);
     box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.75),
-        0 0 20px #00ff88,
-        inset 0 0 20px rgba(0, 255, 136, 0.3);
+        0 0 25px var(--accent),
+        inset 0 0 15px rgba(255, 215, 0, 0.2);
     z-index: 9999;
     pointer-events: none;
     border-radius: 8px;
@@ -603,14 +718,14 @@ body {
 
 .tutorial-box {
     position: fixed;
-    background: #1c2631;
-    border: 2px solid #00ff88;
+    background: var(--bg-panel);
+    border: 2px solid var(--accent);
     border-radius: 12px;
     padding: 20px;
     max-width: 400px;
     width: 90%;
-    color: white;
-    box-shadow: 0 0 30px rgba(0, 255, 136, 0.5);
+    color: var(--text-primary);
+    box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
     z-index: 10000;
     animation: tutorial-slide-in 0.3s ease-out;
 }
@@ -629,7 +744,7 @@ body {
 
 .tutorial-box__title {
     margin: 0 0 10px 0;
-    color: #00ff88;
+    color: var(--accent);
     font-size: 18px;
 }
 
@@ -670,9 +785,9 @@ body {
     z-index: 1000;
     width: 50px;
     height: 50px;
-    background: #1f2a3a;
-    color: white;
-    border: 2px solid #444;
+    background: var(--bg-panel);
+    color: var(--text-primary);
+    border: 2px solid var(--border-color);
     border-radius: 8px;
     font-size: 24px;
     cursor: pointer;
@@ -719,7 +834,7 @@ body {
         right: -240px;
         transition: right 0.3s ease;
         box-shadow: -2px 0 10px rgba(0, 0, 0, 0.5);
-        background: #141b24;
+        background: var(--bg-secondary);
         /* Ensure background is set */
     }
 
