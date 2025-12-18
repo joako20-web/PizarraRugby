@@ -14,6 +14,11 @@ export const SETTINGS = {
         MODE_ARROW: 'a',
         MODE_ZONE: 'z',
         MODE_SHIELD: 'h',
-        ANIMATION_PLAY: 'Space'
+        MODE_SHIELD: 'h',
+        ANIMATION_PLAY: 'Space',
+        FRAME_PREV: 'ArrowLeft',
+        FRAME_NEXT: 'ArrowRight',
+        FRAME_ADD: '+',
+        FRAME_REMOVE: '-'
     }
 };

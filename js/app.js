@@ -178,7 +178,11 @@ async function resetApp() {
             MODE_ARROW: 'a',
             MODE_ZONE: 'z',
             MODE_SHIELD: 'h',
-            ANIMATION_PLAY: 'Space'
+            ANIMATION_PLAY: 'Space',
+            FRAME_PREV: 'ArrowLeft',
+            FRAME_NEXT: 'ArrowRight',
+            FRAME_ADD: '+',
+            FRAME_REMOVE: '-'
         };
 
         // Limpiar settings de localStorage
@@ -294,10 +298,15 @@ function initEvents() {
             e.preventDefault(); // Evitar scroll
             if (state.isPlaying) Animation.pause();
             else Animation.play();
-        } else if (key === s.ANIMATION_PLAY.toLowerCase()) {
             if (state.isPlaying) Animation.pause();
             else Animation.play();
         }
+
+        // Frame Shortcuts
+        if (key === s.FRAME_NEXT.toLowerCase()) document.getElementById("next-frame").click();
+        if (key === s.FRAME_PREV.toLowerCase()) document.getElementById("prev-frame").click();
+        if (key === s.FRAME_ADD.toLowerCase()) document.getElementById("add-frame").click();
+        if (key === s.FRAME_REMOVE.toLowerCase()) document.getElementById("delete-frame").click();
     });
 
     // Eventos touch para móviles

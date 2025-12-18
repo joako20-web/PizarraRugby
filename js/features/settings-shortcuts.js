@@ -38,6 +38,25 @@ export const SettingsShortcuts = {
                     <label>Reproducir/Pausar</label>
                     <button class="btn btn--secondary bind-btn" data-action="ANIMATION_PLAY">${fmt(s.ANIMATION_PLAY)}</button>
                 </div>
+                
+                <h4 style="margin: 15px 0 10px 0; color: #888; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px;">Fotogramas</h4>
+                
+                <div class="shortcut-item">
+                    <label>Siguiente Frame</label>
+                    <button class="btn btn--secondary bind-btn" data-action="FRAME_NEXT">${fmt(s.FRAME_NEXT)}</button>
+                </div>
+                <div class="shortcut-item">
+                    <label>Anterior Frame</label>
+                    <button class="btn btn--secondary bind-btn" data-action="FRAME_PREV">${fmt(s.FRAME_PREV)}</button>
+                </div>
+                <div class="shortcut-item">
+                    <label>Añadir Frame</label>
+                    <button class="btn btn--secondary bind-btn" data-action="FRAME_ADD">${fmt(s.FRAME_ADD)}</button>
+                </div>
+                <div class="shortcut-item">
+                    <label>Eliminar Frame</label>
+                    <button class="btn btn--secondary bind-btn" data-action="FRAME_REMOVE">${fmt(s.FRAME_REMOVE)}</button>
+                </div>
 
                 <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); text-align: right;">
                     <button id="btn-reset-shortcuts" class="btn btn--danger" style="width: auto; padding: 6px 12px; font-size: 13px;">Restaurar Atajos</button>
@@ -61,7 +80,11 @@ export const SettingsShortcuts = {
                         MODE_ARROW: 'a',
                         MODE_ZONE: 'z',
                         MODE_SHIELD: 'h',
-                        ANIMATION_PLAY: 'Space'
+                        ANIMATION_PLAY: 'Space',
+                        FRAME_PREV: 'Arrowleft',
+                        FRAME_NEXT: 'Arrowright',
+                        FRAME_ADD: '+',
+                        FRAME_REMOVE: '-'
                     };
                     if (saveCallback) saveCallback();
 

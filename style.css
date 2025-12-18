@@ -404,6 +404,8 @@ body {
 /* Range Slider */
 .form-group input[type="range"] {
     -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
     width: 100%;
     background: transparent;
     margin: 10px 0;
@@ -463,6 +465,8 @@ body {
 
 /* Color Input */
 .form-group input[type="color"] {
+    -webkit-appearance: none;
+    -moz-appearance: none;
     appearance: none;
     border: none;
     width: 100%;
