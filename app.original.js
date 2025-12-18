@@ -1,6 +1,17 @@
+/**
+ * ================================================================
+ * PIZARRA RUGBY v2.3.0
+ * ================================================================
+ * Herramienta táctica profesional para diseño y animación de jugadas
+ * 
+ * @version 2.3.0 (Refactored to BEM/SMACSS)
+ * @license MIT
+ * @see README.md
+ * ================================================================
+ */
+
 // ==============================
-// CONFIGURACIÓN GENERAL - v2.1.0
-// Todas las constantes centralizadas para fácil modificación
+// CONFIGURACIÓN GENERAL
 // ==============================
 const CONFIG = {
     // ============================================
@@ -237,18 +248,18 @@ const Notificacion = {
     show(mensaje, duracion = 3000) {
         const notif = document.getElementById("notification");
         notif.textContent = mensaje;
-        notif.classList.remove("hidden");
+        notif.classList.remove("is-hidden");
 
         // Esperar un frame para que se aplique el display antes de animar
         setTimeout(() => {
-            notif.classList.add("show");
+            notif.classList.add("is-visible");
         }, CONFIG.UI_TIMING.NOTIFICATION_SHOW_DELAY);
 
         // Ocultar después de la duración especificada
         setTimeout(() => {
-            notif.classList.remove("show");
+            notif.classList.remove("is-visible");
             setTimeout(() => {
-                notif.classList.add("hidden");
+                notif.classList.add("is-hidden");
             }, CONFIG.UI_TIMING.NOTIFICATION_HIDE_DELAY);
         }, duracion);
     }
@@ -282,22 +293,22 @@ const Popup = {
                 buttonsBox.style.justifyContent = "center";
             }
 
-            overlay.classList.remove("hidden");
+            overlay.classList.remove("is-hidden");
 
             btnOk.onclick = () => {
-                overlay.classList.add("hidden");
+                overlay.classList.add("is-hidden");
                 resolve(true);
             };
 
             btnCancel.onclick = () => {
-                overlay.classList.add("hidden");
+                overlay.classList.add("is-hidden");
                 resolve(false);
             };
 
             overlay.onclick = (e) => {
                 const popup = document.getElementById("popup-modal");
                 if (!popup.contains(e.target)) {
-                    overlay.classList.add("hidden");
+                    overlay.classList.add("is-hidden");
                     resolve(showCancel ? false : true);
                 }
             };
@@ -331,7 +342,7 @@ const Popup = {
 
             document.querySelectorAll("#popup-content .choice").forEach(btn => {
                 btn.onclick = () => {
-                    document.getElementById("popup-overlay").classList.add("hidden");
+                    document.getElementById("popup-overlay").classList.add("is-hidden");
                     resolve(btn.dataset.v);
                 };
             });
@@ -398,9 +409,9 @@ const UI = {
         const hasSelection = state.selectedShield || state.selectedZone || state.selectedText || state.selectedArrow;
 
         if (hasSelection) {
-            deleteBtn.classList.remove("hidden");
+            deleteBtn.classList.remove("is-hidden");
         } else {
-            deleteBtn.classList.add("hidden");
+            deleteBtn.classList.add("is-hidden");
         }
     }
 };
@@ -1610,7 +1621,7 @@ const Players = {
         const selector = `.player-toggle[data-team="${team}"][data-number="${num}"]`;
         const div = document.querySelector(selector);
         if (div) {
-            div.classList.toggle("active", p.visible);
+            div.classList.toggle("is-active", p.visible);
         }
 
         this.updateTeamButtons();
@@ -1623,7 +1634,7 @@ const Players = {
             const team = div.dataset.team;
             const num = parseInt(div.dataset.number);
             const p = f.players.find(x => x.team === team && x.number === num);
-            div.classList.toggle("active", p.visible);
+            div.classList.toggle("is-active", p.visible);
         });
         this.updateTeamButtons();
     }
@@ -1711,11 +1722,11 @@ const Formations = {
             const halfBtn = document.getElementById("field-type-half");
 
             if (state.fieldConfig.type === "full") {
-                fullBtn.classList.add("active");
-                halfBtn.classList.remove("active");
+                fullBtn.classList.add("is-active");
+                halfBtn.classList.remove("is-active");
             } else {
-                fullBtn.classList.remove("active");
-                halfBtn.classList.add("active");
+                fullBtn.classList.remove("is-active");
+                halfBtn.classList.add("is-active");
             }
 
             // Actualizar info de configuración
@@ -1829,26 +1840,26 @@ const Mode = {
         state.previewArrow = null;
 
         document.querySelectorAll("#sidebar button")
-            .forEach(b => b.classList.remove("active"));
+            .forEach(b => b.classList.remove("is-active"));
 
         if (m === "move") {
-            document.getElementById("mode-move").classList.add("active");
+            document.getElementById("mode-move").classList.add("is-active");
         }
         if (m === "text") {
-            document.getElementById("mode-text").classList.add("active");
+            document.getElementById("mode-text").classList.add("is-active");
         }
         if (m === "scrum") {
-            document.getElementById("mode-scrum").classList.add("active");
+            document.getElementById("mode-scrum").classList.add("is-active");
         }
         if (m === "shield") {
-            document.getElementById("mode-shield").classList.add("active");
+            document.getElementById("mode-shield").classList.add("is-active");
         }
 
         const zonePanel = document.getElementById("zone-color-panel");
         if (m === "zone") {
-            zonePanel.classList.remove("hidden");
+            zonePanel.classList.remove("is-hidden");
         } else {
-            zonePanel.classList.add("hidden");
+            zonePanel.classList.add("is-hidden");
         }
 
         Renderer.drawFrame();
@@ -2503,11 +2514,11 @@ function initEvents() {
         const halfBtn = document.getElementById("field-type-half");
 
         if (state.fieldConfig.type === "full") {
-            fullBtn.classList.add("active");
-            halfBtn.classList.remove("active");
+            fullBtn.classList.add("is-active");
+            halfBtn.classList.remove("is-active");
         } else {
-            fullBtn.classList.remove("active");
-            halfBtn.classList.add("active");
+            fullBtn.classList.remove("is-active");
+            halfBtn.classList.add("is-active");
         }
     }
 
@@ -2624,7 +2635,7 @@ function initEvents() {
                 Mode.set("kick");
                 document.getElementById("mode-arrow").textContent = "Flecha (Patada) ▼";
             }
-            document.getElementById("arrow-menu").classList.add("hidden");
+            document.getElementById("arrow-menu").classList.add("is-hidden");
         };
     });
 
@@ -2633,7 +2644,7 @@ function initEvents() {
     document.getElementById("mode-text").onclick = () => Mode.set("text");
     document.getElementById("mode-scrum").onclick = () => Mode.set("scrum");
     document.getElementById("mode-arrow").onclick = () => {
-        document.getElementById("arrow-menu").classList.toggle("hidden");
+        document.getElementById("arrow-menu").classList.toggle("is-hidden");
     };
     document.getElementById("mode-zone").onclick = () => Mode.set("zone");
     document.getElementById("mode-shield").onclick = () => Mode.set("shield");
@@ -2643,7 +2654,7 @@ function initEvents() {
     document.getElementById("show-team-b").onclick = () => Players.showTeam("B");
 
     // Colores de zona
-    document.querySelectorAll(".zcp-color").forEach(btn => {
+    document.querySelectorAll(".color-picker__swatch").forEach(btn => {
         btn.onclick = () => {
             state.selectedZoneColor = btn.dataset.color;
         };
@@ -2698,12 +2709,12 @@ function initEvents() {
         const overlay = document.getElementById("mobile-overlay");
         const rightPanel = document.getElementById("right-panel");
 
-        sidebar.classList.toggle("show");
-        overlay.classList.toggle("show");
+        sidebar.classList.toggle("is-visible");
+        overlay.classList.toggle("is-visible");
 
         // Cerrar el panel derecho si está abierto
-        if (rightPanel.classList.contains("show")) {
-            rightPanel.classList.remove("show");
+        if (rightPanel.classList.contains("is-visible")) {
+            rightPanel.classList.remove("is-visible");
         }
     };
 
@@ -2713,12 +2724,12 @@ function initEvents() {
         const overlay = document.getElementById("mobile-overlay");
         const sidebar = document.getElementById("sidebar");
 
-        rightPanel.classList.toggle("show");
-        overlay.classList.toggle("show");
+        rightPanel.classList.toggle("is-visible");
+        overlay.classList.toggle("is-visible");
 
         // Cerrar el sidebar si está abierto
-        if (sidebar.classList.contains("show")) {
-            sidebar.classList.remove("show");
+        if (sidebar.classList.contains("is-visible")) {
+            sidebar.classList.remove("is-visible");
         }
     };
 
@@ -2728,9 +2739,9 @@ function initEvents() {
         const rightPanel = document.getElementById("right-panel");
         const overlay = document.getElementById("mobile-overlay");
 
-        sidebar.classList.remove("show");
-        rightPanel.classList.remove("show");
-        overlay.classList.remove("show");
+        sidebar.classList.remove("is-visible");
+        rightPanel.classList.remove("is-visible");
+        overlay.classList.remove("is-visible");
     };
 }
 
@@ -2783,17 +2794,17 @@ function handleResize() {
         mobileMenuBtn.style.display = "block";
         mobileRightMenuBtn.style.display = "block";
 
-        sidebar.classList.remove("show");
-        rightPanel.classList.remove("show");
-        overlay.classList.remove("show");
+        sidebar.classList.remove("is-visible");
+        rightPanel.classList.remove("is-visible");
+        overlay.classList.remove("is-visible");
     } else {
         // MODO DESKTOP
         mobileMenuBtn.style.display = "none";
         mobileRightMenuBtn.style.display = "none";
 
-        sidebar.classList.remove("show");
-        rightPanel.classList.remove("show");
-        overlay.classList.remove("show");
+        sidebar.classList.remove("is-visible");
+        rightPanel.classList.remove("is-visible");
+        overlay.classList.remove("is-visible");
     }
 
     // Redimensionar canvas para ambos modos
@@ -2835,6 +2846,13 @@ const Tutorial = {
     tutorials: {
         basic: [
             {
+                title: "0. Configuración del Campo",
+                text: "Antes de empezar, elige el tipo de campo: 'Campo Completo' para ver todo el campo de rugby, o 'Mitad Campo' para enfocarte en una zona específica. Usa el botón de rotar para cambiar la orientación.",
+                target: ".field-type-selector",
+                action: null,
+                position: "right"
+            },
+            {
                 title: "1. Selección de Jugadores",
                 text: "En el menú izquierdo puedes seleccionar jugadores de cada equipo. Haz clic en los números para mostrar/ocultar jugadores en el campo. También puedes usar los botones 'Mostrar equipo azul/rojo' para colocar todo el equipo automáticamente.",
                 target: "#players-panels",
@@ -2866,52 +2884,73 @@ const Tutorial = {
         advanced: [
             {
                 title: "Herramienta: Flechas",
-                text: "El menú de flechas te permite dibujar dos tipos: flechas normales para indicar movimientos y flechas de patada con arco. Haz clic para marcar el inicio y el final de la flecha.",
+                text: "El menú de flechas te permite dibujar dos tipos: flechas normales para indicar movimientos y flechas de patada con arco. Haz clic para marcar el inicio y el final de la flecha. Mantén Shift presionado para ajustar la altura del arco en patadas.",
                 target: "#arrow-menu-container",
                 action: null,
                 position: "right"
             },
             {
                 title: "Herramienta: Texto",
-                text: "Añade anotaciones a tus jugadas. Haz clic en el campo para colocar texto explicativo. Puedes arrastrar el texto para reposicionarlo.",
+                text: "Añade anotaciones a tus jugadas. Haz clic en el campo para colocar texto explicativo. Puedes arrastrar el texto para reposicionarlo y hacer doble clic para editarlo.",
                 target: "#mode-text",
                 action: null,
                 position: "right"
             },
             {
                 title: "Herramienta: Melé",
-                text: "Posiciona automáticamente a los jugadores en formación de melé. Haz clic en el campo y elige qué equipo(s) participan. Los jugadores se colocarán en la formación correcta.",
+                text: "Posiciona automáticamente a los jugadores en formación de melé. Haz clic en el campo y elige qué equipo(s) participan. Los jugadores se colocarán en la formación correcta de 8 vs 8.",
                 target: "#mode-scrum",
                 action: null,
                 position: "right"
             },
             {
                 title: "Herramienta: Zonas",
-                text: "Crea zonas de colores en el campo para destacar áreas tácticas. Selecciona un color, dibuja el área y asígnale un nombre. Puedes bloquear/desbloquear zonas para evitar moverlas.",
+                text: "Crea zonas de colores en el campo para destacar áreas tácticas. Selecciona un color, dibuja el área haciendo dos clics (esquinas opuestas), asígnale un nombre y luego posiciona la etiqueta. Haz clic en el candado para bloquear/desbloquear zonas.",
                 target: "#mode-zone",
                 action: null,
                 position: "right"
             },
             {
                 title: "Herramienta: Escudos",
-                text: "Asigna escudos a los jugadores. Puedes colocarlo apuntando a donde sea. El escudo se vincula a la ficha y se mueve con ella",
+                text: "Asigna escudos de entrenamiento a los jugadores. Haz clic cerca de un jugador para crear el escudo, luego arrastra para ajustar la dirección. El escudo se mueve con el jugador al crear animaciones.",
                 target: "#mode-shield",
                 action: null,
                 position: "right"
             },
             {
+                title: "Gestión de Formaciones",
+                text: "Guarda configuraciones tácticas completas con el botón 'Guardar Formación'. Puedes cargar formaciones guardadas desde el selector y eliminarlas con el botón de papelera. Perfecto para reutilizar setups comunes.",
+                target: "#save-formation-btn",
+                action: null,
+                position: "right"
+            },
+            {
                 title: "Controles del Balón",
-                text: "El botón 'Mostrar / ocultar balón' te permite controlar la visibilidad del balón en cada frame. Útil para simular diferentes fases de juego.",
+                text: "El botón 'Mostrar / ocultar balón' te permite controlar la visibilidad del balón en cada frame. Útil para simular diferentes fases de juego. Arrastra el balón para reposicionarlo.",
                 target: "#toggle-ball",
                 action: null,
                 position: "right"
             },
             {
+                title: "Borrar Elementos",
+                text: "Selecciona cualquier elemento (jugador, flecha, texto, zona, escudo) y presiona la tecla 'Supr' o haz clic en el botón 'Borrar selección' para eliminarlo. 'Borrar flechas' elimina todas las flechas del frame actual.",
+                target: "#delete-btn",
+                action: null,
+                position: "right"
+            },
+            {
                 title: "Limpiar Tablero",
-                text: "Usa 'Borrar flechas' para eliminar solo las flechas del frame actual. 'Limpiar tablero' resetea completamente el frame: elimina jugadores, flechas, textos y trails.",
+                text: "'Limpiar tablero' resetea completamente el frame actual: oculta jugadores, elimina flechas, textos, escudos y trails. Mantiene las zonas intactas. Útil para empezar un nuevo setup desde cero.",
                 target: "#clear-board",
                 action: null,
                 position: "right"
+            },
+            {
+                title: "Atajos de Teclado",
+                text: "Usa 'Esc' para limpiar selecciones. 'Delete/Supr' para borrar elementos. 'Ctrl+Click' para selección múltiple. Estos atajos aceleran tu flujo de trabajo.",
+                target: "#pitch",
+                action: null,
+                position: "top"
             }
         ]
     },
@@ -2923,8 +2962,8 @@ const Tutorial = {
         this.actionCompleted = false;
 
         // Mostrar overlay
-        document.getElementById('tutorial-overlay').classList.remove('hidden');
-        document.getElementById('tutorial-box').classList.remove('hidden');
+        document.getElementById('tutorial-overlay').classList.remove('is-hidden');
+        document.getElementById('tutorial-box').classList.remove('is-hidden');
 
         this.showStep(0);
     },
@@ -2968,7 +3007,7 @@ const Tutorial = {
 
         if (!target) {
             console.warn('Tutorial: elemento no encontrado:', selector);
-            spotlight.classList.remove('active');
+            spotlight.classList.remove('is-active');
             return;
         }
 
@@ -2980,37 +3019,90 @@ const Tutorial = {
         spotlight.style.top = (rect.top - padding) + 'px';
         spotlight.style.width = (rect.width + padding * 2) + 'px';
         spotlight.style.height = (rect.height + padding * 2) + 'px';
-        spotlight.classList.add('active');
+        spotlight.classList.add('is-active');
 
         // Posicionar cuadro de información
         const boxRect = tutorialBox.getBoundingClientRect();
         let left, top;
+        const margin = 30; // Mayor margen para evitar superposición
 
         switch (boxPosition) {
             case 'right':
-                left = rect.right + 20;
+                left = rect.right + margin;
                 top = rect.top + (rect.height / 2) - (boxRect.height / 2);
+                // Si se sale por la derecha, ponerlo arriba
+                if (left + boxRect.width > window.innerWidth - 10) {
+                    left = rect.left + (rect.width / 2) - (boxRect.width / 2);
+                    top = rect.top - boxRect.height - margin;
+                }
                 break;
             case 'left':
-                left = rect.left - boxRect.width - 20;
+                left = rect.left - boxRect.width - margin;
                 top = rect.top + (rect.height / 2) - (boxRect.height / 2);
+                // Si se sale por la izquierda, ponerlo arriba
+                if (left < 10) {
+                    left = rect.left + (rect.width / 2) - (boxRect.width / 2);
+                    top = rect.top - boxRect.height - margin;
+                }
                 break;
             case 'top':
                 left = rect.left + (rect.width / 2) - (boxRect.width / 2);
-                top = rect.top - boxRect.height - 20;
+                top = rect.top - boxRect.height - margin;
+                // Si se sale por arriba, ponerlo abajo
+                if (top < 10) {
+                    top = rect.bottom + margin;
+                }
                 break;
             case 'bottom':
                 left = rect.left + (rect.width / 2) - (boxRect.width / 2);
-                top = rect.bottom + 20;
+                top = rect.bottom + margin;
+                // Si se sale por abajo, ponerlo arriba
+                if (top + boxRect.height > window.innerHeight - 10) {
+                    top = rect.top - boxRect.height - margin;
+                }
                 break;
             default:
                 left = window.innerWidth / 2 - boxRect.width / 2;
                 top = window.innerHeight / 2 - boxRect.height / 2;
         }
 
-        // Ajustar si se sale de la pantalla
+        // Ajustar si se sale de la pantalla (con checks mejorados)
         left = Math.max(10, Math.min(left, window.innerWidth - boxRect.width - 10));
         top = Math.max(10, Math.min(top, window.innerHeight - boxRect.height - 10));
+
+        // Verificar que no se superponga con el spotlight
+        const spotlightRect = {
+            left: rect.left - padding,
+            right: rect.right + padding,
+            top: rect.top - padding,
+            bottom: rect.bottom + padding
+        };
+
+        const boxFinalRect = {
+            left: left,
+            right: left + boxRect.width,
+            top: top,
+            bottom: top + boxRect.height
+        };
+
+        // Si hay superposición, mover el box
+        if (!(boxFinalRect.right < spotlightRect.left ||
+            boxFinalRect.left > spotlightRect.right ||
+            boxFinalRect.bottom < spotlightRect.top ||
+            boxFinalRect.top > spotlightRect.bottom)) {
+            // Hay superposición, mover a la posición opuesta
+            if (boxPosition === 'right' || boxPosition === 'left') {
+                top = rect.bottom + margin;
+                if (top + boxRect.height > window.innerHeight - 10) {
+                    top = rect.top - boxRect.height - margin;
+                }
+            } else {
+                left = rect.right + margin;
+                if (left + boxRect.width > window.innerWidth - 10) {
+                    left = rect.left - boxRect.width - margin;
+                }
+            }
+        }
 
         tutorialBox.style.left = left + 'px';
         tutorialBox.style.top = top + 'px';
@@ -3037,9 +3129,9 @@ const Tutorial = {
 
     finish() {
         this.active = false;
-        document.getElementById('tutorial-overlay').classList.add('hidden');
-        document.getElementById('tutorial-box').classList.add('hidden');
-        document.getElementById('tutorial-spotlight').classList.remove('active');
+        document.getElementById('tutorial-overlay').classList.add('is-hidden');
+        document.getElementById('tutorial-box').classList.add('is-hidden');
+        document.getElementById('tutorial-spotlight').classList.remove('is-active');
 
         // Si terminó el tutorial básico, preguntar si quiere ver el avanzado
         if (this.currentTutorialType === 'basic') {

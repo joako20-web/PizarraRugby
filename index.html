@@ -39,12 +39,12 @@
 
 <body>
     <!-- Botón de menú para móvil -->
-    <button id="mobile-menu-btn" class="mobile-only">
+    <button id="mobile-menu-btn" class="mobile-nav-btn mobile-nav-btn--left u-mobile-only">
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
         </svg>
     </button>
-    <button id="mobile-right-menu-btn" class="mobile-only">
+    <button id="mobile-right-menu-btn" class="mobile-nav-btn mobile-nav-btn--right u-mobile-only">
         <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
             <path
                 d="M5.25 5.623c0-.702.754-1.147 1.366-.806l13.5 7.5a.91.91 0 0 1 0 1.583l-13.5 7.5c-.612.34-1.366-.104-1.366-.806V5.623Z" />
@@ -54,132 +54,133 @@
     <!-- ========================================
          PANEL LATERAL IZQUIERDO (SIDEBAR)
          ======================================== -->
-    <div id="sidebar">
+    <aside id="sidebar" class="sidebar">
 
         <!-- Contenedor de paneles de jugadores (para tutorial) -->
-        <div id="players-panels">
+        <div id="players-panels" class="sidebar__group">
             <!-- Panel de jugadores del equipo AZUL -->
-            <div class="panel">
-                <h2>Jugadores AZUL</h2>
-                <button id="show-team-a">Mostrar equipo azul</button>
+            <section class="panel">
+                <h2 class="panel__title">Jugadores AZUL</h2>
+                <button id="show-team-a" class="btn btn--full">Mostrar equipo azul</button>
 
                 <!-- Selector de jugadores (vacío, se llena dinámicamente) -->
-                <div class="player-selector"></div>
+                <div class="panel__player-selector"></div>
 
                 <!-- Grid de jugadores azules (se llena dinámicamente) -->
-                <div id="players-blue" class="players-grid"></div>
-            </div>
+                <div id="players-blue" class="player-grid"></div>
+            </section>
 
             <!-- Panel de jugadores del equipo ROJO -->
-            <div class="panel">
-                <h2>Jugadores ROJO</h2>
-                <button id="show-team-b">Mostrar equipo rojo</button>
+            <section class="panel">
+                <h2 class="panel__title">Jugadores ROJO</h2>
+                <button id="show-team-b" class="btn btn--full">Mostrar equipo rojo</button>
 
                 <!-- Selector de jugadores (vacío, se llena dinámicamente) -->
-                <div class="player-selector"></div>
+                <div class="panel__player-selector"></div>
 
                 <!-- Grid de jugadores rojos (se llena dinámicamente) -->
-                <div id="players-red" class="players-grid"></div>
-            </div>
+                <div id="players-red" class="player-grid"></div>
+            </section>
         </div>
 
         <!-- Panel de herramientas y modos -->
-        <div class="panel">
-            <h3>Modos</h3>
+        <section class="panel">
+            <h3 class="panel__title">Modos</h3>
 
             <!-- Modo mover fichas (activo por defecto) -->
-            <button id="mode-move" class="active">Mover / Seleccionar</button>
+            <!-- Nota: 'active' se cambia a 'is-active' via JS, pero lo pongo aquí si está hardcoded -->
+            <button id="mode-move" class="btn btn--mode is-active">Mover / Seleccionar</button>
 
             <!-- Menú desplegable de flechas -->
-            <div id="arrow-menu-container">
-                <button id="mode-arrow">Flecha
-                    <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <div id="arrow-menu-container" class="dropdown">
+                <button id="mode-arrow" class="btn btn--mode">Flecha
+                    <svg class="icon icon--sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
                     </svg>
                 </button>
-                <div id="arrow-menu" class="hidden">
-                    <button data-arrow="normal">Flecha normal</button>
-                    <button data-arrow="kick">Flecha de patada</button>
+                <div id="arrow-menu" class="dropdown__menu is-hidden">
+                    <button class="dropdown__item" data-arrow="normal">Flecha normal</button>
+                    <button class="dropdown__item" data-arrow="kick">Flecha de patada</button>
                 </div>
             </div>
 
             <!-- Modo texto -->
-            <button id="mode-text">Texto</button>
+            <button id="mode-text" class="btn btn--mode">Texto</button>
 
             <!-- Modo melé -->
-            <button id="mode-scrum">Melé</button>
+            <button id="mode-scrum" class="btn btn--mode">Melé</button>
 
             <!-- Modo zonas -->
-            <button id="mode-zone">Zonas</button>
+            <button id="mode-zone" class="btn btn--mode">Zonas</button>
 
             <!-- Modo escudo de entrenamiento -->
-            <button id="mode-shield">Escudo de entrenamiento</button>
+            <button id="mode-shield" class="btn btn--mode">Escudo de entrenamiento</button>
 
             <!-- Control de visibilidad del balón -->
-            <button id="toggle-ball">Mostrar / ocultar balón</button>
+            <button id="toggle-ball" class="btn btn--action">Mostrar / ocultar balón</button>
 
             <!-- Botones de limpieza -->
-            <button id="clear-board">Limpiar tablero</button>
+            <button id="clear-board" class="btn btn--danger">Limpiar tablero</button>
 
-        </div>
+        </section>
 
-    </div>
+    </aside>
 
     <!-- ========================================
          ÁREA PRINCIPAL (CANVAS)
          ======================================== -->
-    <div id="main">
+    <main id="main" class="main-content">
         <!-- Canvas donde se dibuja el campo de rugby -->
-        <canvas id="pitch"></canvas>
-    </div>
-    <div id="zone-color-panel" class="hidden">
-        <div class="zcp-title">Color de la zona</div>
-        <div class="zcp-colors">
-            <div class="zcp-color color-1" data-color="#00aaff"></div>
-            <div class="zcp-color color-2" data-color="#ff3333"></div>
-            <div class="zcp-color color-3" data-color="#ffd000"></div>
-            <div class="zcp-color color-4" data-color="#00cc66"></div>
-            <div class="zcp-color color-5" data-color="#ff9100"></div>
+        <canvas id="pitch" class="main-content__canvas"></canvas>
+    </main>
+
+    <div id="zone-color-panel" class="color-picker is-hidden">
+        <div class="color-picker__title">Color de la zona</div>
+        <div class="color-picker__colors">
+            <div class="color-picker__swatch color-picker__swatch--1" data-color="#00aaff"></div>
+            <div class="color-picker__swatch color-picker__swatch--2" data-color="#ff3333"></div>
+            <div class="color-picker__swatch color-picker__swatch--3" data-color="#ffd000"></div>
+            <div class="color-picker__swatch color-picker__swatch--4" data-color="#00cc66"></div>
+            <div class="color-picker__swatch color-picker__swatch--5" data-color="#ff9100"></div>
         </div>
-    </div>
     </div>
 
     <!-- ========================================
          PANEL LATERAL DERECHO (ANIMACIÓN)
          ======================================== -->
-    <div id="right-panel">
-        <h2>Animación</h2>
+    <aside id="right-panel" class="sidebar sidebar--right">
+        <h2 class="sidebar__title">Animación</h2>
 
         <!-- Contenedor de controles de frames (para tutorial) -->
-        <div id="frame-controls">
+        <div id="frame-controls" class="sidebar__group">
             <!-- Barra moderna de frames -->
-            <div id="frame-bar">
-                <button id="prev-frame" class="fb-btn">
+            <div id="frame-bar" class="frame-bar">
+                <button id="prev-frame" class="frame-bar__btn">
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
                     </svg>
                 </button>
 
-                <div id="frame-counter">
+                <div id="frame-counter" class="frame-bar__counter">
                     Frame <span id="current-frame-index">1</span> de
                     <span id="total-frames">1</span>
                 </div>
 
-                <button id="next-frame" class="fb-btn">
+                <button id="next-frame" class="frame-bar__btn">
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
                     </svg>
                 </button>
             </div>
 
-            <div id="frame-actions">
-                <button id="add-frame" class="fb-action">
-                    <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <div id="frame-actions" class="frame-actions">
+                <button id="add-frame" class="frame-actions__btn">
+                    <svg class="icon icon--sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                     </svg> Añadir
                 </button>
-                <button id="delete-frame" class="fb-action">
-                    <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <button id="delete-frame" class="frame-actions__btn">
+                    <svg class="icon icon--sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 12h-15" />
                     </svg> Eliminar
                 </button>
@@ -187,17 +188,17 @@
         </div>
 
         <!-- Contenedor de reproducción y exportación (para tutorial) -->
-        <div id="playback-controls">
+        <div id="playback-controls" class="sidebar__group">
             <!-- Controles de reproducción -->
-            <button id="play-animation">
-                <svg class="icon-sm" viewBox="0 0 24 24" fill="currentColor">
+            <button id="play-animation" class="btn btn--primary">
+                <svg class="icon icon--sm" viewBox="0 0 24 24" fill="currentColor">
                     <path fill-rule="evenodd"
                         d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653Z"
                         clip-rule="evenodd" />
                 </svg> Reproducir
             </button>
-            <button id="stop-animation">
-                <svg class="icon-sm" viewBox="0 0 24 24" fill="currentColor">
+            <button id="stop-animation" class="btn btn--secondary">
+                <svg class="icon icon--sm" viewBox="0 0 24 24" fill="currentColor">
                     <path fill-rule="evenodd"
                         d="M4.5 7.5a3 3 0 0 1 3-3h9a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3h-9a3 3 0 0 1-3-3v-9Z"
                         clip-rule="evenodd" />
@@ -205,79 +206,81 @@
             </button>
 
             <!-- Exportación de video -->
-            <button id="export-webm">Exportar</button>
+            <button id="export-webm" class="btn btn--action">Exportar</button>
         </div>
 
         <!-- Field Configuration Panel -->
-        <div class="panel">
-            <h3>Campo</h3>
+        <section class="panel">
+            <h3 class="panel__title">Campo</h3>
 
             <!-- Field type selector -->
-            <div class="field-type-selector">
-                <button id="field-type-full" class="field-type-btn active">Campo Completo</button>
-                <button id="field-type-half" class="field-type-btn">Mitad de Campo</button>
-            </div>
+            <div class="field-config">
+                <div class="field-config__type-selector">
+                    <button id="field-type-full" class="field-config__btn is-active">Campo Completo</button>
+                    <button id="field-type-half" class="field-config__btn">Mitad de Campo</button>
+                </div>
 
-            <!-- Rotate button -->
-            <button id="rotate-field-btn">
-                <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
-                </svg> Rotar Campo
-            </button>
+                <!-- Rotate button -->
+                <button id="rotate-field-btn" class="btn btn--action">
+                    <svg class="icon icon--sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+                    </svg> Rotar Campo
+                </button>
 
-            <!-- Current configuration indicator -->
-            <div id="field-config-info" class="field-info">
-                Campo Completo - Horizontal
+                <!-- Current configuration indicator -->
+                <div id="field-config-info" class="field-config__info">
+                    Campo Completo - Horizontal
+                </div>
             </div>
-        </div>
+        </section>
 
         <!-- Formations Panel -->
-        <div class="panel">
-            <h3>Formaciones</h3>
+        <section class="panel">
+            <h3 class="panel__title">Formaciones</h3>
 
             <!-- Save formation button -->
-            <button id="save-formation-btn">
-                <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button id="save-formation-btn" class="btn btn--action">
+                <svg class="icon icon--sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round"
                         d="M9 3.75H6.912a2.25 2.25 0 0 0-2.15 1.588L2.35 13.177a2.25 2.25 0 0 0-.1.661V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 0 0-2.15-1.588H15M2.25 13.5h3.86a2.25 2.25 0 0 1 2.012 1.244l.256.512a2.25 2.25 0 0 0 2.013 1.244h3.218a2.25 2.25 0 0 0 2.013-1.244l.256-.512a2.25 2.25 0 0 1 2.013-1.244h3.859M12 3v8.25m0 0-3-3m3 3 3-3" />
                 </svg> Guardar Formación
             </button>
 
             <!-- Load formation selector -->
-            <select id="formation-selector" aria-label="Selector de formaciones guardadas">
+            <select id="formation-selector" class="formation-selector" aria-label="Selector de formaciones guardadas">
                 <option value="">-- Seleccionar formación --</option>
             </select>
 
             <!-- Load and delete buttons -->
             <div class="formation-actions">
-                <button id="load-formation-btn">
-                    <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <button id="load-formation-btn" class="btn btn--action">
+                    <svg class="icon icon--sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round"
                             d="M3.75 9.776c.112-.017.227-.026.344-.026h15.812c.117 0 .232.009.344.026m-16.5 0a2.25 2.25 0 0 0-1.883 2.542l.857 6a2.25 2.25 0 0 0 2.227 1.932H19.05a2.25 2.25 0 0 0 2.227-1.932l.857-6a2.25 2.25 0 0 0-1.883-2.542m-16.5 0V6A2.25 2.25 0 0 1 6 3.75h3.879a1.5 1.5 0 0 1 1.06.44l2.122 2.12a1.5 1.5 0 0 0 1.06.44H18A2.25 2.25 0 0 1 20.25 9v.776" />
                     </svg> Cargar
                 </button>
-                <button id="delete-formation-btn">
-                    <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <button id="delete-formation-btn" class="btn btn--danger">
+                    <svg class="icon icon--sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round"
                             d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
                     </svg> Eliminar
                 </button>
             </div>
-        </div>
-    </div>
+        </section>
+    </aside>
 
     <!-- Overlay para móvil -->
-    <div id="mobile-overlay"></div>
+    <div id="mobile-overlay" class="mobile-overlay is-hidden"></div>
 
     <!-- Indicador de versión -->
-    <div id="version-indicator">v2.2.0</div>
+    <div id="version-indicator" class="version-indicator">v2.2.0</div>
 
     <!-- Sistema de notificaciones -->
-    <div id="notification" class="notification hidden"></div>
+    <div id="notification" class="notification is-hidden"></div>
 
     <!-- Botón de ayuda/tutorial -->
-    <button id="help-btn" class="help-button" title="Tutorial">
+    <button id="help-btn" class="help-btn" title="Tutorial">
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <path stroke-linecap="round" stroke-linejoin="round"
                 d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
@@ -285,30 +288,30 @@
     </button>
 
     <!-- Botón de borrar elementos seleccionados -->
-    <button id="delete-btn" class="delete-button hidden" title="Borrar elemento seleccionado">Borrar</button>
+    <button id="delete-btn" class="delete-btn is-hidden" title="Borrar elemento seleccionado">Borrar</button>
 
     <!-- Sistema de tutorial -->
-    <div id="tutorial-overlay" class="hidden"></div>
-    <div id="tutorial-spotlight"></div>
-    <div id="tutorial-box" class="hidden">
-        <div id="tutorial-content">
-            <h3 id="tutorial-title"></h3>
-            <p id="tutorial-text"></p>
+    <div id="tutorial-overlay" class="tutorial-overlay is-hidden"></div>
+    <div id="tutorial-spotlight" class="tutorial-spotlight is-hidden"></div>
+    <div id="tutorial-box" class="tutorial-box is-hidden">
+        <div id="tutorial-content" class="tutorial-box__content">
+            <h3 id="tutorial-title" class="tutorial-box__title"></h3>
+            <p id="tutorial-text" class="tutorial-box__text"></p>
         </div>
-        <div id="tutorial-navigation">
-            <button id="tutorial-skip">Saltar</button>
-            <button id="tutorial-prev">
-                <span class="btn-label">Paso atrás</span>
-                <span class="btn-arrow">
-                    <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <div id="tutorial-navigation" class="tutorial-box__navigation">
+            <button id="tutorial-skip" class="btn btn--danger">Saltar</button>
+            <button id="tutorial-prev" class="btn btn--secondary">
+                <span class="btn__label">Paso atrás</span>
+                <span class="btn__icon">
+                    <svg class="icon icon--sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
                     </svg>
                 </span>
             </button>
-            <button id="tutorial-next">
-                <span class="btn-label">Paso adelante</span>
-                <span class="btn-arrow">
-                    <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button id="tutorial-next" class="btn btn--secondary">
+                <span class="btn__label">Paso adelante</span>
+                <span class="btn__icon">
+                    <svg class="icon icon--sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
                     </svg>
                 </span>
@@ -316,30 +319,23 @@
         </div>
     </div>
 
-    <!-- Error Handler Module (standalone) -->
-    <script type="module">
-        import { errorHandler } from './js/error-handler.js';
-        // Exponer globalmente para que app.js pueda usarlo
-        window.errorHandler = errorHandler;
-        console.log('🛡️ Error handling system initialized');
-    </script>
+    <!-- Script principal de la aplicación (Monolithic) -->
+    <script src="app.original.js"></script>
 
-    <!-- Script principal de la aplicación -->
-    <script src="app.js"></script>
     <!-- ===========================
      POPUP MODAL PERSONALIZADO
      =========================== -->
-    <div id="popup-overlay" class="hidden">
-        <div id="popup-modal">
-            <h2 id="popup-title">Título</h2>
+    <div id="popup-overlay" class="popup-overlay is-hidden">
+        <div id="popup-modal" class="popup-modal">
+            <h2 id="popup-title" class="popup-modal__title">Título</h2>
 
-            <div id="popup-content">
+            <div id="popup-content" class="popup-modal__content">
                 <!-- Aquí va el contenido dinámico -->
             </div>
 
-            <div id="popup-buttons">
-                <button id="popup-cancel">Cancelar</button>
-                <button id="popup-ok">Aceptar</button>
+            <div id="popup-buttons" class="popup-modal__buttons">
+                <button id="popup-cancel" class="btn btn--secondary">Cancelar</button>
+                <button id="popup-ok" class="btn btn--primary">Aceptar</button>
             </div>
         </div>
     </div>

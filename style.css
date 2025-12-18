@@ -1,56 +1,59 @@
-/* ========================================
-   ESTILOS GLOBALES
-   ======================================== */
+/* ==========================================================================
+   SMACSS ARCHITECTURE
+   1. Base       - Reset, standardized styles
+   2. Layout     - Major structural blocks
+   3. Modules    - Reusable components (BEM)
+   4. State      - State-based styles (.is-active, .is-hidden)
+   5. Utilities  - Helper classes
+   ========================================================================== */
 
-/* Normalización básica y fuente por defecto */
+/* ========================================
+   1. BASE
+   ======================================== */
 * {
     box-sizing: border-box;
     font-family: Arial, sans-serif;
 }
 
-/* Contenedor principal del body */
 body {
     margin: 0;
     display: flex;
     height: 100vh;
     background: #101820;
     color: #fff;
+    overflow: hidden;
 }
 
 /* ========================================
-   LAYOUT PRINCIPAL
+   2. LAYOUT
    ======================================== */
-
-/* Barra lateral izquierda */
-#sidebar {
+.sidebar {
     width: 240px;
     background: #141b24;
-    padding: 0px;
+    padding: 0;
     overflow-y: auto;
     border-right: 1px solid #222;
+    display: flex;
+    flex-direction: column;
 }
 
-/* Área de contenido principal */
-#main {
+.sidebar--right {
+    border-right: none;
+    border-left: 1px solid #222;
+    padding: 15px;
+}
+
+.main-content {
     flex: 1;
     display: flex;
     justify-content: center;
     align-items: center;
     padding: 10px;
+    position: relative;
     overflow: hidden;
 }
 
-/* Panel lateral derecho */
-#right-panel {
-    width: 240px;
-    background: #141b24;
-    padding: 15px;
-    overflow-y: auto;
-    border-left: 1px solid #222;
-}
-
-/* Campo de juego */
-#pitch {
+.main-content__canvas {
     background: #0d5e30;
     border-radius: 12px;
     box-shadow: 0 0 22px #000;
@@ -58,32 +61,106 @@ body {
     height: 100%;
 }
 
+.sidebar__group {
+    margin-bottom: 20px;
+}
+
+.sidebar__title {
+    margin-top: 0;
+    font-size: 1.25em;
+    margin-bottom: 15px;
+}
+
 /* ========================================
-   COMPONENTES DE PANEL
+   3. MODULES (Components)
    ======================================== */
 
-/* Panel contenedor genérico */
+/* --- Panels --- */
 .panel {
-    margin-top: 0;
-    margin-bottom: 0;
+    margin: 10px;
     padding: 10px;
     border: 1px solid #222;
     border-radius: 8px;
+    background: transparent;
 }
 
-/* Grid de jugadores (5 columnas) */
-.players-grid {
+.panel__title {
+    margin-top: 0;
+    font-size: 1.1em;
+    margin-bottom: 10px;
+    color: #eee;
+}
+
+.panel__player-selector {
+    margin-bottom: 8px;
+}
+
+/* --- Player Grid --- */
+.player-grid {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
     gap: 6px;
     margin-top: 8px;
 }
 
-/* ========================================
-   BOTONES Y SELECTORES DE JUGADORES
-   ======================================== */
+/* --- Buttons --- */
+.btn {
+    width: 100%;
+    padding: 8px;
+    margin: 4px 0;
+    background: #1f2a3a;
+    color: white;
+    border: 1px solid #333;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: background 0.2s, border-color 0.2s;
+}
 
-/* Botón de selección de jugador */
+.btn:hover {
+    background: #2a3b52;
+}
+
+.btn--full {
+    width: 100%;
+}
+
+.btn--mode {
+    justify-content: flex-start;
+    padding-left: 12px;
+}
+
+.btn--action {
+    background: #2c3948;
+}
+
+.btn--primary {
+    background: #0068ff;
+    border-color: #0056d6;
+}
+
+.btn--primary:hover {
+    background: #1c7cff;
+}
+
+.btn--secondary {
+    background: #444;
+}
+
+.btn--danger {
+    background: #7a2020;
+    border-color: #5a1515;
+}
+
+.btn--danger:hover {
+    background: #a32b2b;
+}
+
+/* --- Player Token (Matches existing JS creation logic styling) --- */
 .player-toggle {
     padding: 6px;
     background: #1f2a3a;
@@ -94,92 +171,28 @@ body {
     font-size: 13px;
 }
 
-/* Estado activo del botón de jugador (azul) */
-.player-toggle.active {
+.player-toggle.is-active {
     background: #0068ff;
     outline: 2px solid #fff;
 }
 
-/* Botón de jugador del equipo rojo */
 .player-toggle.red {
     background: #5a2020;
 }
 
-/* Estado activo del botón de jugador rojo */
-.player-toggle.red.active {
+.player-toggle.red.is-active {
     background: #ff3333;
 }
 
-/* ========================================
-   BOTONES GENERALES
-   ======================================== */
-
-/* Estilos base para todos los botones */
-button {
-    width: 100%;
-    padding: 6px;
-    margin: 4px 0;
-    background: #1f2a3a;
-    color: white;
-    border: 1px solid #333;
-    border-radius: 6px;
-    cursor: pointer;
-    color: white;
-    border: 1px solid #333;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 13px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-}
-
-/* Estado activo de botones genéricos */
-button.active {
-    outline: 2px solid #fff;
-}
-
-/* ========================================
-   INFORMACIÓN Y SELECTORES
-   ======================================== */
-
-/* Separador visual */
-/* Separador visual */
-.sep {
-    margin: 8px 0;
-}
-
-/* ========================================
-   ICONOS SVG
-   ======================================== */
-.icon {
-    width: 24px;
-    height: 24px;
-    display: inline-block;
-    vertical-align: middle;
-}
-
-.icon-sm {
-    width: 18px;
-    height: 18px;
-    display: inline-block;
-    vertical-align: middle;
-}
-
-/* ========================================
-   MENÚ DE FLECHAS (DROPDOWN)
-   ======================================== */
-
-/* Contenedor del menú de flechas */
-#arrow-menu-container {
+/* --- Dropdowns --- */
+.dropdown {
     position: relative;
+    width: 100%;
 }
 
-/* Menú desplegable de flechas */
-#arrow-menu {
+.dropdown__menu {
     position: absolute;
-    top: 36px;
+    top: 100%;
     left: 0;
     background: #1f2a3a;
     border: 1px solid #333;
@@ -187,15 +200,10 @@ button.active {
     border-radius: 6px;
     width: 100%;
     z-index: 50;
+    margin-top: 4px;
 }
 
-/* Estado oculto del menú de flechas */
-#arrow-menu.hidden {
-    display: none;
-}
-
-/* Botones dentro del menú de flechas */
-#arrow-menu button {
+.dropdown__item {
     width: 100%;
     margin: 2px 0;
     padding: 6px;
@@ -203,13 +211,105 @@ button.active {
     border: 1px solid #444;
     color: white;
     text-align: left;
+    cursor: pointer;
+    display: block;
 }
 
-/* ========================================
-   PANEL FLOTANTE PARA ZONAS
-   ======================================== */
+/* --- Frame Bar --- */
+.frame-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 8px 0;
+    margin: 10px 0;
+    background: #1a2330;
+    border: 1px solid #333;
+    border-radius: 8px;
+}
 
-#zone-color-panel {
+.frame-bar__btn {
+    width: 36px;
+    height: 32px;
+    background: #2c3948;
+    border: 1px solid #444;
+    border-radius: 6px;
+    cursor: pointer;
+    color: white;
+    font-size: 16px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.frame-bar__btn:hover {
+    background: #3c4d61;
+}
+
+.frame-bar__counter {
+    font-size: 14px;
+    color: #ddd;
+    text-align: center;
+    min-width: 120px;
+}
+
+.frame-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.frame-actions__btn {
+    width: auto;
+    padding: 6px 12px;
+    background: #2c3948;
+    border: 1px solid #444;
+    border-radius: 6px;
+    cursor: pointer;
+    color: white;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+/* --- Field Configuration --- */
+.field-config__type-selector {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 8px;
+}
+
+.field-config__btn {
+    flex: 1;
+    padding: 6px;
+    background: #1f2a3a;
+    border: 1px solid #333;
+    border-radius: 4px;
+    color: #aaa;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.field-config__btn.is-active {
+    background: #0068ff;
+    color: white;
+    border-color: #fff;
+}
+
+.field-config__info {
+    margin-top: 8px;
+    font-size: 12px;
+    color: #aaa;
+    text-align: center;
+    padding: 4px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+}
+
+/* --- Color Picker --- */
+.color-picker {
     position: absolute;
     top: 20px;
     left: 50%;
@@ -224,43 +324,19 @@ button.active {
     box-shadow: 0 0 10px #000;
 }
 
-.color-1 {
-    background: #00aaff;
-}
-
-.color-2 {
-    background: #ff3333;
-}
-
-.color-3 {
-    background: #ffd000;
-}
-
-.color-4 {
-    background: #00cc66;
-}
-
-.color-5 {
-    background: #ff9100;
-}
-
-#zone-color-panel.hidden {
-    display: none;
-}
-
-.zcp-title {
+.color-picker__title {
     font-size: 14px;
     margin-bottom: 8px;
     color: white;
 }
 
-.zcp-colors {
+.color-picker__colors {
     display: flex;
     justify-content: center;
     gap: 10px;
 }
 
-.zcp-color {
+.color-picker__swatch {
     width: 30px;
     height: 30px;
     border-radius: 6px;
@@ -268,9 +344,62 @@ button.active {
     border: 2px solid white;
 }
 
-/* ========= POPUP MODAL ========= */
+/* Mapeo de colores originales a modificadores BEM */
+.color-picker__swatch--1 {
+    background: #00aaff;
+}
 
-#popup-overlay {
+.color-picker__swatch--2 {
+    background: #ff3333;
+}
+
+.color-picker__swatch--3 {
+    background: #ffd000;
+}
+
+.color-picker__swatch--4 {
+    background: #00cc66;
+}
+
+.color-picker__swatch--5 {
+    background: #ff9100;
+}
+
+/* --- Icons --- */
+.icon {
+    width: 24px;
+    height: 24px;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.icon--sm {
+    width: 18px;
+    height: 18px;
+}
+
+/* --- Formation Selector --- */
+.formation-selector {
+    width: 100%;
+    padding: 8px;
+    margin: 8px 0;
+    background: #2c3948;
+    color: white;
+    border: 1px solid #444;
+    border-radius: 6px;
+}
+
+.formation-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.formation-actions button {
+    flex: 1;
+}
+
+/* --- Popups & Modals --- */
+.popup-overlay {
     position: fixed;
     left: 0;
     top: 0;
@@ -283,11 +412,7 @@ button.active {
     z-index: 99999;
 }
 
-#popup-overlay.hidden {
-    display: none;
-}
-
-#popup-modal {
+.popup-modal {
     background: #1c2631;
     border: 1px solid #333;
     border-radius: 12px;
@@ -311,15 +436,15 @@ button.active {
     }
 }
 
-#popup-title {
+.popup-modal__title {
     margin-top: 0;
     margin-bottom: 12px;
     text-align: center;
 }
 
-#popup-content input,
-#popup-content select,
-#popup-content button.choice {
+.popup-modal__content input,
+.popup-modal__content select,
+.popup-modal__content button.choice {
     width: 100%;
     margin: 6px 0;
     padding: 8px;
@@ -331,113 +456,198 @@ button.active {
     font-size: 14px;
 }
 
-#popup-content button.choice:hover {
+.popup-modal__content button.choice:hover {
     background: #3a4a5a;
 }
 
-#popup-buttons {
+.popup-modal__buttons {
     display: flex;
     justify-content: space-between;
     margin-top: 15px;
 }
 
-#popup-buttons button {
+.popup-modal__buttons button {
     width: 48%;
-    padding: 10px;
-    border-radius: 6px;
-    border: none;
-    cursor: pointer;
-    background: #2c3948;
-    color: white;
 }
 
-#popup-ok {
+/* --- Notifications --- */
+.notification {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 4px;
+    z-index: 10000;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    transition: opacity 0.3s, transform 0.3s;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.notification.is-visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* --- Help / Floating Buttons --- */
+.help-btn {
+    position: fixed;
+    bottom: 10px;
+    right: 80px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
     background: #0068ff;
-}
-
-#popup-ok:hover {
-    background: #1c7cff;
-}
-
-#popup-cancel:hover {
-    background: #3a4a5a;
-}
-
-/* ===== NUEVA BARRA MODERNA DE FRAMES ===== */
-
-#frame-bar {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    padding: 8px 0;
-    margin: 10px 0;
-    background: #1a2330;
-    border: 1px solid #333;
-    border-radius: 8px;
-}
-
-.fb-btn {
-    width: 36px;
-    height: 32px;
-    background: #2c3948;
-    border: 1px solid #444;
-    border-radius: 6px;
-    cursor: pointer;
     color: white;
-    font-size: 16px;
+    border: 3px solid #fff;
+    font-size: 28px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 104, 255, 0.5);
+    z-index: 1001;
+    transition: all 0.3s ease;
+    padding: 0;
     display: flex;
     justify-content: center;
     align-items: center;
 }
 
-.fb-btn:hover {
-    background: #3c4d61;
+.help-btn:hover {
+    transform: scale(1.1);
 }
 
-#frame-counter {
-    font-size: 14px;
-    color: #ddd;
-    text-align: center;
-    min-width: 120px;
-}
-
-#frame-actions {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-bottom: 12px;
-}
-
-.fb-action {
+.delete-btn {
+    position: fixed;
+    bottom: 75px;
+    right: 10px;
     width: auto;
-    padding: 6px 12px;
-    background: #2c3948;
-    border: 1px solid #444;
-    border-radius: 6px;
-    cursor: pointer;
+    min-width: 100px;
+    padding: 8px 16px;
+    background: #ff3333;
     color: white;
-    font-size: 13px;
-    display: flex;
-    align-items: center;
-    gap: 5px;
+    border: 2px solid #fff;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(255, 51, 51, 0.5);
+    z-index: 1001;
+    transition: all 0.3s ease;
 }
 
-.fb-action:hover {
-    background: #3c4d61;
+.delete-btn:hover {
+    background: #ff5555;
+    transform: translateY(-2px);
 }
 
-/* ========================================
-   ESTILOS MÓVILES
-   ======================================== */
+.version-indicator {
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.6);
+    color: #aaa;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-family: monospace;
+    z-index: 100;
+    pointer-events: none;
+    user-select: none;
+}
 
-/* Botones de menú móvil - ocultos por defecto */
-.mobile-only {
+/* --- Tutorial System --- */
+.tutorial-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 9998;
+    pointer-events: none;
+}
+
+.tutorial-spotlight {
+    position: fixed;
+    border: 4px solid #00ff88;
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.75),
+        0 0 20px #00ff88,
+        inset 0 0 20px rgba(0, 255, 136, 0.3);
+    z-index: 9999;
+    pointer-events: none;
+    border-radius: 8px;
+    transition: all 0.4s ease;
     display: none;
 }
 
-#mobile-menu-btn,
-#mobile-right-menu-btn {
+.tutorial-spotlight.is-active {
+    display: block;
+}
+
+.tutorial-box {
+    position: fixed;
+    background: #1c2631;
+    border: 2px solid #00ff88;
+    border-radius: 12px;
+    padding: 20px;
+    max-width: 400px;
+    width: 90%;
+    color: white;
+    box-shadow: 0 0 30px rgba(0, 255, 136, 0.5);
+    z-index: 10000;
+    animation: tutorial-slide-in 0.3s ease-out;
+}
+
+@keyframes tutorial-slide-in {
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.tutorial-box__title {
+    margin: 0 0 10px 0;
+    color: #00ff88;
+    font-size: 18px;
+}
+
+.tutorial-box__navigation {
+    display: flex;
+    gap: 8px;
+    margin-top: 15px;
+}
+
+.tutorial-box__navigation button {
+    flex: 1;
+    flex-direction: column;
+}
+
+/* ========================================
+   4. STATE
+   ======================================== */
+.is-hidden {
+    display: none !important;
+}
+
+.is-active {
+    /* Styles are handled in module classes usually, 
+       but we can add a generic active state helper if needed */
+    border-color: #fff !important;
+}
+
+/* ========================================
+   5. RESPONSIVE (UTILITIES)
+   ======================================== */
+.u-mobile-only {
+    display: none !important;
+}
+
+.mobile-nav-btn {
     position: fixed;
     top: 10px;
     z-index: 1000;
@@ -455,97 +665,106 @@ button.active {
     justify-content: center;
 }
 
-#mobile-menu-btn {
+.mobile-nav-btn--left {
     left: 10px;
 }
 
-#mobile-right-menu-btn {
+.mobile-nav-btn--right {
     right: 10px;
 }
 
-/* Media query para tablets y móviles */
 @media (max-width: 1024px) {
     body {
         flex-direction: column;
     }
 
-    .mobile-only {
+    .u-mobile-only {
         display: block;
     }
 
-    /* Sidebar oculto por defecto en móvil */
-    #sidebar {
+    /* Sidebar Mobile State */
+    .sidebar {
         position: fixed;
         left: -240px;
         top: 0;
         height: 100vh;
-        width: 240px;
         z-index: 999;
         transition: left 0.3s ease;
         box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5);
     }
 
-    #sidebar.show {
+    .sidebar.is-visible {
         left: 0;
     }
 
-    /* Panel derecho oculto por defecto en móvil */
-    #right-panel {
-        position: fixed;
+    .sidebar--right {
+        left: auto;
         right: -240px;
-        top: 0;
-        height: 100vh;
-        width: 240px;
-        background: #141b24;
-        padding: 15px;
-        overflow-y: auto;
-        z-index: 999;
         transition: right 0.3s ease;
         box-shadow: -2px 0 10px rgba(0, 0, 0, 0.5);
-        border-left: 1px solid #222;
+        background: #141b24;
+        /* Ensure background is set */
     }
 
-    #right-panel.show {
+    .sidebar--right.is-visible {
         right: 0;
     }
 
-    /* Área principal ocupa todo el espacio */
-    #main {
+    .main-content {
         width: 100%;
         height: 100vh;
         padding: 70px 5px 5px 5px;
     }
 
-    /* Canvas más grande en móvil */
-    #pitch {
+    .main-content__canvas {
         max-width: calc(100vw - 10px);
         max-height: calc(100vh - 80px);
         width: calc(100vw - 10px);
         height: auto;
     }
+
+    /* Adjust floating elements */
+    .version-indicator {
+        bottom: 70px;
+        font-size: 10px;
+    }
+
+    .help-btn {
+        bottom: 10px;
+        right: 10px;
+        width: 45px;
+        height: 45px;
+        font-size: 24px;
+    }
+
+    .delete-btn {
+        bottom: 70px;
+        right: 10px;
+        min-width: 90px;
+        padding: 7px 14px;
+        font-size: 13px;
+    }
 }
 
-/* Media query específica para móviles en modo portrait */
 @media (max-width: 768px) and (orientation: portrait) {
-    #pitch {
+    .main-content__canvas {
         width: calc(100vw - 10px);
         max-height: calc(100vh - 80px);
         height: auto;
     }
 
-    #main {
+    .main-content {
         padding: 65px 5px 5px 5px;
     }
 }
 
-/* Media query para móviles en modo landscape */
 @media (max-width: 1024px) and (orientation: landscape) {
-    #main {
+    .main-content {
         padding: 65px 5px 5px 5px;
         height: 100vh;
     }
 
-    #pitch {
+    .main-content__canvas {
         max-width: calc(100vw - 10px);
         max-height: calc(100vh - 75px);
         width: calc(100vw - 10px);
@@ -553,8 +772,8 @@ button.active {
     }
 }
 
-/* Overlay para cerrar menús al hacer clic fuera */
-#mobile-overlay {
+/* Overlay */
+.mobile-overlay {
     display: none;
     position: fixed;
     top: 0;
@@ -565,395 +784,6 @@ button.active {
     z-index: 998;
 }
 
-#mobile-overlay.show {
+.mobile-overlay.is-visible {
     display: block;
-}
-
-/* ========================================
-   INDICADOR DE VERSIÓN
-   ======================================== */
-
-#version-indicator {
-    position: fixed;
-    bottom: 10px;
-    right: 10px;
-    background: rgba(0, 0, 0, 0.6);
-    color: #aaa;
-    padding: 4px 10px;
-    border-radius: 4px;
-    font-size: 11px;
-    font-family: monospace;
-    z-index: 100;
-    pointer-events: none;
-    -webkit-user-select: none;
-    user-select: none;
-}
-
-/* En móvil, mover más arriba para no tapar controles */
-@media (max-width: 1024px) {
-    #version-indicator {
-        bottom: 70px;
-        font-size: 10px;
-        padding: 3px 8px;
-    }
-}
-
-/* ========================================
-   SISTEMA DE TUTORIAL
-   ======================================== */
-
-/* Botón de ayuda flotante */
-.help-button {
-    position: fixed;
-    bottom: 10px;
-    right: 80px;
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background: #0068ff;
-    color: white;
-    border: 3px solid #fff;
-    font-size: 28px;
-    font-weight: bold;
-    cursor: pointer;
-    box-shadow: 0 4px 12px rgba(0, 104, 255, 0.5);
-    z-index: 1001;
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    margin: 0;
-}
-
-.help-button:hover {
-    background: #1c7cff;
-    transform: scale(1.1);
-    box-shadow: 0 6px 16px rgba(0, 104, 255, 0.7);
-}
-
-/* En móvil, mover para no tapar otros elementos */
-@media (max-width: 1024px) {
-    .help-button {
-        bottom: 10px;
-        right: 10px;
-        width: 45px;
-        height: 45px;
-        font-size: 24px;
-    }
-}
-
-/* Botón de borrar elementos seleccionados */
-.delete-button {
-    position: fixed;
-    bottom: 75px;
-    right: 10px;
-    width: auto;
-    min-width: 100px;
-    padding: 8px 16px;
-    background: #ff3333;
-    color: white;
-    border: 2px solid #fff;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: bold;
-    cursor: pointer;
-    box-shadow: 0 4px 12px rgba(255, 51, 51, 0.5);
-    z-index: 1001;
-    transition: all 0.3s ease;
-}
-
-.delete-button:hover {
-    background: #ff5555;
-    box-shadow: 0 6px 16px rgba(255, 51, 51, 0.7);
-    transform: translateY(-2px);
-}
-
-.delete-button.hidden {
-    display: none;
-}
-
-/* En móvil, ajustar posición */
-@media (max-width: 1024px) {
-    .delete-button {
-        bottom: 70px;
-        right: 10px;
-        min-width: 90px;
-        padding: 7px 14px;
-        font-size: 13px;
-    }
-}
-
-/* Overlay oscuro del tutorial - ahora con box-shadow desde spotlight */
-#tutorial-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: transparent;
-    z-index: 9998;
-    pointer-events: none;
-}
-
-#tutorial-overlay.hidden {
-    display: none;
-}
-
-/* Spotlight - área resaltada */
-#tutorial-spotlight {
-    position: fixed;
-    border: 4px solid #00ff88;
-    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.75),
-        0 0 20px #00ff88,
-        inset 0 0 20px rgba(0, 255, 136, 0.3);
-    z-index: 9999;
-    pointer-events: none;
-    border-radius: 8px;
-    transition: all 0.4s ease;
-    display: none;
-}
-
-#tutorial-spotlight.active {
-    display: block;
-}
-
-/* Cuadro de información del tutorial */
-#tutorial-box {
-    position: fixed;
-    background: #1c2631;
-    border: 2px solid #00ff88;
-    border-radius: 12px;
-    padding: 20px;
-    max-width: 400px;
-    width: 90%;
-    color: white;
-    box-shadow: 0 0 30px rgba(0, 255, 136, 0.5);
-    z-index: 10000;
-    animation: tutorial-slide-in 0.3s ease-out;
-}
-
-#tutorial-box.hidden {
-    display: none;
-}
-
-@keyframes tutorial-slide-in {
-    from {
-        transform: translateY(-20px);
-        opacity: 0;
-    }
-
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
-}
-
-#tutorial-content h3 {
-    margin: 0 0 10px 0;
-    color: #00ff88;
-    font-size: 18px;
-}
-
-#tutorial-content p {
-    margin: 0 0 15px 0;
-    line-height: 1.5;
-    font-size: 14px;
-}
-
-#tutorial-navigation {
-    display: flex;
-    gap: 8px;
-    justify-content: space-between;
-}
-
-#tutorial-navigation button {
-    flex: 1;
-    padding: 10px;
-    border-radius: 6px;
-    border: 1px solid #444;
-    background: #2c3948;
-    color: white;
-    cursor: pointer;
-    font-size: 13px;
-    transition: background 0.2s;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-}
-
-#tutorial-navigation button .btn-label {
-    font-size: 12px;
-}
-
-#tutorial-navigation button .btn-arrow {
-    font-size: 16px;
-    font-weight: bold;
-}
-
-#tutorial-navigation button:hover {
-    background: #3c4d61;
-}
-
-#tutorial-skip {
-    background: #ff3333 !important;
-}
-
-#tutorial-skip:hover {
-    background: #ff5555 !important;
-}
-
-#tutorial-next {
-    background: #0068ff !important;
-}
-
-#tutorial-next:hover {
-    background: #1c7cff !important;
-}
-
-#tutorial-prev {
-    background: #2c3948 !important;
-}
-
-#tutorial-prev:hover {
-    background: #3c4d61 !important;
-}
-
-/* Responsive para móviles */
-@media (max-width: 768px) {
-    #tutorial-box {
-        max-width: calc(100% - 20px);
-        padding: 15px;
-    }
-
-    #tutorial-content h3 {
-        font-size: 16px;
-    }
-
-    #tutorial-content p {
-        font-size: 13px;
-    }
-
-    #tutorial-navigation {
-        flex-direction: column;
-    }
-
-    #tutorial-navigation button {
-        width: 100%;
-    }
-}
-
-/* ========================================
-   CONFIGURACIÓN DE CAMPO
-   ======================================== */
-
-.field-type-selector {
-    display: flex;
-    gap: 5px;
-    margin-bottom: 8px;
-}
-
-.field-type-btn {
-    flex: 1;
-    padding: 8px;
-    background: #2c3948;
-    border: 2px solid #444;
-    border-radius: 6px;
-    cursor: pointer;
-    color: white;
-    font-size: 13px;
-    transition: all 0.2s;
-}
-
-.field-type-btn.active {
-    background: #0068ff;
-    border-color: #fff;
-}
-
-.field-type-btn:hover:not(.active) {
-    background: #3c4d61;
-}
-
-.field-info {
-    text-align: center;
-    padding: 6px;
-    background: #1a2330;
-    border-radius: 4px;
-    font-size: 12px;
-    color: #aaa;
-    margin-top: 8px;
-}
-
-/* ========================================
-   FORMACIONES
-   ======================================== */
-
-#formation-selector {
-    width: 100%;
-    padding: 8px;
-    margin: 6px 0;
-    background: #2c3948;
-    color: white;
-    border: 1px solid #444;
-    border-radius: 6px;
-    font-size: 13px;
-    cursor: pointer;
-}
-
-#formation-selector:focus {
-    outline: 2px solid #0068ff;
-    outline-offset: 1px;
-}
-
-.formation-actions {
-    display: flex;
-    gap: 5px;
-    margin-top: 6px;
-}
-
-.formation-actions button {
-    flex: 1;
-    padding: 8px;
-    font-size: 13px;
-}
-
-/* ========================================
-   SISTEMA DE NOTIFICACIONES
-   ======================================== */
-
-.notification {
-    position: fixed;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%) translateY(-100px);
-    background-color: #dc3545;
-    color: white;
-    padding: 15px 30px;
-    border-radius: 8px;
-    font-size: 16px;
-    font-weight: bold;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    z-index: 10000;
-    opacity: 0;
-    transition: all 0.3s ease;
-    pointer-events: none;
-    text-align: center;
-    max-width: 90%;
-}
-
-.notification.show {
-    transform: translateX(-50%) translateY(0);
-    opacity: 1;
-}
-
-.notification.hidden {
-    display: block;
-}
-
-.notification.error-notification {
-    background: linear-gradient(135deg, #ff3333 0%, #cc0000 100%);
-    border-left: 4px solid #ff6666;
-    box-shadow: 0 4px 16px rgba(255, 51, 51, 0.4);
-    font-weight: bold;
 }
