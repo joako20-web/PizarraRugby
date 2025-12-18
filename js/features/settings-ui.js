@@ -55,6 +55,10 @@ export const SettingsUI = {
                     <label>Tamaño Jugadores</label>
                     <input type="range" id="set-scale" min="0.5" max="1.5" step="0.1" value="${SETTINGS.PLAYER_SCALE}" style="width:100%;" />
                 </div>
+                <div class="form-group">
+                    <label>Tamaño Balón</label>
+                    <input type="range" id="set-ball-scale" min="0.5" max="2.0" step="0.1" value="${SETTINGS.BALL_SCALE || 1.0}" style="width:100%;" />
+                </div>
                 <div class="form-group" style="display:flex; align-items:center;">
                     <input type="checkbox" id="set-numbers" ${SETTINGS.SHOW_NUMBERS ? 'checked' : ''} style="margin-right:10px;" />
                     <label for="set-numbers" style="margin-bottom:0;">Mostrar Números</label>
@@ -91,6 +95,7 @@ export const SettingsUI = {
         if (result) {
             const theme = document.getElementById("set-theme").value;
             const scale = parseFloat(document.getElementById("set-scale").value);
+            const ballScale = parseFloat(document.getElementById("set-ball-scale").value);
             const showNumbers = document.getElementById("set-numbers").checked;
 
             const nameA = document.getElementById("set-name-a").value;
@@ -101,6 +106,7 @@ export const SettingsUI = {
             this.save({
                 THEME: theme,
                 PLAYER_SCALE: scale,
+                BALL_SCALE: ballScale,
                 SHOW_NUMBERS: showNumbers,
                 TEAM_A_NAME: nameA,
                 TEAM_A_COLOR: colorA,

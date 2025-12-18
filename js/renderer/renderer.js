@@ -321,11 +321,15 @@ export const Renderer = {
     drawRugbyBall(b) {
         if (!b.visible) return;
 
+        const scale = SETTINGS.BALL_SCALE || 1.0;
+        const rx = b.rx * scale;
+        const ry = b.ry * scale;
+
         ctx.save();
         ctx.translate(b.x, b.y);
         ctx.rotate(-0.4);
         ctx.beginPath();
-        ctx.ellipse(0, 0, b.rx, b.ry, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2);
         ctx.fillStyle = "#f5e1c0";
         ctx.fill();
         ctx.strokeStyle = "#b37a42";
