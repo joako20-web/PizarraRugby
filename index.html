@@ -89,6 +89,23 @@
 
             <!-- Modo mover fichas (activo por defecto) -->
             <!-- Nota: 'active' se cambia a 'is-active' via JS, pero lo pongo aquí si está hardcoded -->
+            <!-- Control Historial -->
+            <div class="history-controls" style="display: flex; gap: 10px; margin-bottom: 10px;">
+                <button id="btn-undo" class="btn btn--secondary" title="Deshacer (Ctrl+Z)" disabled>
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+                    </svg>
+                </button>
+                <button id="btn-redo" class="btn btn--secondary" title="Rehacer (Ctrl+Y)" disabled>
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M15 15l6-6m0 0l-6-6m6 6H9a6 6 0 000 12h3" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Modos de dibujo -->
             <button id="mode-move" class="btn btn--mode is-active">Mover / Seleccionar</button>
 
             <!-- Menú desplegable de flechas -->
@@ -206,7 +223,18 @@
             </button>
 
             <!-- Exportación de video -->
-            <button id="export-webm" class="btn btn--action">Exportar</button>
+            <!-- Exportación de video e imágen -->
+            <button id="export-webm" class="btn btn--action">Exportar Video (WebM)</button>
+            <button id="export-image" class="btn btn--action">Captura de Pantalla 📷</button>
+
+            <hr>
+
+            <button id="toggle-presentation" class="btn btn--mode">
+                <svg class="icon icon--sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+                </svg> Modo Presentación
+            </button>
         </div>
 
         <!-- Field Configuration Panel -->
@@ -273,6 +301,9 @@
     <!-- Overlay para móvil -->
     <div id="mobile-overlay" class="mobile-overlay is-hidden"></div>
 
+    <!-- Botón flotante para salir de presentación -->
+    <button id="exit-presentation" class="exit-presentation-btn">Salir de Presentación (ESC)</button>
+
     <!-- Indicador de versión -->
     <div id="version-indicator" class="version-indicator">v2.2.0</div>
 
@@ -320,7 +351,7 @@
     </div>
 
     <!-- Script principal de la aplicación (Monolithic) -->
-    <script src="app.original.js"></script>
+    <script type="module" src="./js/app.js"></script>
 
     <!-- ===========================
      POPUP MODAL PERSONALIZADO
