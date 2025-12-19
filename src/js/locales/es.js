@@ -144,5 +144,45 @@ export const es = {
     "error_no_frames_export": "No hay suficientes frames para exportar (mínimo 2).",
     "export_success": "Exportación completada exitosamente.",
     "no_formations": "No hay formaciones guardadas.",
-    "btn_load": "Cargar"
+    "btn_load": "Cargar",
+
+    // Settings (Updates)
+    "settings_tab_general": "General",
+    "settings_tab_shortcuts": "Atajos",
+    "settings_tab_layout": "Interfaz",
+    "settings_layout_title": "Disposición de Paneles",
+    "settings_layout_tools_pos": "Panel de Herramientas (Modos)",
+    "settings_layout_anim_pos": "Panel de Animación",
+    "settings_layout_left": "Izquierda",
+    "settings_layout_right": "Derecha",
+    "settings_layout_visibility": "Visibilidad de Herramientas",
+    "settings_layout_visibility_desc": "Marca las herramientas que quieres ver en el panel lateral.",
+
+    "settings_theme_dark": "Oscuro",
+    "settings_theme_light": "Claro",
+
+    // Shortcuts Page
+    "shortcuts_title": "Atajos de Teclado",
+    "shortcuts_desc": "Haz clic en un botón y pulsa la tecla deseada.",
+    "shortcuts_reset": "Restaurar Atajos",
+    "shortcuts_reset_title": "Restaurar Atajos",
+    "shortcuts_reset_text": "¿Estás seguro de que quieres restaurar todos los atajos a sus valores por defecto?",
+    "shortcuts_reset_confirm": "Sí, restaurar",
+    "shortcuts_conflict_title": "Atajo ya en uso",
+    "shortcuts_conflict_msg": "La tecla <strong>{key}</strong> ya está asignada a: <strong>{action}</strong>.<br><br>¿Quieres asignarla aquí y dejar \"{action}\" sin atajo?",
+    "shortcuts_conflict_confirm": "Sí, asignar",
+    "shortcuts_press": "Pulsar...",
+    "key_space": "Espacio",
+
+    "shortcut_anim_play": "Reproducir/Pausar",
+    "shortcut_frame_next": "Siguiente Frame",
+    "shortcut_frame_prev": "Anterior Frame",
+    "shortcut_frame_add": "Añadir Frame",
+    "shortcut_frame_remove": "Eliminar Frame",
+    "shortcut_section_frames": "Fotogramas",
+
+    // Settings Reset
+    "settings_reset_confirm_title": "¿Restaurar valores de fábrica?",
+    "settings_reset_confirm_text": "Se restablecerán todos los ajustes, nombres y atajos.",
+    "settings_reset_confirm_btn": "Restaurar"
 };

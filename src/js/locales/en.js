@@ -144,5 +144,45 @@ export const en = {
     "error_no_frames_export": "Not enough frames to export (minimum 2).",
     "export_success": "Export completed successfully.",
     "no_formations": "No saved formations.",
-    "btn_load": "Load"
+    "btn_load": "Load",
+
+    // Settings (Updates)
+    "settings_tab_general": "General",
+    "settings_tab_shortcuts": "Shortcuts",
+    "settings_tab_layout": "Interface",
+    "settings_layout_title": "Panel Layout",
+    "settings_layout_tools_pos": "Tools Panel (Modes)",
+    "settings_layout_anim_pos": "Animation Panel",
+    "settings_layout_left": "Left",
+    "settings_layout_right": "Right",
+    "settings_layout_visibility": "Tool Visibility",
+    "settings_layout_visibility_desc": "Check the tools you want to see in the sidebar.",
+
+    "settings_theme_dark": "Dark",
+    "settings_theme_light": "Light",
+
+    // Shortcuts Page
+    "shortcuts_title": "Keyboard Shortcuts",
+    "shortcuts_desc": "Click a button and press the desired key.",
+    "shortcuts_reset": "Reset Shortcuts",
+    "shortcuts_reset_title": "Reset Shortcuts",
+    "shortcuts_reset_text": "Are you sure you want to restore all shortcuts to their default values?",
+    "shortcuts_reset_confirm": "Yes, restore",
+    "shortcuts_conflict_title": "Shortcut in use",
+    "shortcuts_conflict_msg": "The key <strong>{key}</strong> is already assigned to: <strong>{action}</strong>.<br><br>Do you want to reassign it here and leave \"{action}\" unbound?",
+    "shortcuts_conflict_confirm": "Yes, reassign",
+    "shortcuts_press": "Press...",
+    "key_space": "Space",
+
+    "shortcut_anim_play": "Play/Pause",
+    "shortcut_frame_next": "Next Frame",
+    "shortcut_frame_prev": "Previous Frame",
+    "shortcut_frame_add": "Add Frame",
+    "shortcut_frame_remove": "Delete Frame",
+    "shortcut_section_frames": "Frames",
+
+    // Settings Reset
+    "settings_reset_confirm_title": "Restore Factory Defaults?",
+    "settings_reset_confirm_text": "All settings, names, and shortcuts will be reset.",
+    "settings_reset_confirm_btn": "Restore"
 };

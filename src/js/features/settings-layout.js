@@ -1,5 +1,6 @@
 import { SETTINGS } from '../core/settings.js';
 import { UI } from '../ui/ui.js';
+import { I18n } from '../core/i18n.js';
 
 export const SettingsLayout = {
     render() {
@@ -13,13 +14,13 @@ export const SettingsLayout = {
         if (!ui.animationPanelPosition) ui.animationPanelPosition = 'right';
 
         const tools = [
-            { id: 'move', label: 'Mover / Selección' },
-            { id: 'freehand', label: 'Dibujo Libre (+ Goma)' },
-            { id: 'text', label: 'Texto' },
-            { id: 'scrum', label: 'Melé' },
-            { id: 'arrow', label: 'Flechas' },
-            { id: 'zone', label: 'Zonas' },
-            { id: 'shield', label: 'Escudos' }
+            { id: 'move', label: I18n.t('mode_move') },
+            { id: 'freehand', label: I18n.t('mode_draw') },
+            { id: 'text', label: I18n.t('mode_text') },
+            { id: 'scrum', label: I18n.t('mode_scrum') },
+            { id: 'arrow', label: I18n.t('mode_arrow') },
+            { id: 'zone', label: I18n.t('mode_zone') },
+            { id: 'shield', label: I18n.t('mode_shield') }
         ];
 
         let toolsHtml = tools.map(t => `
@@ -34,40 +35,40 @@ export const SettingsLayout = {
 
         return `
             <div class="settings-section">
-                <h3>Disposición de Paneles</h3>
+                <h3>${I18n.t('settings_layout_title')}</h3>
                 
                 <div class="form-group" style="margin-bottom: 15px;">
-                    <label style="margin-bottom: 5px; display:block;">Panel de Herramientas (Modos)</label>
+                    <label style="margin-bottom: 5px; display:block;">${I18n.t('settings_layout_tools_pos')}</label>
                     <div class="radio-group" style="display:flex; gap:15px;">
                         <label style="display:flex; align-items:center; gap:5px; cursor:pointer;">
                             <input type="radio" name="pos-tools" value="left" ${ui.toolsPanelPosition !== 'right' ? 'checked' : ''}>
-                            Izquierda
+                            ${I18n.t('settings_layout_left')}
                         </label>
                         <label style="display:flex; align-items:center; gap:5px; cursor:pointer;">
                             <input type="radio" name="pos-tools" value="right" ${ui.toolsPanelPosition === 'right' ? 'checked' : ''}>
-                            Derecha
+                            ${I18n.t('settings_layout_right')}
                         </label>
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label style="margin-bottom: 5px; display:block;">Panel de Animación / Configuración</label>
+                    <label style="margin-bottom: 5px; display:block;">${I18n.t('settings_layout_anim_pos')}</label>
                     <div class="radio-group" style="display:flex; gap:15px;">
                         <label style="display:flex; align-items:center; gap:5px; cursor:pointer;">
                             <input type="radio" name="pos-anim" value="left" ${ui.animationPanelPosition === 'left' ? 'checked' : ''}>
-                            Izquierda
+                            ${I18n.t('settings_layout_left')}
                         </label>
                         <label style="display:flex; align-items:center; gap:5px; cursor:pointer;">
                             <input type="radio" name="pos-anim" value="right" ${ui.animationPanelPosition !== 'left' ? 'checked' : ''}>
-                            Derecha
+                            ${I18n.t('settings_layout_right')}
                         </label>
                     </div>
                 </div>
 
                 <hr style="margin: 20px 0;">
 
-                <h3>Visibilidad de Herramientas</h3>
-                <p style="font-size: 12px; color: #888; margin-bottom: 15px;">Oculta las herramientas que no utilices.</p>
+                <h3>${I18n.t('settings_layout_visibility')}</h3>
+                <p style="font-size: 12px; color: #888; margin-bottom: 15px;">${I18n.t('settings_layout_visibility_desc')}</p>
                 <div class="tools-list">
                     ${toolsHtml}
                 </div>
