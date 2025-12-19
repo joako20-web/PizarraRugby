@@ -1,3 +1,5 @@
+import { I18n } from '../core/i18n.js';
+
 // ==============================
 // SISTEMA DE POPUPS
 // ==============================
@@ -62,11 +64,11 @@ export const Popup = {
     async selectScrumTeam() {
         return new Promise(resolve => {
             this.show({
-                title: "Equipo para la melé",
+                title: I18n.t('scrum_team_title'),
                 html: `
-                    <button class="choice" data-v="A">Equipo A</button>
-                    <button class="choice" data-v="B">Equipo B</button>
-                    <button class="choice" data-v="AB">Ambos (AB)</button>
+                    <button class="choice" data-v="A">${I18n.t('settings_team_a')}</button>
+                    <button class="choice" data-v="B">${I18n.t('settings_team_b')}</button>
+                    <button class="choice" data-v="AB">${I18n.t('scrum_team_both')}</button>
                 `,
                 showCancel: true
             }).then(ok => {

@@ -7,7 +7,8 @@
 
     <!-- Meta Tags -->
     <meta name="description"
-        content="PizarraRugby - Herramienta táctica profesional para diseñar, animar y exportar jugadas de rugby. Ideal para entrenadores y jugadores.">
+        content="PizarraRugby - Herramienta táctica profesional para diseñar, animar y exportar jugadas de rugby. Ideal para entrenadores y jugadores."
+        data-i18n-content="meta_description">
     <meta name="keywords" content="rugby, táctica, pizarra, jugadas, entrenamiento, animación, formaciones">
     <meta name="author" content="PizarraRugby">
     <meta name="robots" content="index, follow">
@@ -33,8 +34,9 @@
     <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
     <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 
-    <title>PizarraRugby - Herramienta Táctica Profesional</title>
-    <link rel="stylesheet" href="style.css">
+    <title data-i18n="app_title">PizarraRugby - Herramienta Táctica Profesional</title>
+    <!-- Vite handles CSS import via JS usually, but we can link it directly too -->
+    <link rel="stylesheet" href="/src/main.css">
 </head>
 
 <body>
@@ -60,8 +62,8 @@
         <div id="players-panels" class="sidebar__group">
             <!-- Panel de jugadores del equipo AZUL -->
             <section class="panel">
-                <h2 class="panel__title">Jugadores AZUL</h2>
-                <button id="show-team-a" class="btn btn--full">Mostrar equipo azul</button>
+                <h2 class="panel__title" data-i18n="panel_players_blue">Jugadores AZUL</h2>
+                <button id="show-team-a" class="btn btn--full" data-i18n="btn_show_blue">Mostrar equipo azul</button>
 
                 <!-- Selector de jugadores (vacío, se llena dinámicamente) -->
                 <div class="panel__player-selector"></div>
@@ -72,8 +74,8 @@
 
             <!-- Panel de jugadores del equipo ROJO -->
             <section class="panel">
-                <h2 class="panel__title">Jugadores ROJO</h2>
-                <button id="show-team-b" class="btn btn--full">Mostrar equipo rojo</button>
+                <h2 class="panel__title" data-i18n="panel_players_red">Jugadores ROJO</h2>
+                <button id="show-team-b" class="btn btn--full" data-i18n="btn_show_red">Mostrar equipo rojo</button>
 
                 <!-- Selector de jugadores (vacío, se llena dinámicamente) -->
                 <div class="panel__player-selector"></div>
@@ -85,17 +87,19 @@
 
         <!-- Panel de herramientas y modos -->
         <section class="panel">
-            <h3 class="panel__title">Modos</h3>
+            <h3 class="panel__title" data-i18n="panel_modes_title">Modos</h3>
 
             <!-- Control Historial -->
             <div class="history-controls" style="display: flex; gap: 10px; margin-bottom: 10px;">
-                <button id="btn-undo" class="btn btn--secondary" title="Deshacer (Ctrl+Z)" disabled>
+                <button id="btn-undo" class="btn btn--secondary" title="Deshacer (Ctrl+Z)"
+                    data-i18n-title="btn_undo_title" disabled>
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round"
                             d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
                     </svg>
                 </button>
-                <button id="btn-redo" class="btn btn--secondary" title="Rehacer (Ctrl+Y)" disabled>
+                <button id="btn-redo" class="btn btn--secondary" title="Rehacer (Ctrl+Y)"
+                    data-i18n-title="btn_redo_title" disabled>
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round"
                             d="M15 15l6-6m0 0l-6-6m6 6H9a6 6 0 000 12h3" />
@@ -104,26 +108,30 @@
             </div>
 
             <!-- Modos de dibujo -->
-            <button id="mode-move" class="btn btn--mode is-active">Mover / Seleccionar</button>
+            <button id="mode-move" class="btn btn--mode is-active" data-i18n="mode_move">Mover / Seleccionar</button>
 
             <!-- Menú desplegable de flechas -->
             <div id="arrow-menu-container" class="dropdown">
-                <button id="mode-arrow" class="btn btn--mode">Flecha
+                <button id="mode-arrow" class="btn btn--mode" data-i18n="mode_arrow">Flecha
                     <svg class="icon icon--sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
                     </svg>
                 </button>
                 <div id="arrow-menu" class="dropdown__menu is-hidden">
-                    <button class="dropdown__item" data-arrow="normal">Flecha normal</button>
-                    <button class="dropdown__item" data-arrow="kick">Flecha de patada</button>
+                    <button class="dropdown__item" data-arrow="normal" data-i18n="mode_arrow_normal">Flecha
+                        normal</button>
+                    <button class="dropdown__item" data-arrow="kick" data-i18n="mode_arrow_kick">Flecha de
+                        patada</button>
                 </div>
             </div>
 
             <!-- Modo dibujo y goma (agrupados) -->
             <div style="display: flex; gap: 5px; margin: 4px 0;">
-                <button id="mode-freehand" class="btn btn--mode" style="flex: 1; margin: 0;">Dibujo</button>
+                <button id="mode-freehand" class="btn btn--mode" style="flex: 1; margin: 0;"
+                    data-i18n="mode_draw">Dibujo</button>
                 <button id="mode-eraser" class="btn btn--mode"
-                    style="flex: 0 0 40px; padding: 0; margin: 0; justify-content: center;" title="Goma de borrar">
+                    style="flex: 0 0 40px; padding: 0; margin: 0; justify-content: center;" title="Goma de borrar"
+                    data-i18n-title="mode_eraser_title">
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M7 16l9-9 4 4-9 9-4-4" />
                         <path stroke-linecap="round" stroke-linejoin="round" d="M11 12l4 4" />
@@ -134,22 +142,23 @@
             </div>
 
             <!-- Modo texto -->
-            <button id="mode-text" class="btn btn--mode">Texto</button>
+            <button id="mode-text" class="btn btn--mode" data-i18n="mode_text">Texto</button>
 
             <!-- Modo melé -->
-            <button id="mode-scrum" class="btn btn--mode">Melé</button>
+            <button id="mode-scrum" class="btn btn--mode" data-i18n="mode_scrum">Melé</button>
 
             <!-- Modo zonas -->
-            <button id="mode-zone" class="btn btn--mode">Zonas</button>
+            <button id="mode-zone" class="btn btn--mode" data-i18n="mode_zone">Zonas</button>
 
             <!-- Modo escudo de entrenamiento -->
-            <button id="mode-shield" class="btn btn--mode">Escudo de entrenamiento</button>
+            <button id="mode-shield" class="btn btn--mode" data-i18n="mode_shield">Escudo de entrenamiento</button>
 
             <!-- Control de visibilidad del balón -->
-            <button id="toggle-ball" class="btn btn--action">Mostrar / ocultar balón</button>
+            <button id="toggle-ball" class="btn btn--action" data-i18n="btn_toggle_ball">Mostrar / ocultar
+                balón</button>
 
             <!-- Botones de limpieza -->
-            <button id="clear-board" class="btn btn--danger">Limpiar tablero</button>
+            <button id="clear-board" class="btn btn--danger" data-i18n="btn_clear_board">Limpiar tablero</button>
         </section>
     </aside>
 
@@ -162,7 +171,7 @@
     </main>
 
     <div id="zone-color-panel" class="color-picker is-hidden">
-        <div class="color-picker__title">Color de la zona</div>
+        <div class="color-picker__title" data-i18n="zone_color_title">Color de la zona</div>
         <div class="color-picker__colors">
             <div class="color-picker__swatch color-picker__swatch--1" data-color="#00aaff"></div>
             <div class="color-picker__swatch color-picker__swatch--2" data-color="#ff3333"></div>
@@ -176,7 +185,7 @@
          PANEL LATERAL DERECHO (ANIMACIÓN)
          ======================================== -->
     <aside id="right-panel" class="sidebar sidebar--right">
-        <h2 class="sidebar__title">Animación</h2>
+        <h2 class="sidebar__title" data-i18n="panel_anim_title">Animación</h2>
 
         <!-- Contenedor de controles de frames (para tutorial) -->
         <div id="frame-controls" class="sidebar__group">
@@ -189,7 +198,8 @@
                 </button>
 
                 <div id="frame-counter" class="frame-bar__counter">
-                    Frame <span id="current-frame-index">1</span> de
+                    <span data-i18n="anim_frame_label">Frame</span> <span id="current-frame-index">1</span> <span
+                        data-i18n="anim_frame_of">de</span>
                     <span id="total-frames">1</span>
                 </div>
 
@@ -204,12 +214,12 @@
                 <button id="add-frame" class="frame-actions__btn">
                     <svg class="icon icon--sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                    </svg> Añadir
+                    </svg> <span data-i18n="btn_add_frame">Añadir</span>
                 </button>
                 <button id="delete-frame" class="frame-actions__btn">
                     <svg class="icon icon--sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 12h-15" />
-                    </svg> Eliminar
+                    </svg> <span data-i18n="btn_delete_frame">Eliminar</span>
                 </button>
             </div>
         </div>
@@ -217,26 +227,35 @@
         <!-- Contenedor de reproducción y exportación (para tutorial) -->
         <div id="playback-controls" class="sidebar__group">
             <!-- Controles de reproducción -->
+            <div class="form-group" style="margin-bottom: 10px;">
+                <label for="playback-speed" style="display: flex; justify-content: space-between;">
+                    <span data-i18n="lbl_playback_speed">Velocidad</span>
+                    <span id="speed-display">1.0x</span>
+                </label>
+                <input type="range" id="playback-speed" min="0.25" max="2.0" step="0.25" value="1.0">
+            </div>
+
             <!-- Controles de reproducción -->
             <button id="play-animation" class="btn btn--primary">
                 <svg class="icon icon--sm" viewBox="0 0 24 24" fill="currentColor">
                     <path fill-rule="evenodd"
                         d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653Z"
                         clip-rule="evenodd" />
-                </svg> Reproducir
+                </svg> <span data-i18n="btn_play">Reproducir</span>
             </button>
             <button id="pause-animation" class="btn btn--secondary is-hidden">
                 <svg class="icon icon--sm" viewBox="0 0 24 24" fill="currentColor">
                     <path fill-rule="evenodd"
                         d="M6.75 5.25a.75.75 0 01.75-.75H9a.75.75 0 01.75.75v13.5a.75.75 0 01-.75.75H7.5a.75.75 0 01-.75-.75V5.25zm7.5 0A.75.75 0 0115 4.5h1.5a.75.75 0 01.75.75v13.5a.75.75 0 01-.75.75H15a.75.75 0 01-.75-.75V5.25z"
                         clip-rule="evenodd" />
-                </svg> Pausar
+                </svg> <span data-i18n="btn_pause">Pausar</span>
             </button>
 
             <!-- Exportación de video -->
             <!-- Exportación de video e imágen -->
-            <button id="export-webm" class="btn btn--action">Exportar Video</button>
-            <button id="export-image" class="btn btn--action">Captura de Pantalla 📷</button>
+            <button id="export-webm" class="btn btn--action" data-i18n="btn_export_video">Exportar Video</button>
+            <button id="export-image" class="btn btn--action" data-i18n="btn_export_image">Captura de Pantalla
+                📷</button>
 
             <hr>
 
@@ -244,20 +263,22 @@
                 <svg class="icon icon--sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round"
                         d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
-                </svg> Modo Presentación
+                </svg> <span data-i18n="btn_presentation">Modo Presentación</span>
             </button>
 
         </div>
 
         <!-- Field Configuration Panel -->
         <section class="panel">
-            <h3 class="panel__title">Campo</h3>
+            <h3 class="panel__title" data-i18n="panel_field_title">Campo</h3>
 
             <!-- Field type selector -->
             <div class="field-config">
                 <div class="field-config__type-selector">
-                    <button id="field-type-full" class="field-config__btn is-active">Campo Completo</button>
-                    <button id="field-type-half" class="field-config__btn">Mitad de Campo</button>
+                    <button id="field-type-full" class="field-config__btn is-active" data-i18n="btn_field_full">Campo
+                        Completo</button>
+                    <button id="field-type-half" class="field-config__btn" data-i18n="btn_field_half">Mitad de
+                        Campo</button>
                 </div>
 
                 <!-- Rotate button -->
@@ -265,11 +286,11 @@
                     <svg class="icon icon--sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round"
                             d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
-                    </svg> Rotar Campo
+                    </svg> <span data-i18n="btn_rotate_field">Rotar Campo</span>
                 </button>
 
                 <!-- Current configuration indicator -->
-                <div id="field-config-info" class="field-config__info">
+                <div id="field-config-info" class="field-config__info" data-i18n="field_info_full_h">
                     Campo Completo - Horizontal
                 </div>
             </div>
@@ -277,19 +298,22 @@
 
         <!-- Formations Panel -->
         <section id="formations-panel" class="panel">
-            <h3 class="panel__title">Formaciones</h3>
+            <h3 class="panel__title" data-i18n="panel_formations_title">Formaciones</h3>
 
             <!-- Save formation button -->
             <button id="save-formation-btn" class="btn btn--action">
                 <svg class="icon icon--sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round"
                         d="M9 3.75H6.912a2.25 2.25 0 0 0-2.15 1.588L2.35 13.177a2.25 2.25 0 0 0-.1.661V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 0 0-2.15-1.588H15M2.25 13.5h3.86a2.25 2.25 0 0 1 2.012 1.244l.256.512a2.25 2.25 0 0 0 2.013 1.244h3.218a2.25 2.25 0 0 0 2.013-1.244l.256-.512a2.25 2.25 0 0 1 2.013-1.244h3.859M12 3v8.25m0 0-3-3m3 3 3-3" />
-                </svg> Guardar Formación
+                </svg> <span data-i18n="btn_save_formation">Guardar</span>
             </button>
 
+            <!-- Gallery Button Removed -->
+
             <!-- Load formation selector -->
-            <select id="formation-selector" class="formation-selector" aria-label="Selector de formaciones guardadas">
-                <option value="">-- Seleccionar formación --</option>
+            <select id="formation-selector" class="formation-selector" aria-label="Selector de formaciones guardadas"
+                data-i18n-aria="select_formation_placeholder">
+                <option value="" data-i18n="select_formation_placeholder">-- Seleccionar formación --</option>
             </select>
 
             <!-- Load and delete buttons -->
@@ -298,18 +322,19 @@
                     <svg class="icon icon--sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round"
                             d="M3.75 9.776c.112-.017.227-.026.344-.026h15.812c.117 0 .232.009.344.026m-16.5 0a2.25 2.25 0 0 0-1.883 2.542l.857 6a2.25 2.25 0 0 0 2.227 1.932H19.05a2.25 2.25 0 0 0 2.227-1.932l.857-6a2.25 2.25 0 0 0-1.883-2.542m-16.5 0V6A2.25 2.25 0 0 1 6 3.75h3.879a1.5 1.5 0 0 1 1.06.44l2.122 2.12a1.5 1.5 0 0 0 1.06.44H18A2.25 2.25 0 0 1 20.25 9v.776" />
-                    </svg> Cargar
+                    </svg> <span data-i18n="btn_load_formation">Cargar</span>
                 </button>
                 <button id="delete-formation-btn" class="btn btn--danger">
                     <svg class="icon icon--sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round"
                             d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                    </svg> Eliminar
+                    </svg> <span data-i18n="btn_delete_formation">Eliminar</span>
                 </button>
             </div>
         </section>
         <section class="panel">
-            <button id="btn-reset-app" class="btn btn--danger is-hidden">Resetear Todo</button>
+            <button id="btn-reset-app" class="btn btn--danger is-hidden" data-i18n="btn_reset_app">Resetear
+                Todo</button>
         </section>
     </aside>
 
@@ -317,7 +342,8 @@
     <div id="mobile-overlay" class="mobile-overlay is-hidden"></div>
 
     <!-- Botón flotante para salir de presentación -->
-    <button id="exit-presentation" class="exit-presentation-btn">Salir de Presentación (ESC)</button>
+    <button id="exit-presentation" class="exit-presentation-btn" data-i18n="btn_exit_presentation">Salir de Presentación
+        (ESC)</button>
 
 
 
@@ -325,7 +351,7 @@
     <div id="notification" class="notification is-hidden"></div>
 
     <!-- Botón de ayuda/tutorial -->
-    <button id="help-btn" class="help-btn" title="Tutorial">
+    <button id="help-btn" class="help-btn" title="Tutorial" data-i18n-title="tutorial_btn_title">
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <path stroke-linecap="round" stroke-linejoin="round"
                 d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
@@ -335,7 +361,8 @@
 
 
     <!-- Botón de borrar elementos seleccionados -->
-    <button id="delete-btn" class="delete-btn is-hidden" title="Borrar elemento seleccionado">Borrar</button>
+    <button id="delete-btn" class="delete-btn is-hidden" title="Borrar elemento seleccionado"
+        data-i18n="btn_delete_element" data-i18n-title="btn_delete_element">Borrar</button>
 
     <!-- Sistema de tutorial -->
     <div id="tutorial-overlay" class="tutorial-overlay is-hidden"></div>
@@ -346,9 +373,9 @@
             <p id="tutorial-text" class="tutorial-box__text"></p>
         </div>
         <div id="tutorial-navigation" class="tutorial-box__navigation">
-            <button id="tutorial-skip" class="btn btn--danger">Saltar</button>
+            <button id="tutorial-skip" class="btn btn--danger" data-i18n="tutorial_skip">Saltar</button>
             <button id="tutorial-prev" class="btn btn--secondary">
-                <span class="btn__label">Paso atrás</span>
+                <span class="btn__label" data-i18n="tutorial_prev">Paso atrás</span>
                 <span class="btn__icon">
                     <svg class="icon icon--sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
@@ -356,7 +383,7 @@
                 </span>
             </button>
             <button id="tutorial-next" class="btn btn--primary">
-                <span class="btn__label">Paso adelante</span>
+                <span class="btn__label" data-i18n="tutorial_next">Paso adelante</span>
                 <span class="btn__icon">
                     <svg class="icon icon--sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
@@ -366,8 +393,10 @@
         </div>
     </div>
 
+
+
     <!-- Script principal de la aplicación (Monolithic) -->
-    <script type="module" src="./js/app.js"></script>
+    <script type="module" src="/src/js/app.js"></script>
 
     <!-- ===========================
      POPUP MODAL PERSONALIZADO
@@ -381,8 +410,53 @@
             </div>
 
             <div id="popup-buttons" class="popup-modal__buttons">
-                <button id="popup-cancel" class="btn btn--secondary">Cancelar</button>
-                <button id="popup-ok" class="btn btn--primary">Aceptar</button>
+                <button id="popup-cancel" class="btn btn--secondary" data-i18n="popup_cancel">Cancelar</button>
+                <button id="popup-ok" class="btn btn--primary" data-i18n="popup_ok">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gallery Modal REMOVED BY USER REQUEST -->
+
+    <!-- Export Options Modal -->
+    <div id="export-modal" class="popup-overlay is-hidden">
+        <div class="popup-modal">
+            <h2 class="popup-modal__title" data-i18n="export_options_title">Opciones de Exportación</h2>
+            <div class="popup-modal__content">
+                <div class="form-group">
+                    <label for="export-filename" data-i18n="lbl_filename">Nombre del archivo</label>
+                    <input type="text" id="export-filename" placeholder="Animación" value="Animación">
+                </div>
+
+                <div class="form-group">
+                    <label for="export-resolution" data-i18n="lbl_resolution">Resolución</label>
+                    <select id="export-resolution">
+                        <option value="current" data-i18n="res_current">Actual (Pantalla)</option>
+                        <option value="1920x1080">Full HD (1080p)</option>
+                        <option value="2560x1440">2K (1440p)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="export-fps" data-i18n="lbl_fps">Cuadros por segundo (FPS)</label>
+                    <select id="export-fps">
+                        <option value="30">30 FPS (Normal)</option>
+                        <option value="60">60 FPS (Fluido)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="export-quality" data-i18n="lbl_quality">Calidad (Bitrate)</label>
+                    <select id="export-quality">
+                        <option value="standard" data-i18n="quality_standard">Estándar (5 Mbps)</option>
+                        <option value="high" data-i18n="quality_high" selected>Alta (8 Mbps)</option>
+                        <option value="ultra" data-i18n="quality_ultra">Ultra (15 Mbps)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="popup-modal__buttons">
+                <button id="export-cancel" class="btn btn--secondary" data-i18n="btn_cancel">Cancelar</button>
+                <button id="export-confirm" class="btn btn--primary" data-i18n="btn_export">Exportar</button>
             </div>
         </div>
     </div>

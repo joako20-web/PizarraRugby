@@ -3,6 +3,8 @@ import { state } from '../core/state.js';
 import { Popup } from '../ui/popup.js';
 import { Renderer } from '../renderer/renderer.js';
 import { Players } from './players.js';
+import { I18n } from '../core/i18n.js';
+import { canvas } from '../core/dom.js';
 
 // ==============================
 // FORMACIONES
@@ -18,8 +20,8 @@ export const Formations = {
     async save(name) {
         if (!name || name.trim() === '') {
             await Popup.show({
-                title: "Error",
-                html: "Por favor, ingresa un nombre para la formación",
+                title: I18n.t('error_title'),
+                html: I18n.t('error_no_formation_name'),
                 showCancel: false
             });
             return;
@@ -30,8 +32,8 @@ export const Formations = {
 
         if (visiblePlayers.length === 0) {
             await Popup.show({
-                title: "Error",
-                html: "No hay jugadores visibles para guardar",
+                title: I18n.t('error_title'),
+                html: I18n.t('error_no_visible_players'),
                 showCancel: false
             });
             return;
@@ -41,6 +43,7 @@ export const Formations = {
         const formation = {
             name: name.trim(),
             date: new Date().toISOString(),
+            // image: canvas.toDataURL('image/jpeg', 0.4), // Removed by user request
             fieldConfig: { ...state.fieldConfig },
             players: visiblePlayers.map(p => ({
                 team: p.team,
@@ -56,8 +59,8 @@ export const Formations = {
 
         this.updateSelector();
         await Popup.show({
-            title: "Guardado",
-            html: `Formación "<strong>${name}</strong>" guardada correctamente`,
+            title: I18n.t('formation_saved_title'),
+            html: `${I18n.t('formation_saved_msg')} "<strong>${name}</strong>"`,
             showCancel: false
         });
     },
@@ -68,8 +71,8 @@ export const Formations = {
 
         if (!formation) {
             await Popup.show({
-                title: "Error",
-                html: "Formación no encontrada",
+                title: I18n.t('error_title'),
+                html: I18n.t('formation_not_found'),
                 showCancel: false
             });
             return;
@@ -132,19 +135,19 @@ export const Formations = {
         Players.updateTeamButtons();
         Renderer.drawFrame();
         await Popup.show({
-            title: "Cargado",
-            html: `Formación "<strong>${name}</strong>" cargada correctamente`,
+            title: I18n.t('formation_loaded_title'),
+            html: `${I18n.t('formation_loaded_msg')} "<strong>${name}</strong>"`,
             showCancel: false
         });
     },
 
     async delete(name) {
         const confirmed = await Popup.show({
-            title: "Confirmar eliminación",
-            html: `¿Estás seguro de que quieres eliminar la formación "<strong>${name}</strong>"?`,
+            title: I18n.t('delete_formation_title'),
+            html: `${I18n.t('delete_formation_msg')} "<strong>${name}</strong>"`,
             showCancel: true,
-            okText: "Eliminar",
-            cancelText: "Cancelar"
+            okText: I18n.t('btn_delete'),
+            cancelText: I18n.t('btn_cancel')
         });
 
         if (!confirmed) {

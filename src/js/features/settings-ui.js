@@ -1,4 +1,5 @@
 import { SETTINGS, DEFAULT_SHORTCUTS } from '../core/settings.js';
+import { I18n } from '../core/i18n.js';
 import { Players } from './players.js';
 import { Renderer } from '../renderer/renderer.js';
 import { Popup } from '../ui/popup.js';
@@ -169,46 +170,53 @@ export const SettingsUI = {
         return `
             <div style="display: flex; flex-direction: column; gap: 15px;">
                 <div class="form-group">
-                    <label>Tema</label>
+                    <label>${I18n.t('settings_language')}</label>
+                    <select id="set-language" style="width:100%; height:40px;">
+                        <option value="es" ${I18n.currentLocale === 'es' ? 'selected' : ''}>Español</option>
+                        <option value="en" ${I18n.currentLocale === 'en' ? 'selected' : ''}>English</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>${I18n.t('settings_theme')}</label>
                     <select id="set-theme" style="width:100%; height:40px;">
                         <option value="dark" ${SETTINGS.THEME === 'dark' ? 'selected' : ''}>Oscuro</option>
                         <option value="light" ${SETTINGS.THEME === 'light' ? 'selected' : ''}>Claro</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>Tamaño Jugadores (x${SETTINGS.PLAYER_SCALE})</label>
+                    <label>${I18n.t('settings_player_scale') || 'Tamaño Jugadores'} (x${SETTINGS.PLAYER_SCALE})</label>
                     <input type="range" id="set-scale" min="0.5" max="2.0" step="0.1" value="${SETTINGS.PLAYER_SCALE}" style="width:100%;" />
                 </div>
                 <div class="form-group">
-                    <label>Tamaño Balón (x${SETTINGS.BALL_SCALE})</label>
+                    <label>${I18n.t('settings_ball_scale') || 'Tamaño Balón'} (x${SETTINGS.BALL_SCALE})</label>
                     <input type="range" id="set-ball-scale" min="0.5" max="2.0" step="0.1" value="${SETTINGS.BALL_SCALE}" style="width:100%;" />
                 </div>
                 <div class="form-group" style="display:flex; align-items:center;">
                     <input type="checkbox" id="set-numbers" ${SETTINGS.SHOW_NUMBERS ? 'checked' : ''} style="margin-right:10px;" />
-                    <label for="set-numbers" style="margin-bottom:0;">Mostrar Números</label>
+                    <label for="set-numbers" style="margin-bottom:0;">${I18n.t('settings_show_numbers') || 'Mostrar Números'}</label>
                 </div>
                 
                 <hr>
                 
                 <div class="form-group">
-                    <label>Nombre Equipo A</label>
+                    <label>${I18n.t('settings_team_a')}</label>
                     <input type="text" id="set-name-a" value="${SETTINGS.TEAM_A_NAME}" style="width:100%; height:40px;" />
                 </div>
                 <div class="form-group">
-                    <label>Color Equipo A</label>
+                    <label>${I18n.t('settings_team_colors')}</label>
                     <input type="color" id="set-color-a" value="${SETTINGS.TEAM_A_COLOR}" style="width:100%; height:40px;" />
                 </div>
                 <div class="form-group">
-                    <label>Nombre Equipo B</label>
+                    <label>${I18n.t('settings_team_b')}</label>
                     <input type="text" id="set-name-b" value="${SETTINGS.TEAM_B_NAME}" style="width:100%; height:40px;" />
                 </div>
                 <div class="form-group">
-                    <label>Color Equipo B</label>
+                    <label>${I18n.t('settings_team_colors')}</label>
                     <input type="color" id="set-color-b" value="${SETTINGS.TEAM_B_COLOR}" style="width:100%; height:40px;" />
                 </div>
                 
                 <hr>
-                <button id="btn-reset-settings" class="btn btn--danger" style="width: auto; align-self: flex-end; padding: 6px 12px;">Restaurar valores fábrica</button>
+                <button id="btn-reset-settings" class="btn btn--danger" style="width: auto; align-self: flex-end; padding: 6px 12px;">${I18n.t('settings_btn_reset')}</button>
             </div>
         `;
     },
@@ -229,6 +237,7 @@ export const SettingsUI = {
         }
     },
 
+
     saveGeneralSettings() {
         const nameA = document.getElementById("set-name-a");
         if (nameA) {
@@ -240,14 +249,48 @@ export const SettingsUI = {
             const nameB = document.getElementById("set-name-b").value;
             const colorB = document.getElementById("set-color-b").value;
 
+            const language = document.getElementById("set-language").value;
+
+            // Check default team names switching
+            let finalNameA = nameA.value;
+            let finalNameB = nameB;
+
+            if (language !== I18n.currentLocale) {
+                // Logic: If the CURRENT name matches the CURRENT default, 
+                // swap it to the NEW default.
+
+                const currentDefaultA = I18n.t("default_team_a");
+                const currentDefaultB = I18n.t("default_team_b");
+
+                I18n.setLocale(language);
+
+                // Now I18n.t returns the NEW default
+                const newDefaultA = I18n.t("default_team_a");
+                const newDefaultB = I18n.t("default_team_b");
+
+                // Check Team A
+                if (finalNameA === currentDefaultA) {
+                    finalNameA = newDefaultA;
+                }
+
+                // Check Team B
+                if (finalNameB === currentDefaultB) {
+                    finalNameB = newDefaultB;
+                }
+
+                // Re-render to update texts in current modal
+                // Note: renderTabContent will use the NEW defaults if we save them to SETTINGS first
+                this.renderTabContent();
+            }
+
             this.save({
                 THEME: theme,
                 PLAYER_SCALE: scale,
                 BALL_SCALE: ballScale,
                 SHOW_NUMBERS: showNumbers,
-                TEAM_A_NAME: nameA.value,
+                TEAM_A_NAME: finalNameA,
                 TEAM_A_COLOR: colorA,
-                TEAM_B_NAME: nameB,
+                TEAM_B_NAME: finalNameB,
                 TEAM_B_COLOR: colorB
             });
         }

@@ -8,6 +8,7 @@ import { Mode } from './mode.js';
 import { Tutorial } from './tutorial.js';
 import { Scrum } from './scrum.js';
 import { History } from './history.js';
+import { I18n } from '../core/i18n.js';
 
 // ==============================
 // EVENTOS DEL CANVAS
@@ -36,8 +37,8 @@ export const CanvasEvents = {
         if (state.mode === "zone") {
             if (!state.selectedZoneColor) {
                 await Popup.show({
-                    title: "Color no seleccionado",
-                    html: `<p>Debes elegir un color para crear una zona.</p>`,
+                    title: I18n.t('error_no_color_title'),
+                    html: `<p>${I18n.t('error_no_color_msg')}</p>`,
                     showCancel: false
                 });
                 return;
@@ -51,7 +52,7 @@ export const CanvasEvents = {
             if (!state.zoneEnd) {
                 state.zoneEnd = pos;
 
-                const name = await Popup.prompt("Nombre de la zona:");
+                const name = await Popup.prompt(I18n.t('prompt_zone_name'));
                 if (!name || name.trim() === "") {
                     state.zoneStart = null;
                     state.zoneEnd = null;
@@ -262,7 +263,7 @@ export const CanvasEvents = {
 
         // Modo texto
         if (state.mode === "text") {
-            const text = await Popup.prompt("Ingrese texto:", "Nuevo texto");
+            const text = await Popup.prompt(I18n.t('prompt_text_enter'), I18n.t('default_text_new'));
             if (text) {
                 f.texts.push({
                     x: pos.x,
@@ -525,7 +526,7 @@ export const CanvasEvents = {
         const t = HitTest.findTextAt(pos.x, pos.y);
         if (!t) return;
 
-        const tx = await Popup.prompt("Editar texto:", t.text);
+        const tx = await Popup.prompt(I18n.t('prompt_text_edit'), t.text);
         if (tx === null) return;
 
         if (tx.trim() === "") {

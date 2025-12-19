@@ -6,6 +6,7 @@ import { Utils, clampYToPlayableArea, getPlayerInitialPosition, calculateFieldDi
 import { Frame } from "./model/frame.js";
 import { Renderer } from "./renderer/renderer.js";
 import { Popup } from "./ui/popup.js";
+import { I18n } from "./core/i18n.js";
 import { UI } from "./ui/ui.js";
 import { Players } from "./features/players.js"; // CRÍTICO: Usado en init() y eventos
 import { Formations } from "./features/formations.js";
@@ -16,6 +17,8 @@ import { CanvasEvents } from "./features/canvasEvents.js";
 import { History } from "./features/history.js";
 import { Export } from "./features/export.js";
 import { SettingsUI } from "./features/settings-ui.js";
+// import { Gallery } from "./ui/gallery.js"; // Removed by user request
+import { ExportUI } from "./ui/export-ui.js";
 
 
 function resetBoardForFieldChange() {
@@ -133,10 +136,10 @@ function updateFieldConfigInfo() {
 
 async function resetApp() {
     const confirm = await Popup.show({
-        title: "Resetear Todo",
-        html: "¿Estás seguro? Esto borrará <b>todo</b> el progreso actual y comenzará un nuevo proyecto desde cero.<br><br>Esta acción no se puede deshacer.",
-        okText: "Sí, borrar todo",
-        cancelText: "Cancelar"
+        title: I18n.t('popup_reset_title'),
+        html: I18n.t('popup_reset_text'),
+        okText: I18n.t('popup_reset_confirm'),
+        cancelText: I18n.t('popup_reset_cancel')
     });
 
     if (confirm) {
@@ -220,24 +223,35 @@ async function resetApp() {
     }
 }
 
+
 function updateButtonTooltips() {
     const s = SETTINGS.SHORTCUTS;
     if (!s) return;
 
-    const setTooltip = (id, text, key) => {
+    const setTooltip = (id, key, shortcut) => {
         const el = document.getElementById(id);
-        if (el) el.title = `${text} (${key})`;
+        if (el) {
+            const text = I18n.t(key);
+            // Si la traducción es igual a la clave (no encontrada), usar la clave como fallback visual temporario
+            // o buscar en el diccionario actual si hay fallbacks hardcoded? 
+            // Mejor confiar en que las claves existen.
+            el.title = `${text} (${shortcut})`;
+        }
     };
 
-    setTooltip('mode-move', "Mover / Seleccionar", s.MODE_MOVE.toUpperCase());
-    setTooltip('mode-text', "Texto", s.MODE_TEXT.toUpperCase());
-    setTooltip('mode-scrum', "Melé", s.MODE_SCRUM.toUpperCase());
-    setTooltip('mode-arrow', "Flecha", s.MODE_ARROW.toUpperCase());
-    setTooltip('mode-freehand', "Dibujo", s.MODE_FREEHAND.toUpperCase());
-    setTooltip('mode-eraser', "Goma", s.MODE_ERASER.toUpperCase());
-    setTooltip('mode-zone', "Zonas", s.MODE_ZONE.toUpperCase());
-    setTooltip('mode-shield', "Escudo", s.MODE_SHIELD.toUpperCase());
-    setTooltip('play-animation', "Reproducir", s.ANIMATION_PLAY === 'Space' ? 'Espacio' : s.ANIMATION_PLAY.toUpperCase());
+    setTooltip('mode-move', "mode_move", s.MODE_MOVE.toUpperCase());
+    setTooltip('mode-text', "mode_text", s.MODE_TEXT.toUpperCase());
+    setTooltip('mode-scrum', "mode_scrum", s.MODE_SCRUM.toUpperCase());
+    setTooltip('mode-arrow', "mode_arrow", s.MODE_ARROW.toUpperCase());
+    setTooltip('mode-freehand', "mode_draw", s.MODE_FREEHAND.toUpperCase());
+    // "mode_eraser_title" keys in locale is "Goma de borrar" / "Eraser"
+    setTooltip('mode-eraser', "mode_eraser_title", s.MODE_ERASER.toUpperCase());
+    setTooltip('mode-zone', "mode_zone", s.MODE_ZONE.toUpperCase());
+    setTooltip('mode-shield', "mode_shield", s.MODE_SHIELD.toUpperCase());
+
+    // Play button special case
+    const playShortcut = s.ANIMATION_PLAY === 'Space' ? (I18n.currentLocale === 'es' ? 'Espacio' : 'Space') : s.ANIMATION_PLAY.toUpperCase();
+    setTooltip('play-animation', "btn_play", playShortcut);
 }
 
 
@@ -245,7 +259,26 @@ function updateButtonTooltips() {
 // INICIALIZACIÓN DE EVENTOS
 // ==============================
 
+
+
 function initEvents() {
+    // Initialize i18n
+    I18n.init();
+
+    // Initialize Gallery
+    // if (typeof Gallery !== "undefined") Gallery.init(); // Removed
+
+    // Initialize ExportUI
+    if (typeof ExportUI !== "undefined") ExportUI.init();
+
+    // Initial tooltip update
+    updateButtonTooltips();
+
+    // Listen for language changes to update tooltips
+    window.addEventListener('languageChanged', () => {
+        updateButtonTooltips();
+    });
+
     // Historial
     const btnUndo = document.getElementById("btn-undo");
     const btnRedo = document.getElementById("btn-redo");
@@ -440,7 +473,7 @@ function initEvents() {
     document.getElementById("play-animation").onclick = () => Animation.play();
     const pauseBtn = document.getElementById("pause-animation");
     if (pauseBtn) pauseBtn.onclick = () => Animation.pause();
-    document.getElementById("export-webm").onclick = () => Animation.exportWebM();
+    // document.getElementById("export-webm").onclick = () => Animation.exportWebM(); // Handled by ExportUI
     document.getElementById("export-image").onclick = () => Export.downloadImage();
 
     // Presentation Mode
@@ -565,7 +598,7 @@ function initEvents() {
 
     // Formaciones
     document.getElementById("save-formation-btn").onclick = async () => {
-        const name = await Popup.prompt("Nombre de la formación", "Ej: Ataque 1");
+        const name = await Popup.prompt(I18n.t('prompt_formation_name'), I18n.t('prompt_formation_placeholder'));
         if (name) {
             await Formations.save(name);
         }
@@ -578,8 +611,8 @@ function initEvents() {
             await Formations.load(name);
         } else {
             await Popup.show({
-                title: "Seleccionar formación",
-                html: "Por favor, selecciona una formación de la lista",
+                title: I18n.t('alert_select_formation'),
+                html: I18n.t('alert_select_formation_desc'),
                 showCancel: false
             });
         }
@@ -593,8 +626,8 @@ function initEvents() {
             selector.value = "";
         } else {
             await Popup.show({
-                title: "Seleccionar formación",
-                html: "Por favor, selecciona una formación de la lista",
+                title: I18n.t('alert_select_formation'),
+                html: I18n.t('alert_select_formation_desc'),
                 showCancel: false
             });
         }

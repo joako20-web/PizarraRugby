@@ -1,0 +1,32 @@
+{
+  "name": "pizarrarugby",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "**Aplicación web profesional para diseño y animación de jugadas de rugby**",
+  "main": "app.original.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint .",
+    "test": "vitest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/joako20-web/PizarraRugby.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/joako20-web/PizarraRugby/issues"
+  },
+  "homepage": "https://github.com/joako20-web/PizarraRugby#readme",
+  "devDependencies": {
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.7.4",
+    "vite": "^5.4.11",
+    "vitest": "^2.1.8"
+  }
+}

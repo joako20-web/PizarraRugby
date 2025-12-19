@@ -2,6 +2,7 @@ import { Utils, getPlayerInitialPosition } from '../core/utils.js';
 import { CONFIG } from '../core/config.js';
 import { Renderer } from '../renderer/renderer.js';
 import { SETTINGS } from '../core/settings.js';
+import { I18n } from '../core/i18n.js';
 
 // ==============================
 // GESTIÓN DE JUGADORES
@@ -47,8 +48,9 @@ export const Players = {
             .every(pl => pl.visible);
         const btnA = document.getElementById("show-team-a");
         if (btnA) {
-            const action = allVisibleA ? "Ocultar" : "Mostrar";
-            btnA.textContent = `${action} ${SETTINGS.TEAM_A_NAME}`;
+            const actionKey = allVisibleA ? "action_hide" : "action_show";
+            const actionText = I18n.t(actionKey);
+            btnA.textContent = `${actionText} ${SETTINGS.TEAM_A_NAME}`;
 
             // Revert styles to default CSS
             btnA.style.backgroundColor = "";
@@ -62,8 +64,9 @@ export const Players = {
             .every(pl => pl.visible);
         const btnB = document.getElementById("show-team-b");
         if (btnB) {
-            const action = allVisibleB ? "Ocultar" : "Mostrar";
-            btnB.textContent = `${action} ${SETTINGS.TEAM_B_NAME}`;
+            const actionKey = allVisibleB ? "action_hide" : "action_show";
+            const actionText = I18n.t(actionKey);
+            btnB.textContent = `${actionText} ${SETTINGS.TEAM_B_NAME}`;
 
             // Revert styles to default CSS
             btnB.style.backgroundColor = "";
