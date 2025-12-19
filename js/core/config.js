@@ -50,8 +50,8 @@ export const CONFIG = {
         SPACING: 50,             // Espaciado entre filas (campo completo)
         ROW_OFFSET: 42,          // Offset horizontal de filas
         PACK_OFFSET: 45,         // Offset del pack
-        SPACING_HALF: 25,        // Espaciado para medio campo
-        ROW_OFFSET_HALF: 28,     // Offset de filas (medio campo)
+        SPACING_HALF: 40,        // Espaciado para medio campo
+        ROW_OFFSET_HALF: 35,     // Offset de filas (medio campo)
         PACK_OFFSET_HALF: 30     // Offset del pack (medio campo)
     },
 

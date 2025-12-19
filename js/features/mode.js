@@ -29,6 +29,14 @@ export const Mode = {
             const btn = document.getElementById("mode-shield");
             if (btn) btn.classList.add("is-active");
         }
+        if (m === "freehand") {
+            const btn = document.getElementById("mode-freehand");
+            if (btn) btn.classList.add("is-active");
+        }
+        if (m === "eraser") {
+            const btn = document.getElementById("mode-eraser");
+            if (btn) btn.classList.add("is-active");
+        }
 
         const zonePanel = document.getElementById("zone-color-panel");
         if (zonePanel) {

@@ -4,6 +4,7 @@ import { Frame } from '../model/frame.js';
 import { Renderer } from '../renderer/renderer.js';
 import { Players } from './players.js';
 import { Animation } from './animation.js';
+import { UI } from '../ui/ui.js';
 
 export const History = {
     stack: [],
@@ -126,6 +127,11 @@ export const History = {
             btnRedo.disabled = this.currentIndex >= this.stack.length - 1;
             if (btnRedo.disabled) btnRedo.classList.add('is-disabled');
             else btnRedo.classList.remove('is-disabled');
+        }
+
+        // Update global Reset button visibility
+        if (UI && UI.updateResetButtonVisibility) {
+            UI.updateResetButtonVisibility(this.stack.length);
         }
     },
 

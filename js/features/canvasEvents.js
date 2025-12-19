@@ -271,6 +271,7 @@ export const CanvasEvents = {
                 });
                 Mode.set("move");
                 Renderer.drawFrame();
+                History.push();
             }
         }
 
@@ -296,6 +297,12 @@ export const CanvasEvents = {
         } else if (state.mode === "scrum") {
             await Scrum.place(pos.x, pos.y);
             History.push(); // Guardar melé
+        }
+
+        // Modo dibujo libre
+        if (state.mode === "freehand") {
+            state.currentPath = [{ x: pos.x, y: pos.y }];
+            Renderer.drawFrame();
         }
     },
 
@@ -393,11 +400,77 @@ export const CanvasEvents = {
             };
             Renderer.drawFrame();
         }
+
+        // Modo dibujo libre en progreso
+        if (state.mode === "freehand" && state.currentPath) {
+            state.currentPath.push({ x: pos.x, y: pos.y });
+            Renderer.drawFrame();
+        }
+
+        // Modo Borrador (Eraser)
+        if (state.mode === "eraser" && (e.buttons === 1 || e.type === "touchmove")) {
+            const f = Utils.getCurrentFrame();
+            if (f.drawings && f.drawings.length > 0) {
+                const eraserRadius = 20; // Radio de borrado
+                let changed = false;
+
+                // Filtrar dibujos que NO toquen el borrador
+                const initialLength = f.drawings.length;
+                f.drawings = f.drawings.filter(drawing => {
+                    // Verificar si algún punto del dibujo está cerca del mouse
+                    for (const point of drawing.points) {
+                        const dist = Math.hypot(point.x - pos.x, point.y - pos.y);
+                        if (dist < eraserRadius) {
+                            return false; // Eliminar este dibujo
+                        }
+                    }
+                    return true; // Mantener
+                });
+
+                if (f.drawings.length < initialLength) {
+                    Renderer.drawFrame();
+                    // Debounce history push? Or just push on mouse up? 
+                    // Pushing on every delete might be too much, but effective.
+                    // Let's rely on MouseUp for history if possible, or just push now.
+                    // For better UX, pushing now ensures granularity if we delete multiple strokes.
+                    // But undoing one by one might be tedious.
+                    // Let's wait for mouseUp to push history if we want to group deletions?
+                    // OR push history ONLY if we deleted something.
+                    // Ideally we group deletions per stroke (drag action).
+                    // We can set a flag "state.somethingErased = true" and push on mouseUp.
+                    state.somethingErased = true;
+                }
+            }
+        }
     },
 
     handleMouseUp() {
         if (state.draggingZone) {
             state.draggingZone = false;
+        }
+
+        // Finalizar dibujo libre
+        if (state.mode === "freehand" && state.currentPath) {
+            const f = Utils.getCurrentFrame();
+            if (state.currentPath.length > 1) {
+                // Ensure drawings array exists (for legacy frames)
+                if (!f.drawings) f.drawings = [];
+
+                f.drawings.push({
+                    points: state.currentPath,
+                    color: "white" // Default color
+                });
+                History.push();
+            }
+            state.currentPath = null;
+            Renderer.drawFrame();
+            return;
+        }
+
+        // Finalizar borrado
+        if (state.mode === "eraser" && state.somethingErased) {
+            History.push();
+            state.somethingErased = false;
         }
 
         // Si estábamos arrastrando un escudo en modo shield, volver a modo move
@@ -410,22 +483,28 @@ export const CanvasEvents = {
 
         state.draggingShield = null;
 
-        if (state.dragTarget && state.dragTarget.type === "players") {
-            const f = Utils.getCurrentFrame();
-            state.dragTarget.players.forEach((pl, i) => {
-                const st = state.dragTarget.startPositions[i];
-                // Solo añadir trail si se movió significativamente
-                if (Math.hypot(pl.x - st.x, pl.y - st.y) > 2) {
-                    f.trailLines.push({
-                        x1: st.x,
-                        y1: st.y,
-                        x2: pl.x,
-                        y2: pl.y,
-                        team: pl.team
-                    });
-                }
-            });
-            History.push(); // Guardar movimiento
+        if (state.dragTarget) {
+            // Push history for ANY drag action completion (ball, text, players)
+            // But only if we actually moved something?
+            // For now, simpler to just push if we had a drag target.
+
+            if (state.dragTarget.type === "players") {
+                const f = Utils.getCurrentFrame();
+                state.dragTarget.players.forEach((pl, i) => {
+                    const st = state.dragTarget.startPositions[i];
+                    // Solo añadir trail si se movió significativamente
+                    if (Math.hypot(pl.x - st.x, pl.y - st.y) > 2) {
+                        f.trailLines.push({
+                            x1: st.x,
+                            y1: st.y,
+                            x2: pl.x,
+                            y2: pl.y,
+                            team: pl.team
+                        });
+                    }
+                });
+            }
+            History.push();
         }
 
         state.dragTarget = null;

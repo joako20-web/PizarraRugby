@@ -600,6 +600,37 @@ export const Renderer = {
             ctx.strokeRect(x, y, w, h);
             ctx.setLineDash([]);
         }
+
+        // Dibujos libres (guardados)
+        if (f.drawings) {
+            f.drawings.forEach(d => {
+                if (d.points.length < 2) return;
+                ctx.strokeStyle = d.color || "white";
+                ctx.lineWidth = 3;
+                ctx.lineCap = "round";
+                ctx.lineJoin = "round";
+                ctx.beginPath();
+                ctx.moveTo(d.points[0].x, d.points[0].y);
+                for (let i = 1; i < d.points.length; i++) {
+                    ctx.lineTo(d.points[i].x, d.points[i].y);
+                }
+                ctx.stroke();
+            });
+        }
+
+        // Dibujo libre (en progreso)
+        if (state.currentPath && state.currentPath.length > 0) {
+            ctx.strokeStyle = "white"; // Preview color
+            ctx.lineWidth = 3;
+            ctx.lineCap = "round";
+            ctx.lineJoin = "round";
+            ctx.beginPath();
+            ctx.moveTo(state.currentPath[0].x, state.currentPath[0].y);
+            for (let i = 1; i < state.currentPath.length; i++) {
+                ctx.lineTo(state.currentPath[i].x, state.currentPath[i].y);
+            }
+            ctx.stroke();
+        }
     },
 
     // === Animation Interpolation ===

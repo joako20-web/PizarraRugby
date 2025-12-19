@@ -1,4 +1,5 @@
 import { Popup } from '../ui/popup.js';
+import { UI } from '../ui/ui.js';
 
 // ==============================
 // SISTEMA DE TUTORIAL
@@ -64,6 +65,13 @@ export const Tutorial = {
                 position: "right"
             },
             {
+                title: "Herramienta: Dibujo Libre",
+                text: "Dibuja libremente sobre el campo para marcar trayectorias complejas o notas. Selecciona la herramienta y arrastra sobre la pizarra. Usa 'Ctrl+Z' para deshacer el último trazo.",
+                target: "#mode-freehand",
+                action: null,
+                position: "right"
+            },
+            {
                 title: "Herramienta: Melé",
                 text: "Posiciona automáticamente a los jugadores en formación de melé. Haz clic en el campo y elige qué equipo(s) participan. Los jugadores se colocarán en la formación correcta de 8 vs 8.",
                 target: "#mode-scrum",
@@ -87,7 +95,7 @@ export const Tutorial = {
             {
                 title: "Gestión de Formaciones",
                 text: "Guarda configuraciones tácticas completas con el botón 'Guardar Formación'. Puedes cargar formaciones guardadas desde el selector y eliminarlas con el botón de papelera. Perfecto para reutilizar setups comunes.",
-                target: "#save-formation-btn",
+                target: "#formations-panel",
                 action: null,
                 position: "right"
             },
@@ -144,7 +152,17 @@ export const Tutorial = {
 
         this.currentStep = stepIndex;
         this.actionCompleted = false;
+
+        // Restore UI state from previous step (specifically delete button)
+        UI.updateDeleteButton();
+
         const step = steps[stepIndex];
+
+        // Special case for Delete Button step: Force show it
+        if (step.target === "#delete-btn") {
+            const btn = document.getElementById('delete-btn');
+            if (btn) btn.classList.remove('is-hidden');
+        }
 
         // Actualizar contenido
         document.getElementById('tutorial-title').textContent = step.title;
@@ -337,6 +355,9 @@ export const Tutorial = {
         document.getElementById('tutorial-overlay').classList.add('is-hidden');
         document.getElementById('tutorial-box').classList.add('is-hidden');
         document.getElementById('tutorial-spotlight').classList.remove('is-active');
+
+        // Restore UI state
+        UI.updateDeleteButton();
 
         // Si terminó el tutorial básico, preguntar si quiere ver el avanzado
         if (this.currentTutorialType === 'basic') {

@@ -138,7 +138,7 @@ body {
 }
 
 .sidebar__group {
-    margin-bottom: 20px;
+    margin-bottom: 10px;
 }
 
 .sidebar__title {
@@ -153,8 +153,8 @@ body {
 
 /* --- Panels --- */
 .panel {
-    margin: 10px;
-    padding: 10px;
+    margin: 5px;
+    padding: 8px;
     border: 1px solid var(--border-color);
     border-radius: 8px;
     background: transparent;
@@ -317,21 +317,24 @@ body {
     background: rgba(30, 41, 59, 0.2);
 }
 
-/* Custom Scrollbar for settings */
-.settings-content::-webkit-scrollbar {
-    width: 8px;
+/* Custom Scrollbar Global */
+*::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
 }
 
-.settings-content::-webkit-scrollbar-track {
+*::-webkit-scrollbar-track {
     background: transparent;
 }
 
-.settings-content::-webkit-scrollbar-thumb {
+*::-webkit-scrollbar-thumb {
     background: var(--bg-input);
-    border-radius: 4px;
+    /* Matches image's likely color */
+    border-radius: 99px;
+    /* Very rounded as requested */
 }
 
-.settings-content::-webkit-scrollbar-thumb:hover {
+*::-webkit-scrollbar-thumb:hover {
     background: var(--text-secondary);
 }
 
@@ -779,7 +782,9 @@ body {
 .settings-container {
     display: flex;
     width: 800px;
-    height: 600px;
+    max-width: 90vw;
+    height: 480px;
+    max-height: 85vh;
     gap: 0;
     overflow: hidden;
     /* Rounded corners clip */
@@ -1320,4 +1325,45 @@ body.presentation-mode .exit-presentation-btn:hover {
 
 .light-theme .shortcut-item:hover {
     background: rgba(0, 0, 0, 0.05);
+}
+
+/* Fix Delete Button Overlap with Reset Button */
+.delete-btn {
+    position: fixed;
+    bottom: 90px;
+    /* Raised to avoid Reset button */
+    right: 20px;
+    z-index: 1000;
+    padding: 10px 20px;
+    background: var(--danger);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+    display: flex;
+    /* Ensure it displays correctly if flex is needed for icon */
+    align-items: center;
+    gap: 8px;
+}
+
+.delete-btn.is-hidden {
+    display: none;
+}
+
+.delete-btn:hover {
+    background: #dc2626;
+    /* Darker red */
+    transform: translateY(-2px);
+}
+
+/* Tutorial Navigation Improvements */
+#tutorial-prev {
+    border: 1px solid rgba(255, 255, 255, 0.5) !important;
+}
+
+#tutorial-prev:hover {
+    border-color: #ffffff !important;
+    background: rgba(255, 255, 255, 0.1);
 }

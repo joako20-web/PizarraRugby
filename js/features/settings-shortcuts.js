@@ -28,6 +28,14 @@ export const SettingsShortcuts = {
                     <button class="btn btn--secondary bind-btn" data-action="MODE_ARROW">${fmt(s.MODE_ARROW)}</button>
                 </div>
                 <div class="shortcut-item">
+                    <label>Modo Dibujo Libre</label>
+                    <button class="btn btn--secondary bind-btn" data-action="MODE_FREEHAND">${fmt(s.MODE_FREEHAND)}</button>
+                </div>
+                <div class="shortcut-item">
+                    <label>Modo Goma</label>
+                    <button class="btn btn--secondary bind-btn" data-action="MODE_ERASER">${fmt(s.MODE_ERASER)}</button>
+                </div>
+                <div class="shortcut-item">
                     <label>Modo Zonas</label>
                     <button class="btn btn--secondary bind-btn" data-action="MODE_ZONE">${fmt(s.MODE_ZONE)}</button>
                 </div>
@@ -92,7 +100,6 @@ export const SettingsShortcuts = {
                 if (confirmed) {
                     SETTINGS.SHORTCUTS = { ...DEFAULT_SHORTCUTS };
                     if (saveCallback) saveCallback();
-
                     // Force refresh of the shortcuts view (hacky but acts as re-render)
                     // We need to re-render the list to show new values
                     const container = document.getElementById("settings-tab-content");
@@ -152,6 +159,8 @@ export const SettingsShortcuts = {
                                 MODE_TEXT: "Modo Texto",
                                 MODE_SCRUM: "Modo Melé",
                                 MODE_ARROW: "Modo Flecha",
+                                MODE_FREEHAND: "Modo Dibujo Libre",
+                                MODE_ERASER: "Modo Goma",
                                 MODE_ZONE: "Modo Zonas",
                                 MODE_SHIELD: "Modo Escudo",
                                 TOGGLE_BALL: "Mostrar/Ocultar Balón",

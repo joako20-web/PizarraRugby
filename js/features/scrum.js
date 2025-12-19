@@ -43,7 +43,14 @@ export const Scrum = {
             this.placeHorizontalScrum(x, y, choice, setPlayer, spacingY, rowX, pack);
         } else {
             // Vertical field (full vertical or half field which is always vertical)
-            this.placeVerticalScrum(x, y, choice, setPlayer, spacingY, rowX, pack);
+            // Ajuste solo para campo completo vertical (para que no queden muy juntas en medio campo)
+            let s = spacingY;
+            let r = rowX;
+            if (cfg.type === "full") {
+                s = s * 0.85;
+                r = r * 0.85;
+            }
+            this.placeVerticalScrum(x, y, choice, setPlayer, s, r, pack);
         }
 
         Players.syncToggles();
@@ -88,11 +95,11 @@ export const Scrum = {
             setPlayer("A", 1, cx - spacingX, by);
             setPlayer("A", 2, cx, by);
             setPlayer("A", 3, cx + spacingX, by);
-            setPlayer("A", 6, cx - spacingX * 1.5, by - rowY);
-            setPlayer("A", 4, cx - spacingX * 0.5, by - rowY);
-            setPlayer("A", 5, cx + spacingX * 0.5, by - rowY);
-            setPlayer("A", 7, cx + spacingX * 1.5, by - rowY);
-            setPlayer("A", 8, cx, by - rowY * 2);
+            setPlayer("A", 6, cx - spacingX * 1, by - rowY);
+            setPlayer("A", 4, cx - spacingX * 0.3, by - rowY);
+            setPlayer("A", 5, cx + spacingX * 0.3, by - rowY);
+            setPlayer("A", 7, cx + spacingX * 1, by - rowY);
+            setPlayer("A", 8, cx, by - rowY * 1.8);
         }
 
         if (choice === "B" || choice === "AB") {
@@ -102,11 +109,11 @@ export const Scrum = {
             setPlayer("B", 3, cx - spacingX, by);
             setPlayer("B", 2, cx, by);
             setPlayer("B", 1, cx + spacingX, by);
-            setPlayer("B", 7, cx - spacingX * 1.5, by + rowY);
-            setPlayer("B", 5, cx - spacingX * 0.5, by + rowY);
-            setPlayer("B", 4, cx + spacingX * 0.5, by + rowY);
-            setPlayer("B", 6, cx + spacingX * 1.5, by + rowY);
-            setPlayer("B", 8, cx, by + rowY * 2);
+            setPlayer("B", 7, cx - spacingX * 1, by + rowY);
+            setPlayer("B", 5, cx - spacingX * 0.3, by + rowY);
+            setPlayer("B", 4, cx + spacingX * 0.3, by + rowY);
+            setPlayer("B", 6, cx + spacingX * 1, by + rowY);
+            setPlayer("B", 8, cx, by + rowY * 1.8);
         }
     }
 };

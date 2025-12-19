@@ -233,6 +233,8 @@ function updateButtonTooltips() {
     setTooltip('mode-text', "Texto", s.MODE_TEXT.toUpperCase());
     setTooltip('mode-scrum', "Melé", s.MODE_SCRUM.toUpperCase());
     setTooltip('mode-arrow', "Flecha", s.MODE_ARROW.toUpperCase());
+    setTooltip('mode-freehand', "Dibujo", s.MODE_FREEHAND.toUpperCase());
+    setTooltip('mode-eraser', "Goma", s.MODE_ERASER.toUpperCase());
     setTooltip('mode-zone', "Zonas", s.MODE_ZONE.toUpperCase());
     setTooltip('mode-shield', "Escudo", s.MODE_SHIELD.toUpperCase());
     setTooltip('play-animation', "Reproducir", s.ANIMATION_PLAY === 'Space' ? 'Espacio' : s.ANIMATION_PLAY.toUpperCase());
@@ -301,6 +303,8 @@ function initEvents() {
         else if (isMatch(s.MODE_TEXT)) { Mode.set("text"); actionTriggered = true; }
         else if (isMatch(s.MODE_SCRUM)) { Mode.set("scrum"); actionTriggered = true; }
         else if (isMatch(s.MODE_ARROW)) { Mode.set("draw"); actionTriggered = true; }
+        else if (isMatch(s.MODE_FREEHAND)) { Mode.set("freehand"); actionTriggered = true; }
+        else if (isMatch(s.MODE_ERASER)) { Mode.set("eraser"); actionTriggered = true; }
         else if (isMatch(s.MODE_ZONE)) { Mode.set("zone"); actionTriggered = true; }
         else if (isMatch(s.MODE_SHIELD)) { Mode.set("shield"); actionTriggered = true; }
         else if (isMatch(s.TOGGLE_BALL)) {
@@ -398,6 +402,7 @@ function initEvents() {
         Utils.getCurrentFrame().trailLines = [];
         Animation.updateUI();
         Renderer.drawFrame();
+        History.push();
     };
 
     document.getElementById("delete-frame").onclick = () => {
@@ -613,6 +618,12 @@ function initEvents() {
 
     // Modos
     document.getElementById("mode-move").onclick = () => Mode.set("move");
+    const btnFreehand = document.getElementById("mode-freehand");
+    if (btnFreehand) btnFreehand.onclick = () => Mode.set("freehand");
+
+    const btnEraser = document.getElementById("mode-eraser");
+    if (btnEraser) btnEraser.onclick = () => Mode.set("eraser");
+
     document.getElementById("mode-text").onclick = () => Mode.set("text");
     document.getElementById("mode-scrum").onclick = () => Mode.set("scrum");
     document.getElementById("mode-arrow").onclick = () => {
@@ -644,6 +655,7 @@ function initEvents() {
 
         f.arrows = [];
         f.texts = [];
+        f.drawings = [];
         f.trailLines = [];
         f.trainingShields = [];
 

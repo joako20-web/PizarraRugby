@@ -1,8 +1,10 @@
-import { SETTINGS } from '../core/settings.js';
+import { SETTINGS, DEFAULT_SHORTCUTS } from '../core/settings.js';
 import { Players } from './players.js';
 import { Renderer } from '../renderer/renderer.js';
 import { Popup } from '../ui/popup.js';
+
 import { SettingsShortcuts } from './settings-shortcuts.js';
+import { SettingsLayout } from './settings-layout.js';
 
 export const SettingsUI = {
     currentTab: 'general', // 'general' | 'shortcuts'
@@ -16,16 +18,19 @@ export const SettingsUI = {
                 Object.assign(SETTINGS, parsed);
 
                 // Ensure shortcuts object integrity
-                if (!SETTINGS.SHORTCUTS) {
-                    SETTINGS.SHORTCUTS = {
-                        MODE_MOVE: 'v',
-                        MODE_TEXT: 't',
-                        MODE_SCRUM: 'm',
-                        MODE_ARROW: 'a',
-                        MODE_ZONE: 'z',
-                        MODE_SHIELD: 'h',
-                        ANIMATION_PLAY: 'Space'
-                    };
+                if (parsed.SHORTCUTS) {
+                    // Deep merge to ensure new defaults are preserved if missing in saved
+                    SETTINGS.SHORTCUTS = { ...SETTINGS.SHORTCUTS, ...parsed.SHORTCUTS };
+
+                    // Asegurar que todas las claves por defecto existan
+                    // (Por si el usuario guardó settings antiguos sin las nuevas claves)
+                    for (const key in DEFAULT_SHORTCUTS) {
+                        if (!SETTINGS.SHORTCUTS[key]) {
+                            SETTINGS.SHORTCUTS[key] = DEFAULT_SHORTCUTS[key];
+                        }
+                    }
+                } else {
+                    SETTINGS.SHORTCUTS = { ...DEFAULT_SHORTCUTS };
                 }
             } catch (e) {
                 console.error("Error loading settings", e);
@@ -35,6 +40,9 @@ export const SettingsUI = {
         // Initial Theme Application
         this.applyTheme(SETTINGS.THEME);
         this.createSidebarButton();
+
+        // Initial Layout Application
+        import('../ui/ui.js').then(m => m.UI.applyLayout());
     },
 
     createSidebarButton() {
@@ -92,6 +100,10 @@ export const SettingsUI = {
                         <svg class="icon icon--sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" /></svg>
                         Atajos
                     </button>
+                    <button class="settings-tab" data-tab="layout">
+                        <svg class="icon icon--sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" /></svg>
+                        Interfaz
+                    </button>
                 </div>
                 <div id="settings-tab-content" class="settings-content">
                     <!-- Content injected here -->
@@ -129,6 +141,9 @@ export const SettingsUI = {
         } else if (this.currentTab === 'shortcuts') {
             container.innerHTML = SettingsShortcuts.render();
             SettingsShortcuts.bindEvents(() => this.save({})); // Pass save callback
+        } else if (this.currentTab === 'layout') {
+            container.innerHTML = SettingsLayout.render();
+            SettingsLayout.bindEvents((newSettings) => this.save(newSettings));
         }
     },
 

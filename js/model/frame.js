@@ -34,6 +34,7 @@ export const Frame = {
             },
             arrows: [],
             texts: [],
+            drawings: [],
             trailLines: [],
             trainingShields: []
         };
@@ -45,6 +46,7 @@ export const Frame = {
             ball: { ...f.ball },
             arrows: f.arrows.map(a => ({ ...a })),
             texts: f.texts.map(t => ({ ...t })),
+            drawings: (f.drawings || []).map(d => ({ ...d, points: [...d.points] })),
             trailLines: f.trailLines.map(t => ({ ...t })),
             trainingShields: (f.trainingShields || []).map(s => ({ ...s }))
         };

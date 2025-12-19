@@ -119,6 +119,20 @@
                 </div>
             </div>
 
+            <!-- Modo dibujo y goma (agrupados) -->
+            <div style="display: flex; gap: 5px; margin: 4px 0;">
+                <button id="mode-freehand" class="btn btn--mode" style="flex: 1; margin: 0;">Dibujo</button>
+                <button id="mode-eraser" class="btn btn--mode"
+                    style="flex: 0 0 40px; padding: 0; margin: 0; justify-content: center;" title="Goma de borrar">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M7 16l9-9 4 4-9 9-4-4" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M11 12l4 4" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 10l4 4" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 20h14" />
+                    </svg>
+                </button>
+            </div>
+
             <!-- Modo texto -->
             <button id="mode-text" class="btn btn--mode">Texto</button>
 
@@ -136,7 +150,6 @@
 
             <!-- Botones de limpieza -->
             <button id="clear-board" class="btn btn--danger">Limpiar tablero</button>
-            <button id="btn-reset-app" class="btn btn--danger" style="margin-top: 10px;">Resetear Todo</button>
         </section>
     </aside>
 
@@ -263,7 +276,7 @@
         </section>
 
         <!-- Formations Panel -->
-        <section class="panel">
+        <section id="formations-panel" class="panel">
             <h3 class="panel__title">Formaciones</h3>
 
             <!-- Save formation button -->
@@ -294,6 +307,9 @@
                     </svg> Eliminar
                 </button>
             </div>
+        </section>
+        <section class="panel">
+            <button id="btn-reset-app" class="btn btn--danger is-hidden">Resetear Todo</button>
         </section>
     </aside>
 
@@ -339,7 +355,7 @@
                     </svg>
                 </span>
             </button>
-            <button id="tutorial-next" class="btn btn--secondary">
+            <button id="tutorial-next" class="btn btn--primary">
                 <span class="btn__label">Paso adelante</span>
                 <span class="btn__icon">
                     <svg class="icon icon--sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

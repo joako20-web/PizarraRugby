@@ -22,9 +22,10 @@ export const state = {
     selectBoxStart: null,
     selectBoxEnd: null,
 
-    // Flechas
+    // Flechas y Dibujo Libre
     arrowStart: null,
     previewArrow: null,
+    currentPath: null,
     kickArcHeight: CONFIG.KICK_ARC_HEIGHT,
 
     // Zonas

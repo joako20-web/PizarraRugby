@@ -4,6 +4,8 @@ export const DEFAULT_SHORTCUTS = {
     MODE_SCRUM: 'm',
     MODE_ARROW: 'a',
     MODE_ZONE: 'z',
+    MODE_FREEHAND: 'f',
+    MODE_ERASER: 'e',
     MODE_SHIELD: 'h',
     TOGGLE_BALL: 'b',
     PRESENTATION_MODE: 'p',
@@ -23,5 +25,20 @@ export const SETTINGS = {
     PLAYER_SCALE: 1.0,
     SHOW_NUMBERS: true,
     BALL_SCALE: 1.0,
-    SHORTCUTS: { ...DEFAULT_SHORTCUTS }
+    BALL_SCALE: 1.0,
+    SHORTCUTS: { ...DEFAULT_SHORTCUTS },
+    UI: {
+        toolsPanelPosition: 'left',
+        animationPanelPosition: 'right',
+        visibleTools: {
+            move: true,
+            freehand: true,
+            eraser: true,
+            text: true,
+            scrum: true,
+            arrow: true,
+            zone: true,
+            shield: true
+        }
+    }
 };
