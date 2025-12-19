@@ -221,6 +221,13 @@ body {
     padding-left: 12px;
 }
 
+.btn--mode.is-active {
+    background: var(--primary);
+    color: #ffffff !important;
+    border-color: #ffffff;
+    box-shadow: var(--shadow-md);
+}
+
 .btn--action {
     background: var(--bg-input);
 }
@@ -1277,4 +1284,40 @@ body.presentation-mode .exit-presentation-btn {
 
 body.presentation-mode .exit-presentation-btn:hover {
     background: rgba(0, 0, 0, 0.8);
+}
+
+/* --- Light Theme Overrides for Settings --- */
+.light-theme .settings-sidebar {
+    background: rgba(245, 247, 250, 0.85);
+    border-right: 1px solid var(--border-color);
+}
+
+.light-theme .settings-content {
+    background: rgba(255, 255, 255, 0.6);
+}
+
+.light-theme .settings-tab {
+    background: transparent;
+    color: var(--text-secondary);
+}
+
+.light-theme .settings-tab:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--text-primary);
+}
+
+.light-theme .settings-tab.active {
+    background: var(--primary);
+    color: white;
+    border: 1px solid #ffffff;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+}
+
+.light-theme .shortcut-item {
+    background: rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.light-theme .shortcut-item:hover {
+    background: rgba(0, 0, 0, 0.05);
 }

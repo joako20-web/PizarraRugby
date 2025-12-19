@@ -1,4 +1,5 @@
 import { SETTINGS } from '../core/settings.js';
+import { SecondaryPopup } from '../ui/secondary-popup.js';
 
 export const SettingsShortcuts = {
     render() {
@@ -35,8 +36,16 @@ export const SettingsShortcuts = {
                     <button class="btn btn--secondary bind-btn" data-action="MODE_SHIELD">${fmt(s.MODE_SHIELD)}</button>
                 </div>
                 <div class="shortcut-item">
+                    <label>Mostrar/Ocultar balón</label>
+                    <button class="btn btn--secondary bind-btn" data-action="TOGGLE_BALL">${fmt(s.TOGGLE_BALL)}</button>
+                </div>
+                <div class="shortcut-item">
                     <label>Reproducir/Pausar</label>
                     <button class="btn btn--secondary bind-btn" data-action="ANIMATION_PLAY">${fmt(s.ANIMATION_PLAY)}</button>
+                </div>
+                <div class="shortcut-item">
+                    <label>Modo Presentación</label>
+                    <button class="btn btn--secondary bind-btn" data-action="PRESENTATION_MODE">${fmt(s.PRESENTATION_MODE)}</button>
                 </div>
                 
                 <h4 style="margin: 15px 0 10px 0; color: #888; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px;">Fotogramas</h4>
@@ -71,12 +80,20 @@ export const SettingsShortcuts = {
         // Bind Reset Button
         const btnReset = document.getElementById("btn-reset-shortcuts");
         if (btnReset) {
-            btnReset.onclick = () => {
-                if (confirm("¿Restaurar todos los atajos a sus valores por defecto?")) {
+            btnReset.onclick = async () => {
+                const confirmed = await SecondaryPopup.show({
+                    title: "Restaurar Atajos",
+                    html: "¿Estás seguro de que quieres restaurar todos los atajos a sus valores por defecto?",
+                    showCancel: true,
+                    okText: "Sí, restaurar",
+                    cancelText: "Cancelar"
+                });
+
+                if (confirmed) {
                     SETTINGS.SHORTCUTS = {
                         MODE_MOVE: 'v',
                         MODE_TEXT: 't',
-                        MODE_SCRUM: 'm  ',
+                        MODE_SCRUM: 'm',
                         MODE_ARROW: 'a',
                         MODE_ZONE: 'z',
                         MODE_SHIELD: 'h',
@@ -111,18 +128,86 @@ export const SettingsShortcuts = {
                 btn.textContent = "Pulsar...";
                 btn.classList.add("is-active");
 
-                const handler = (ev) => {
+                const handler = async (ev) => {
                     ev.preventDefault();
                     ev.stopPropagation();
 
+                    // Ignorar si solo se pulsan modificadores
+                    if (['Control', 'Alt', 'Shift', 'Meta'].includes(ev.key)) return;
+
                     if (ev.key !== "Escape") {
-                        let newKey = ev.key;
-                        if (ev.code === 'Space') newKey = 'Space';
+                        let keys = [];
+                        if (ev.ctrlKey) keys.push('Ctrl');
+                        if (ev.altKey) keys.push('Alt');
+                        if (ev.shiftKey) keys.push('Shift');
 
-                        SETTINGS.SHORTCUTS[action] = newKey;
-                        if (saveCallback) saveCallback(); // Trigger save logic
+                        let mainKey = ev.key;
+                        if (ev.code === 'Space') mainKey = 'Space';
+                        if (mainKey.length === 1) mainKey = mainKey.toUpperCase();
 
-                        btn.textContent = fmt(newKey);
+                        keys.push(mainKey);
+                        const newShortcut = keys.join('+');
+
+                        // Check for conflicts
+                        let conflict = null;
+                        for (const [key, value] of Object.entries(SETTINGS.SHORTCUTS)) {
+                            if (value.toUpperCase() === newShortcut.toUpperCase() && key !== action) {
+                                conflict = key;
+                                break;
+                            }
+                        }
+
+                        if (conflict) {
+                            // Map internal codes to readable names
+                            const names = {
+                                MODE_MOVE: "Modo Mover",
+                                MODE_TEXT: "Modo Texto",
+                                MODE_SCRUM: "Modo Melé",
+                                MODE_ARROW: "Modo Flecha",
+                                MODE_ZONE: "Modo Zonas",
+                                MODE_SHIELD: "Modo Escudo",
+                                TOGGLE_BALL: "Mostrar/Ocultar Balón",
+                                ANIMATION_PLAY: "Reproducir/Pausar",
+                                PRESENTATION_MODE: "Modo Presentación",
+                                FRAME_NEXT: "Siguiente Frame",
+                                FRAME_PREV: "Anterior Frame",
+                                FRAME_ADD: "Añadir Frame",
+                                FRAME_REMOVE: "Eliminar Frame"
+                            };
+                            const conflictName = names[conflict] || conflict;
+
+                            const overwrite = await SecondaryPopup.show({
+                                title: "Atajo ya en uso",
+                                html: `La tecla <strong>${newShortcut}</strong> ya está asignada a: <strong>${conflictName}</strong>.<br><br>¿Quieres asignarla aquí y dejar "${conflictName}" sin atajo?`,
+                                showCancel: true,
+                                okText: "Sí, asignar",
+                                cancelText: "Cancelar"
+                            });
+
+                            if (overwrite) {
+                                // 1. Remove from old action
+                                SETTINGS.SHORTCUTS[conflict] = "";
+
+                                // 2. Assign to new action
+                                SETTINGS.SHORTCUTS[action] = newShortcut;
+
+                                // 3. Update UI for the CLEARED action
+                                const conflictBtn = document.querySelector(`button[data-action="${conflict}"]`);
+                                if (conflictBtn) conflictBtn.textContent = "?";
+
+                                // 4. Update UI for the NEW action
+                                btn.textContent = newShortcut;
+
+                                if (saveCallback) saveCallback();
+                            } else {
+                                btn.textContent = originalText;
+                            }
+                        } else {
+                            SETTINGS.SHORTCUTS[action] = newShortcut;
+                            if (saveCallback) saveCallback();
+                            btn.textContent = newShortcut;
+                        }
+
                     } else {
                         btn.textContent = originalText;
                     }
@@ -132,7 +217,7 @@ export const SettingsShortcuts = {
                     window.dispatchEvent(new CustomEvent('shortcuts-changed'));
                 };
 
-                window.addEventListener('keydown', handler, { once: true, capture: true });
+                window.addEventListener('keydown', handler, { capture: true });
             };
         });
     }

@@ -20,7 +20,7 @@ export const SettingsUI = {
                     SETTINGS.SHORTCUTS = {
                         MODE_MOVE: 'v',
                         MODE_TEXT: 't',
-                        MODE_SCRUM: 's',
+                        MODE_SCRUM: 'm',
                         MODE_ARROW: 'a',
                         MODE_ZONE: 'z',
                         MODE_SHIELD: 'h',
@@ -288,7 +288,7 @@ export const SettingsUI = {
                 SHORTCUTS: {
                     MODE_MOVE: 'v',
                     MODE_TEXT: 't',
-                    MODE_SCRUM: 's',
+                    MODE_SCRUM: 'm',
                     MODE_ARROW: 'a',
                     MODE_ZONE: 'z',
                     MODE_SHIELD: 'h',

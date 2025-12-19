@@ -174,10 +174,12 @@ async function resetApp() {
         SETTINGS.SHORTCUTS = {
             MODE_MOVE: 'v',
             MODE_TEXT: 't',
-            MODE_SCRUM: 's',
+            MODE_SCRUM: 'm',
             MODE_ARROW: 'a',
             MODE_ZONE: 'z',
             MODE_SHIELD: 'h',
+            TOGGLE_BALL: 'b',
+            PRESENTATION_MODE: 'p',
             ANIMATION_PLAY: 'Space',
             FRAME_PREV: 'ArrowLeft',
             FRAME_NEXT: 'ArrowRight',
@@ -280,33 +282,66 @@ function initEvents() {
             return;
         }
 
-        // Custom Shortcuts
-        const key = e.key.toLowerCase();
-        const code = e.code;
+        // Custom Shortcuts Logic with Modifiers
+        // 1. Construct the string for the current press
+        // Ignorar modificadores sueltos
+        if (['Control', 'Alt', 'Shift', 'Meta'].includes(e.key)) return;
+
+        let currentKeys = [];
+        if (e.ctrlKey) currentKeys.push('Ctrl');
+        if (e.altKey) currentKeys.push('Alt');
+        if (e.shiftKey) currentKeys.push('Shift');
+
+        let mainKey = e.key;
+        if (e.code === 'Space') mainKey = 'Space';
+        if (mainKey.length === 1) mainKey = mainKey.toUpperCase();
+        currentKeys.push(mainKey);
+
+        const currentShortcut = currentKeys.join('+');
         const s = SETTINGS.SHORTCUTS;
 
-        if (!s) return; // Safety
+        if (!s) return;
 
-        if (key === s.MODE_MOVE.toLowerCase()) Mode.set("move");
-        if (key === s.MODE_TEXT.toLowerCase()) Mode.set("text");
-        if (key === s.MODE_SCRUM.toLowerCase()) Mode.set("scrum");
-        if (key === s.MODE_ARROW.toLowerCase()) Mode.set("draw"); // Arrow is draw mode
-        if (key === s.MODE_ZONE.toLowerCase()) Mode.set("zone");
-        if (key === s.MODE_SHIELD.toLowerCase()) Mode.set("shield");
+        // Helper to check match
+        const isMatch = (settingKey) => {
+            if (!settingKey) return false;
+            // Normalize for comparison: ensure uppercase for single letters if manually edited
+            return settingKey.toUpperCase() === currentShortcut.toUpperCase();
+        };
 
-        if (code === 'Space' && s.ANIMATION_PLAY === 'Space') {
-            e.preventDefault(); // Evitar scroll
-            if (state.isPlaying) Animation.pause();
-            else Animation.play();
-            if (state.isPlaying) Animation.pause();
-            else Animation.play();
+        let actionTriggered = false;
+
+        if (isMatch(s.MODE_MOVE)) { Mode.set("move"); actionTriggered = true; }
+        else if (isMatch(s.MODE_TEXT)) { Mode.set("text"); actionTriggered = true; }
+        else if (isMatch(s.MODE_SCRUM)) { Mode.set("scrum"); actionTriggered = true; }
+        else if (isMatch(s.MODE_ARROW)) { Mode.set("draw"); actionTriggered = true; }
+        else if (isMatch(s.MODE_ZONE)) { Mode.set("zone"); actionTriggered = true; }
+        else if (isMatch(s.MODE_SHIELD)) { Mode.set("shield"); actionTriggered = true; }
+        else if (isMatch(s.TOGGLE_BALL)) {
+            const btn = document.getElementById("toggle-ball");
+            if (btn) btn.click();
+            actionTriggered = true;
         }
+        else if (isMatch(s.PRESENTATION_MODE)) {
+            const btn = document.getElementById("toggle-presentation");
+            if (btn) btn.click();
+            actionTriggered = true;
+        }
+        else if (isMatch(s.ANIMATION_PLAY)) {
+            if (state.isPlaying) Animation.pause();
+            else Animation.play();
+            actionTriggered = true;
+        }
+        // Frames
+        else if (isMatch(s.FRAME_NEXT)) { document.getElementById("next-frame").click(); actionTriggered = true; }
+        else if (isMatch(s.FRAME_PREV)) { document.getElementById("prev-frame").click(); actionTriggered = true; }
+        else if (isMatch(s.FRAME_ADD)) { document.getElementById("add-frame").click(); actionTriggered = true; }
+        else if (isMatch(s.FRAME_REMOVE)) { document.getElementById("delete-frame").click(); actionTriggered = true; }
 
-        // Frame Shortcuts
-        if (key === s.FRAME_NEXT.toLowerCase()) document.getElementById("next-frame").click();
-        if (key === s.FRAME_PREV.toLowerCase()) document.getElementById("prev-frame").click();
-        if (key === s.FRAME_ADD.toLowerCase()) document.getElementById("add-frame").click();
-        if (key === s.FRAME_REMOVE.toLowerCase()) document.getElementById("delete-frame").click();
+        if (actionTriggered) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
     });
 
     // Eventos touch para móviles
@@ -356,8 +391,9 @@ function initEvents() {
             deleteSelectedElement();
         }
 
-        if (e.key === 'p' && !e.ctrlKey && !e.metaKey) {
-            togglePresentation();
+
+        if (e.key === "Delete" || e.key === "Supr") {
+            deleteSelectedElement();
         }
     });
 
@@ -453,11 +489,8 @@ function initEvents() {
         window.requestAnimationFrame(step);
     };
 
-    // Atajo de teclado (P) y Escape
+    // Atajo de teclado (Escape)
     window.addEventListener('keydown', (e) => {
-        if (e.key === 'p' && !e.ctrlKey && !e.metaKey && document.activeElement.tagName !== 'INPUT') {
-            togglePresentation();
-        }
         if (e.key === 'Escape') {
             document.body.classList.remove('presentation-mode');
 
