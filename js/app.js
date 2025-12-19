@@ -1,5 +1,5 @@
 import { CONFIG } from "./core/config.js";
-import { SETTINGS } from "./core/settings.js";
+import { SETTINGS, DEFAULT_SHORTCUTS } from "./core/settings.js";
 import { state } from "./core/state.js";
 import { canvas, ctx } from "./core/dom.js";
 import { Utils, clampYToPlayableArea, getPlayerInitialPosition, calculateFieldDimensions } from "./core/utils.js";
@@ -171,21 +171,7 @@ async function resetApp() {
         SETTINGS.BALL_SCALE = 1.0;
         SETTINGS.SHOW_NUMBERS = true;
 
-        SETTINGS.SHORTCUTS = {
-            MODE_MOVE: 'v',
-            MODE_TEXT: 't',
-            MODE_SCRUM: 'm',
-            MODE_ARROW: 'a',
-            MODE_ZONE: 'z',
-            MODE_SHIELD: 'h',
-            TOGGLE_BALL: 'b',
-            PRESENTATION_MODE: 'p',
-            ANIMATION_PLAY: 'Space',
-            FRAME_PREV: 'ArrowLeft',
-            FRAME_NEXT: 'ArrowRight',
-            FRAME_ADD: '+',
-            FRAME_REMOVE: '-'
-        };
+        SETTINGS.SHORTCUTS = { ...DEFAULT_SHORTCUTS };
 
         // Limpiar settings de localStorage
         localStorage.removeItem('rugby_settings');

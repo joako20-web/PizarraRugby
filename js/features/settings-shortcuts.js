@@ -1,4 +1,4 @@
-import { SETTINGS } from '../core/settings.js';
+import { SETTINGS, DEFAULT_SHORTCUTS } from '../core/settings.js';
 import { SecondaryPopup } from '../ui/secondary-popup.js';
 
 export const SettingsShortcuts = {
@@ -90,19 +90,7 @@ export const SettingsShortcuts = {
                 });
 
                 if (confirmed) {
-                    SETTINGS.SHORTCUTS = {
-                        MODE_MOVE: 'v',
-                        MODE_TEXT: 't',
-                        MODE_SCRUM: 'm',
-                        MODE_ARROW: 'a',
-                        MODE_ZONE: 'z',
-                        MODE_SHIELD: 'h',
-                        ANIMATION_PLAY: 'Space',
-                        FRAME_PREV: 'Arrowleft',
-                        FRAME_NEXT: 'Arrowright',
-                        FRAME_ADD: '+',
-                        FRAME_REMOVE: '-'
-                    };
+                    SETTINGS.SHORTCUTS = { ...DEFAULT_SHORTCUTS };
                     if (saveCallback) saveCallback();
 
                     // Force refresh of the shortcuts view (hacky but acts as re-render)
