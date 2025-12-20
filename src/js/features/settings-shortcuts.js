@@ -92,15 +92,7 @@ export const SettingsShortcuts = {
     },
 
     bindEvents(saveCallback) {
-        const fmt = (k) => {
-            if (!k) return '?';
-            if (k === 'Space') return I18n.t('key_space');
-            if (k === 'ArrowLeft') return '←';
-            if (k === 'ArrowRight') return '→';
-            if (k === 'ArrowUp') return '↑';
-            if (k === 'ArrowDown') return '↓';
-            return k.toUpperCase();
-        };
+
 
         // Bind Reset Button
         const btnReset = document.getElementById("btn-reset-shortcuts");

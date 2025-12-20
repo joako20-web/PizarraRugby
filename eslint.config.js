@@ -2,6 +2,7 @@ import js from "@eslint/js";
 import prettier from "eslint-config-prettier";
 
 export default [
+    { ignores: ["dist/", "app.original.js"] },
     js.configs.recommended,
     prettier,
     {

@@ -1,8 +1,8 @@
 import { CONFIG } from "./core/config.js";
 import { SETTINGS, DEFAULT_SHORTCUTS } from "./core/settings.js";
 import { state } from "./core/state.js";
-import { canvas, ctx } from "./core/dom.js";
-import { Utils, clampYToPlayableArea, getPlayerInitialPosition, calculateFieldDimensions } from "./core/utils.js";
+import { canvas } from "./core/dom.js";
+import { Utils, calculateFieldDimensions } from "./core/utils.js";
 import { Frame } from "./model/frame.js";
 import { Renderer } from "./renderer/renderer.js";
 import { Popup } from "./ui/popup.js";
@@ -61,6 +61,7 @@ function resetBoardForFieldChange() {
         Animation.updateUI();
     }
 
+    Renderer.invalidateBackground();
     Renderer.drawFrame();
     History.push(); // Guardar cambio de campo
 }
@@ -799,7 +800,7 @@ function resizeCanvas() {
         // Función auxiliar de mapeo
         const mapX = (x) => newDims.x + ((x - prevDims.x) / prevDims.width) * newDims.width;
         const mapY = (y) => newDims.y + ((y - prevDims.y) / prevDims.height) * newDims.height;
-        const scaleVal = (v) => v * (newDims.width / prevDims.width); // Escalar radios/tamaños
+
 
         // Iterar por todos los frames para mantener consistencia en animación
         state.frames.forEach(f => {

@@ -184,7 +184,7 @@ export const Renderer = {
 
         // Use minimal margins for vertical field to maximize height usage
         const verticalMarginY = 10;  // Margen mínimo arriba/abajo
-        const verticalMarginX = 20;  // Margen mínimo a los lados
+
 
         // Original field dimensions (horizontal reference)
         const originalWidth = 1200 - CONFIG.MARGIN_X * 2;
@@ -281,7 +281,7 @@ export const Renderer = {
         const P_5 = 5 / 50;   // 0.10
         const P_22 = 22 / 50;   // 0.44
         const P_40 = 40 / 50;   // 0.80
-        const P_MID = 1.0;       // 50 / 50
+
 
         // Dibujo de borde completo
         targetCtx.strokeStyle = "#ffffff";

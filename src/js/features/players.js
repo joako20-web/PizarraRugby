@@ -119,8 +119,8 @@ export const Players = {
             p.y = pos.y;
         }
 
-        const selector = `.player-toggle[data-team="${team}"][data-number="${num}"]`;
-        const div = document.querySelector(selector);
+
+
 
         // We rely on syncToggles to handle UI state and colors consistently
         this.syncToggles();
@@ -155,8 +155,7 @@ export const Players = {
                     div.style.borderColor = teamColor;
                 }
 
-                // Helper to determine border specific to team if needed
-                function groupColorBorder(c) { return c; }
+
             }
         });
         this.updateTeamButtons();

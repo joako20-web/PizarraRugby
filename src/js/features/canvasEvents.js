@@ -413,7 +413,7 @@ export const CanvasEvents = {
             const f = Utils.getCurrentFrame();
             if (f.drawings && f.drawings.length > 0) {
                 const eraserRadius = 20; // Radio de borrado
-                let changed = false;
+
 
                 // Filtrar dibujos que NO toquen el borrador
                 const initialLength = f.drawings.length;

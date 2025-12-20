@@ -4,7 +4,7 @@ import { Popup } from '../ui/popup.js';
 import { Renderer } from '../renderer/renderer.js';
 import { Players } from './players.js';
 import { I18n } from '../core/i18n.js';
-import { canvas } from '../core/dom.js';
+
 
 // ==============================
 // FORMACIONES

@@ -98,9 +98,7 @@ export const en = {
     "settings_team_colors": "Colors",
     "settings_shortcuts": "Keyboard Shortcuts",
     "settings_btn_save": "Save",
-    "settings_team_colors": "Colors",
-    "settings_shortcuts": "Keyboard Shortcuts",
-    "settings_btn_save": "Save",
+
     "settings_btn_reset": "Restore Defaults",
 
     // Alerts & Prompts

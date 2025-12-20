@@ -2,10 +2,7 @@ import { state } from '../core/state.js';
 import { Renderer } from '../renderer/renderer.js';
 import { CONFIG } from '../core/config.js';
 import { I18n } from '../core/i18n.js';
-import { Popup } from '../ui/popup.js';
-import { Notificacion } from '../ui/notifications.js';
 import { canvas } from '../core/dom.js';
-import { Utils } from '../core/utils.js';
 
 export const Animation = {
     init() {
@@ -146,6 +143,12 @@ export const Animation = {
         state.cancelPlay = false;
         state.isPaused = false;
 
+        // Block UI
+        const btnPlay = document.getElementById('play-animation');
+        const btnPause = document.getElementById('pause-animation');
+        if (btnPlay) btnPlay.disabled = true;
+        if (btnPause) btnPause.disabled = true;
+
         const fps = options.fps || 30;
         const qualityMap = {
             'standard': 5000000,
@@ -171,25 +174,46 @@ export const Animation = {
         exportCanvas.height = targetHeight;
         const exportCtx = exportCanvas.getContext('2d');
 
-        // Calcular escala
-        const scaleX = targetWidth / canvas.width;
-        const scaleY = targetHeight / canvas.height;
-
-        // Configurar el contexto para escalar contenido
-        exportCtx.scale(scaleX, scaleY);
-
         // Dimensiones lógicas (originales) para el Renderer
         const logicalW = canvas.width;
         const logicalH = canvas.height;
 
-        const fileName = (options.filename || 'animation') + ".webm";
+        // Calcular escala manteniendo aspecto (Letterboxing)
+        const scale = Math.min(targetWidth / logicalW, targetHeight / logicalH);
+        const offsetX = (targetWidth - logicalW * scale) / 2;
+        const offsetY = (targetHeight - logicalH * scale) / 2;
+
+        // Rellenar fondo negro (para las barras)
+        // NOTA: Lo hacemos antes de aplicar transformaciones
+        exportCtx.fillStyle = "black";
+        exportCtx.fillRect(0, 0, targetWidth, targetHeight);
+
+        // Configurar el contexto para escalar y centrar contenido
+        exportCtx.translate(offsetX, offsetY);
+        exportCtx.scale(scale, scale);
 
         // Configurar grabación
         let mimeType = "video/webm;codecs=vp9";
-        if (MediaRecorder.isTypeSupported("video/webm;codecs=vp9")) {
+        let extension = ".webm";
+
+        if (MediaRecorder.isTypeSupported("video/mp4;codecs=h264")) {
+            mimeType = "video/mp4;codecs=h264";
+            extension = ".mp4";
+        } else if (MediaRecorder.isTypeSupported("video/mp4")) {
+            mimeType = "video/mp4";
+            extension = ".mp4";
+        } else if (MediaRecorder.isTypeSupported("video/webm;codecs=vp9")) {
             mimeType = "video/webm;codecs=vp9";
+            extension = ".webm";
         } else if (MediaRecorder.isTypeSupported("video/webm")) {
             mimeType = "video/webm";
+            extension = ".webm";
+        }
+
+        const baseName = options.filename || 'animation';
+        let fileName = baseName;
+        if (!fileName.toLowerCase().endsWith(extension)) {
+            fileName += extension;
         }
 
         // Crear stream desde el canvas de exportación
@@ -215,6 +239,11 @@ export const Animation = {
             a.download = fileName;
             a.click();
             URL.revokeObjectURL(url);
+
+            // Unblock UI
+            if (btnPlay) btnPlay.disabled = false;
+            if (btnPause) btnPause.disabled = false;
+
             Notificacion.show(I18n.t ? I18n.t('export_success') : "Exportación completada exitosamente.");
         };
 
@@ -274,9 +303,20 @@ export const Animation = {
         this.updateUI();
 
         const endPauseFrames = fps * 1.5;
-        for (let i = 0; i < endPauseFrames; i++) {
-            drawExportFrame(state.frames[state.frames.length - 1]);
-            await new Promise(r => setTimeout(r, frameDelay));
+        const lastFrame = state.frames[state.frames.length - 1];
+
+        // HACK: Ocultar trayectorias para el final limpio
+        const originalTrails = lastFrame.trailLines;
+        lastFrame.trailLines = [];
+
+        try {
+            for (let i = 0; i < endPauseFrames; i++) {
+                drawExportFrame(lastFrame);
+                await new Promise(r => setTimeout(r, frameDelay));
+            }
+        } finally {
+            // Restaurar trayectorias
+            lastFrame.trailLines = originalTrails;
         }
 
         rec.stop();

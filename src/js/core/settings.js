@@ -25,7 +25,7 @@ export const SETTINGS = {
     PLAYER_SCALE: 1.0,
     SHOW_NUMBERS: true,
     BALL_SCALE: 1.0,
-    BALL_SCALE: 1.0,
+
     SHORTCUTS: { ...DEFAULT_SHORTCUTS },
     UI: {
         toolsPanelPosition: 'left',

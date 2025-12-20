@@ -98,9 +98,7 @@ export const es = {
     "settings_team_colors": "Colores",
     "settings_shortcuts": "Atajos de Teclado",
     "settings_btn_save": "Guardar",
-    "settings_team_colors": "Colores",
-    "settings_shortcuts": "Atajos de Teclado",
-    "settings_btn_save": "Guardar",
+
     "settings_btn_reset": "Restaurar por defecto",
 
     // Alerts & Prompts
