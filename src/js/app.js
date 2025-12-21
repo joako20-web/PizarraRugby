@@ -2,7 +2,7 @@ import { CONFIG } from "./core/config.js";
 import { SETTINGS, DEFAULT_SHORTCUTS } from "./core/settings.js";
 import { state } from "./core/state.js";
 import { canvas } from "./core/dom.js";
-import { Utils, calculateFieldDimensions } from "./core/utils.js";
+import { Utils, calculateFieldDimensions, debounce } from "./core/utils.js";
 import { Frame } from "./model/frame.js";
 import { Renderer } from "./renderer/renderer.js";
 import { Popup } from "./ui/popup.js";
@@ -611,11 +611,11 @@ function init() {
     // Ajustar tamaño inicial para móviles y desktop (con pequeño un delay para asegurar layout)
     setTimeout(handleResize, 100);
 
-    // Redimensionar cuando cambie la orientación o tamaño de ventana
-    window.addEventListener('resize', handleResize);
-    window.addEventListener('orientationchange', () => {
+    // Redimensionar cuando cambie la orientación o tamaño de ventana (con debounce para performance)
+    window.addEventListener('resize', debounce(handleResize, 150));
+    window.addEventListener('orientationchange', debounce(() => {
         setTimeout(handleResize, 100);
-    });
+    }, 150));
 }
 
 // ==============================

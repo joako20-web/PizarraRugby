@@ -16,8 +16,8 @@
 
     --text-primary: #f8fafc;
     /* Slate 50 */
-    --text-secondary: #94a3b8;
-    /* Slate 400 */
+    --text-secondary: #cbd5e1;
+    /* Slate 300 - Better contrast (7.1:1) for WCAG AA */
 
     --border-color: #334155;
     /* Slate 700 */

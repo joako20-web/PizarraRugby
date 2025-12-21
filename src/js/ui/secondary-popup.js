@@ -1,3 +1,4 @@
+import DOMPurify from 'dompurify';
 
 export const SecondaryPopup = {
     show({ title = "Confirmación", html = "", showCancel = true, okText = "OK", cancelText = "Cancelar" }) {
@@ -33,15 +34,15 @@ export const SecondaryPopup = {
             modal.style.transform = "scale(0.9)";
             modal.style.transition = "transform 0.2s";
 
-            // Content
-            modal.innerHTML = `
+            // Content - SANITIZED with DOMPurify
+            modal.innerHTML = DOMPurify.sanitize(`
                 <h3 style="margin-top:0; color:var(--text-primary);">${title}</h3>
                 <div style="margin:15px 0; color:var(--text-secondary); font-size:14px;">${html}</div>
                 <div style="display:flex; justify-content:center; gap:10px; margin-top:20px;">
                     ${showCancel ? `<button id="sec-cancel" class="btn btn--secondary">${cancelText}</button>` : ''}
                     <button id="sec-ok" class="btn btn--primary">${okText}</button>
                 </div>
-            `;
+            `);
 
             overlay.appendChild(modal);
             document.body.appendChild(overlay);
