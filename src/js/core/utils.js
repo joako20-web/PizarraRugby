@@ -122,8 +122,16 @@ export function getPlayerInitialPosition(team, playerNumber) {
             ? marginX + fieldWidth * CONFIG.TEAM_A_POSITION
             : marginX + fieldWidth * CONFIG.TEAM_B_POSITION;
 
-        const y = marginY + CONFIG.PANEL_Y_TOP +
-            (playerNumber - 1) * CONFIG.PLAYER_SPACING;
+        // Dynamic Spacing Calculation
+        // Calculate available height for players (leaving some padding top/bottom)
+        const panelTop = marginY + CONFIG.PANEL_Y_TOP;
+        const availableHeight = fieldHeight - CONFIG.PANEL_Y_TOP - 20; // 20px padding bottom
+
+        // Calculate required spacing vs config spacing
+        const maxSpacing = CONFIG.PLAYER_SPACING;
+        const dynamicSpacing = Math.min(maxSpacing, availableHeight / (CONFIG.NUM_PLAYERS - 1));
+
+        const y = panelTop + (playerNumber - 1) * dynamicSpacing;
 
         return { x: xSide, y };
     }

@@ -601,12 +601,16 @@ export const Renderer = {
         f.players.forEach(p => {
             if (!p.visible) return;
 
-            // Usar fichas más grandes en campo completo horizontal y aplicar escala de configuración
-            let radius = (state.fieldConfig.type === "full" && state.fieldConfig.orientation === "horizontal")
+            // Responsive Radius Calculation
+            const isMobile = targetCtx.canvas.width <= 1024;
+            const baseScale = isMobile ? 0.6 : 1.0; // 60% size on mobile
+
+            // Usar fichas más grandes en campo completo horizontal (solo desktop)
+            let radius = (state.fieldConfig.type === "full" && state.fieldConfig.orientation === "horizontal" && !isMobile)
                 ? p.radius * 1.2
                 : p.radius;
 
-            radius *= SETTINGS.PLAYER_SCALE;
+            radius *= SETTINGS.PLAYER_SCALE * baseScale;
 
             targetCtx.beginPath();
             targetCtx.arc(p.x, p.y, radius, 0, Math.PI * 2);

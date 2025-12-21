@@ -722,35 +722,98 @@ function initEvents() {
         Renderer.drawFrame();
     };
 
-    // Menú móvil - Sidebar izquierdo
-    document.getElementById("mobile-menu-btn").onclick = () => {
+    // ==============================
+    // GESTIÓN DE PANELES (UNIFICADO)
+    // ==============================
+    function isMobileView() {
+        return window.innerWidth <= 1024;
+    }
+
+    function toggleLeftSidebar() {
         const sidebar = document.getElementById("sidebar");
         const overlay = document.getElementById("mobile-overlay");
-        const rightPanel = document.getElementById("right-panel");
+        const menuBtn = document.getElementById("mobile-menu-btn");
 
-        sidebar.classList.toggle("is-visible");
-        overlay.classList.toggle("is-visible");
-
-        // Cerrar el panel derecho si está abierto
-        if (rightPanel.classList.contains("is-visible")) {
-            rightPanel.classList.remove("is-visible");
+        if (isMobileView()) {
+            sidebar.classList.toggle("is-visible");
+            overlay.classList.toggle("is-visible");
+        } else {
+            // Desktop Logic
+            sidebar.classList.toggle("is-collapsed");
+            // Toggle button visibility via class
+            if (sidebar.classList.contains("is-collapsed")) {
+                menuBtn.classList.add("is-active");
+            } else {
+                menuBtn.classList.remove("is-active");
+            }
         }
-    };
+
+        setTimeout(() => {
+            resizeCanvas(); // Ajustar canvas tras animación
+            Renderer.drawFrame();
+        }, 350);
+    }
+
+    function toggleRightSidebar() {
+        const rightPanel = document.getElementById("right-panel");
+        const overlay = document.getElementById("mobile-overlay");
+        const rightMenuBtn = document.getElementById("mobile-right-menu-btn");
+
+        if (isMobileView()) {
+            rightPanel.classList.toggle("is-visible");
+            overlay.classList.toggle("is-visible");
+        } else {
+            // Desktop Logic
+            rightPanel.classList.toggle("is-collapsed");
+            if (rightPanel.classList.contains("is-collapsed")) {
+                rightMenuBtn.classList.add("is-active");
+            } else {
+                rightMenuBtn.classList.remove("is-active");
+            }
+        }
+
+        setTimeout(() => {
+            resizeCanvas();
+            Renderer.drawFrame();
+        }, 350);
+    }
+
+    // Menú móvil - Sidebar izquierdo
+    // Menú móvil - Sidebar izquierdo
+    const mobileMenuBtn = document.getElementById("mobile-menu-btn");
+    if (mobileMenuBtn) {
+        mobileMenuBtn.onclick = (e) => {
+            e.stopPropagation();
+            toggleLeftSidebar();
+        };
+    }
+
+    // Botones de Cerrar (Close) - Sidebar Izquierdo
+    const closeLeftBtn = document.getElementById("close-sidebar-btn");
+    if (closeLeftBtn) {
+        closeLeftBtn.onclick = (e) => {
+            e.stopPropagation();
+            toggleLeftSidebar();
+        };
+    }
 
     // Menú móvil - Panel derecho
-    document.getElementById("mobile-right-menu-btn").onclick = () => {
-        const rightPanel = document.getElementById("right-panel");
-        const overlay = document.getElementById("mobile-overlay");
-        const sidebar = document.getElementById("sidebar");
+    const mobileRightMenuBtn = document.getElementById("mobile-right-menu-btn");
+    if (mobileRightMenuBtn) {
+        mobileRightMenuBtn.onclick = (e) => {
+            e.stopPropagation();
+            toggleRightSidebar();
+        };
+    }
 
-        rightPanel.classList.toggle("is-visible");
-        overlay.classList.toggle("is-visible");
-
-        // Cerrar el sidebar si está abierto
-        if (sidebar.classList.contains("is-visible")) {
-            sidebar.classList.remove("is-visible");
-        }
-    };
+    // Botones de Cerrar (Close) - Panel Derecho
+    const closeRightBtn = document.getElementById("close-right-panel-btn");
+    if (closeRightBtn) {
+        closeRightBtn.onclick = (e) => {
+            e.stopPropagation();
+            toggleRightSidebar();
+        };
+    }
 
     // Overlay móvil - Cerrar menús al hacer clic fuera
     document.getElementById("mobile-overlay").onclick = () => {
@@ -768,11 +831,10 @@ function initEvents() {
 // ==============================
 // REDIMENSIONAMIENTO PARA MÓVILES
 // ==============================
-function isMobileDevice() {
-    // Detectar dispositivo móvil por capacidad táctil Y tamaño de pantalla
-    const hasTouchScreen = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-    const isSmallScreen = window.innerWidth <= 1024 || window.innerHeight <= 1024;
-    return hasTouchScreen && isSmallScreen;
+// Renombrado a isMobileView para reflejar que es una comprobación de layout/viewport
+function isMobileView() {
+    // Coincidir con el breakpoint CSS de 1024px
+    return window.innerWidth <= 1024;
 }
 
 function resizeCanvas() {
@@ -875,22 +937,39 @@ function handleResize() {
     const mobileRightMenuBtn = document.getElementById("mobile-right-menu-btn");
     const overlay = document.getElementById("mobile-overlay");
 
-    if (isMobileDevice()) {
+    if (isMobileView()) {
         // MODO MÓVIL
-        mobileMenuBtn.style.display = "block";
-        mobileRightMenuBtn.style.display = "block";
+        // Reset styles set by JS in previous versions
+        mobileMenuBtn.style.display = "";
+        mobileRightMenuBtn.style.display = "";
 
+        // Reset desktop states
+        sidebar.classList.remove("is-collapsed");
+        rightPanel.classList.remove("is-collapsed");
+
+        // Ensure buttons are visible (handled by CSS now, but good to ensure consistent state)
+        mobileMenuBtn.classList.remove("is-active");
+        mobileRightMenuBtn.classList.remove("is-active");
+
+        // Hide overlay if resizing from Desktop to Mobile
         sidebar.classList.remove("is-visible");
         rightPanel.classList.remove("is-visible");
         overlay.classList.remove("is-visible");
     } else {
         // MODO DESKTOP
-        mobileMenuBtn.style.display = "none";
-        mobileRightMenuBtn.style.display = "none";
+        mobileMenuBtn.style.display = "";
+        mobileRightMenuBtn.style.display = "";
 
+        // Reset mobile states
         sidebar.classList.remove("is-visible");
         rightPanel.classList.remove("is-visible");
         overlay.classList.remove("is-visible");
+
+        // Default state for Desktop: Open
+        sidebar.classList.remove("is-collapsed");
+        rightPanel.classList.remove("is-collapsed");
+        mobileMenuBtn.classList.remove("is-active");
+        mobileRightMenuBtn.classList.remove("is-active");
     }
 
     // Redimensionar canvas para ambos modos

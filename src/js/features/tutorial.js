@@ -136,11 +136,26 @@ export const Tutorial = {
         this.currentTutorialType = type;
         this.actionCompleted = false;
 
-        // Mostrar overlay
-        const overlay = document.getElementById('tutorial-overlay');
+        // Force Show Sidebars (Mobile/Tablet support)
+        const sidebar = document.getElementById("sidebar");
+        const rightPanel = document.getElementById("right-panel");
+        // Actually, on mobile, if we show sidebars, the overlay usually comes with them.
+        // But for tutorial, we want them visible.
+
+        if (sidebar) sidebar.classList.add("is-visible");
+        if (rightPanel) rightPanel.classList.add("is-visible");
+        // If we want to simulate "opening" them, we might need to handle the overlay too, 
+        // but let's just make sure panels are seen. 
+        // If we add is-visible to both, they might overlap on small screens? 
+        // The CSS handles them as off-canvas. showing both might cover the screen.
+        // But the tutorial will highlight specific parts. 
+        // Let's at least ensure they are available.
+
+        // Mostrar overlay de tutorial
+        const tutOverlay = document.getElementById('tutorial-overlay');
         const box = document.getElementById('tutorial-box');
 
-        if (overlay) overlay.classList.remove('is-hidden');
+        if (tutOverlay) tutOverlay.classList.remove('is-hidden');
         if (box) box.classList.remove('is-hidden');
 
         this.showStep(0);
