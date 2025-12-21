@@ -3,6 +3,11 @@ import { CONFIG } from './config.js';
 // ==============================
 // ESTADO DE LA APLICACIÓN
 // ==============================
+/**
+ * @typedef {import('../types.js').AppState} AppState
+ * @typedef {import('../types.js').Frame} Frame
+ */
+
 export const state = {
     // Modo actual
     mode: "move",

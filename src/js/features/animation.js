@@ -3,8 +3,13 @@ import { Renderer } from '../renderer/renderer.js';
 import { CONFIG } from '../core/config.js';
 import { I18n } from '../core/i18n.js';
 import { canvas } from '../core/dom.js';
+import { Notificacion } from '../ui/notifications.js';
 
 export const Animation = {
+    rafId: null,
+    lastTime: 0,
+    transitionProgress: 0,
+
     init() {
         this.frameCounter = document.getElementById('frame-counter');
         this.frameBar = document.getElementById('frame-bar');
@@ -23,145 +28,97 @@ export const Animation = {
 
     play() {
         if (state.frames.length < 2) {
-            Notificacion.show(I18n.t ? I18n.t('error_no_frames') : "No hay suficientes frames (mínimo 2).");
+            // Check if Notificacion exists, otherwise alert or console
+            const msg = (typeof I18n !== 'undefined' && I18n.t) ? I18n.t('error_no_frames') : "No hay suficientes frames (mínimo 2).";
+            if (typeof Notificacion !== 'undefined') Notificacion.show(msg);
+            else alert(msg);
             return;
         }
 
-        // Si ya está reproduciendo, ignorar
         if (state.isPlaying) return;
 
-        // Si estaba pausado, simplemente reanudar (la loop vieja sigue viva esperando)
-        if (state.isPaused) {
-            state.isPlaying = true;
-            state.isPaused = false;
-            state.cancelPlay = false;
-
-            document.getElementById('play-animation')?.classList.add('is-hidden');
-            document.getElementById('pause-animation')?.classList.remove('is-hidden');
-            canvas.style.pointerEvents = 'none';
-            return; // IMPORTANTE: No iniciar nueva loop
+        // Reset si estábamos en el final
+        if (state.currentFrameIndex >= state.frames.length - 1) {
+            state.currentFrameIndex = 0;
+            this.transitionProgress = 0;
         }
 
-        // Si por alguna razón hay una loop corriendo (aunque no esté playing/paused), evitar duplicados
-        if (this.isLoopRunning) return;
-
         state.isPlaying = true;
-        state.cancelPlay = false;
         state.isPaused = false;
+        state.cancelPlay = false;
 
-        // Ocultar botón Play, mostrar Pausa
+        // UI
         document.getElementById('play-animation')?.classList.add('is-hidden');
         document.getElementById('pause-animation')?.classList.remove('is-hidden');
-
-        // Deshabilitar edición
         canvas.style.pointerEvents = 'none';
 
-        this.isLoopRunning = true;
-        this._playLoop().finally(() => {
-            this.isLoopRunning = false;
-        });
+        this.lastTime = performance.now();
+        this.rafId = requestAnimationFrame(this._tick.bind(this));
     },
 
     pause() {
-        state.isPaused = true;
         state.isPlaying = false;
+        state.isPaused = true;
+        if (this.rafId) {
+            cancelAnimationFrame(this.rafId);
+            this.rafId = null;
+        }
+
         document.getElementById('play-animation')?.classList.remove('is-hidden');
         document.getElementById('pause-animation')?.classList.add('is-hidden');
         canvas.style.pointerEvents = 'auto';
     },
 
     stop() {
-        state.isPlaying = false;
+        this.pause();
+        state.isPaused = false;
         state.cancelPlay = true;
-        state.isPaused = false; // Romper el while(isPaused) de la loop
+        this.transitionProgress = 0;
 
-        document.getElementById('play-animation')?.classList.remove('is-hidden');
-        document.getElementById('pause-animation')?.classList.add('is-hidden');
-        canvas.style.pointerEvents = 'auto';
-
-        // Restaurar frame actual
+        // Restaurar estado visual al frame entero actual
         Renderer.drawFrame();
     },
 
-    async _playLoop() {
-        // ... Logic continues ...
-        // Note: The caller sets isLoopRunning=true and handles finally=false.
-        // We just execute the logic.
+    _tick(timestamp) {
+        if (!state.isPlaying) return;
 
-        // Si estamos en el último frame, volver al inicio
-        if (state.currentFrameIndex >= state.frames.length - 1) {
-            state.currentFrameIndex = 0;
-        }
+        const dt = timestamp - this.lastTime;
+        this.lastTime = timestamp;
 
-        this.updateUI();
-        Renderer.drawFrame();
+        // Duración total de la transición entre dos frames
+        const duration = CONFIG.INTERP_DURATION / CONFIG.PLAYBACK_SPEED;
 
-        // Pequeña pausa inicial si empezamos desde frame 0
-        if (state.currentFrameIndex === 0) {
-            await new Promise(r => setTimeout(r, 500));
-        }
+        // Avanzar el progreso
+        this.transitionProgress += dt / duration;
 
-        for (let i = state.currentFrameIndex; i < state.frames.length - 1; i++) {
-            if (state.cancelPlay) break;
-
-            // Esperar si está pausado
-            while (state.isPaused) {
-                if (state.cancelPlay) break;
-                await new Promise(r => setTimeout(r, 100));
-            }
-
-            state.currentFrameIndex = i;
+        // Manejar cambio de frame
+        if (this.transitionProgress >= 1) {
+            this.transitionProgress -= 1;
+            state.currentFrameIndex++;
             this.updateUI();
 
-            const frameA = state.frames[i];
-            const frameB = state.frames[i + 1];
-
-            await this._interpolateBetweenFrames(frameA, frameB);
-        }
-
-        // Si llegó al final satisfactoriamente
-        if (!state.cancelPlay) {
-            state.currentFrameIndex = state.frames.length - 1;
-            this.updateUI();
-            Renderer.drawFrame();
-            state.isPlaying = false;
-            document.getElementById('play-animation')?.classList.remove('is-hidden');
-            document.getElementById('pause-animation')?.classList.add('is-hidden');
-            canvas.style.pointerEvents = 'auto'; // Reactivar edición
-        }
-    },
-
-    /**
-     * Interpola suavemente entre dos frames
-     * @private
-     */
-    async _interpolateBetweenFrames(frameA, frameB) {
-        // Ajustar pasos según velocidad: A mayor velocidad, menos duración total, mismos pasos?
-        // O mantener duración base y dividir por velocidad.
-        // Duration = Base / Speed.
-        // Steps = BaseSteps.
-        // Delay = Duration / Steps = (Base / Speed) / Steps
-
-        const effectiveDuration = CONFIG.INTERP_DURATION / CONFIG.PLAYBACK_SPEED;
-
-        for (let step = 0; step <= CONFIG.INTERP_STEPS; step++) {
-            if (state.cancelPlay) break;
-
-            // FIX: Si se pausa, ESPERAR aquí en lugar de romper el loop
-            while (state.isPaused) {
-                if (state.cancelPlay) break;
-                await new Promise(r => setTimeout(r, 100));
+            // Si llegamos al final
+            if (state.currentFrameIndex >= state.frames.length - 1) {
+                // Fin de la animación
+                state.currentFrameIndex = state.frames.length - 1;
+                this.stop();
+                return;
             }
-            if (state.cancelPlay) break; // Re-check after resume
-
-            const t = step / CONFIG.INTERP_STEPS;
-            Renderer.drawInterpolatedFrame(frameA, frameB, t);
-
-            await new Promise(resolve =>
-                setTimeout(resolve, effectiveDuration / CONFIG.INTERP_STEPS)
-            );
         }
+
+        // Renderizar interpolación
+        const frameA = state.frames[state.currentFrameIndex];
+        const frameB = state.frames[state.currentFrameIndex + 1];
+
+        // Validar que frameB existe (por seguridad)
+        if (frameB) {
+            Renderer.drawInterpolatedFrame(frameA, frameB, this.transitionProgress);
+        }
+
+        this.rafId = requestAnimationFrame(this._tick.bind(this));
     },
+
+    // Eliminar métodos obsoletos: _playLoop, _interpolateBetweenFrames
 
     async exportAdvanced(options) {
         // options: { filename, resolution, fps, quality }

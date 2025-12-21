@@ -1,0 +1,10 @@
+/* ========================================
+   4. STATE & UTILITIES
+   ======================================== */
+.is-hidden {
+    display: none !important;
+}
+
+.is-active {
+    border-color: #fff !important;
+}

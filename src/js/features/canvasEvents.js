@@ -1,10 +1,10 @@
 import { Utils } from '../core/utils.js';
 import { state } from '../core/state.js';
+import { Store } from '../core/store.js';
 import { HitTest } from '../core/hitTest.js';
 import { Popup } from '../ui/popup.js';
 import { UI } from '../ui/ui.js';
 import { Renderer } from '../renderer/renderer.js';
-import { Mode } from './mode.js';
 import { Tutorial } from './tutorial.js';
 import { Scrum } from './scrum.js';
 import { History } from './history.js';
@@ -45,17 +45,15 @@ export const CanvasEvents = {
             }
 
             if (!state.zoneStart) {
-                state.zoneStart = pos;
+                Store.setZoneCreationState(pos, undefined, undefined);
                 return;
             }
 
             if (!state.zoneEnd) {
-                state.zoneEnd = pos;
-
+                // Prompt for name
                 const name = await Popup.prompt(I18n.t('prompt_zone_name'));
                 if (!name || name.trim() === "") {
-                    state.zoneStart = null;
-                    state.zoneEnd = null;
+                    Store.setZoneCreationState(null, null, undefined);
                     return;
                 }
 
@@ -64,7 +62,7 @@ export const CanvasEvents = {
                 const x2 = Math.max(state.zoneStart.x, pos.x);
                 const y2 = Math.max(state.zoneStart.y, pos.y);
 
-                state.pendingZone = {
+                const pending = {
                     x1, y1, x2, y2,
                     name,
                     color: state.selectedZoneColor,
@@ -73,7 +71,7 @@ export const CanvasEvents = {
                     locked: false
                 };
 
-                Renderer.drawFrame();
+                Store.setZoneCreationState(undefined, pos, pending);
                 return;
             }
 
@@ -83,12 +81,9 @@ export const CanvasEvents = {
                 state.pendingZone.labelOffsetX = (pos.x - left) / width;
                 state.pendingZone.labelOffsetY = (pos.y - top) / height;
 
-                state.zones.push(state.pendingZone);
-                state.pendingZone = null;
-                state.zoneStart = null;
-                state.zoneEnd = null;
+                Store.addZone(state.pendingZone);
 
-                Mode.set("move");
+                Store.setMode("move");
                 Renderer.drawFrame();
                 return;
             }
@@ -111,7 +106,7 @@ export const CanvasEvents = {
                 if (existingShield) {
                     // Actualizar el ángulo del escudo existente y empezar a arrastrarlo
                     existingShield.angle = angle;
-                    state.draggingShield = existingShield;
+                    Store.setDraggingShield(existingShield);
                 } else {
                     // Crear nuevo escudo y empezar a arrastrarlo
                     const newShield = {
@@ -120,7 +115,7 @@ export const CanvasEvents = {
                         angle: angle
                     };
                     f.trainingShields.push(newShield);
-                    state.draggingShield = newShield;
+                    Store.setDraggingShield(newShield);
                 }
 
                 Renderer.drawFrame();
@@ -133,12 +128,8 @@ export const CanvasEvents = {
             // Primero verificar si se hizo clic en un escudo
             const shield = HitTest.findShieldAt(pos.x, pos.y);
             if (shield) {
-                state.draggingShield = shield;
-                state.selectedShield = shield;
-                state.selectedZone = null;
-                state.selectedText = null;
-                state.selectedArrow = null;
-                state.selectedPlayers.clear();
+                Store.setDraggingShield(shield);
+                Store.selectEntity('shield', shield);
                 UI.updateDeleteButton();
                 Renderer.drawFrame();
                 return;
@@ -147,11 +138,7 @@ export const CanvasEvents = {
             // Verificar si se hizo clic en una flecha
             const arrow = HitTest.findArrowAt(pos.x, pos.y);
             if (arrow) {
-                state.selectedArrow = arrow;
-                state.selectedShield = null;
-                state.selectedZone = null;
-                state.selectedText = null;
-                state.selectedPlayers.clear();
+                Store.selectEntity('arrow', arrow);
                 UI.updateDeleteButton();
                 Renderer.drawFrame();
                 return;
@@ -160,11 +147,7 @@ export const CanvasEvents = {
             const z = HitTest.zoneHitTest(pos.x, pos.y);
 
             if (z) {
-                state.selectedZone = z;
-                state.selectedShield = null;
-                state.selectedText = null;
-                state.selectedArrow = null;
-                state.selectedPlayers.clear();
+                Store.selectEntity('zone', z);
 
                 if (!z.locked) {
                     state.draggingZone = true;
@@ -191,11 +174,7 @@ export const CanvasEvents = {
             // Texto
             const t = HitTest.findTextAt(pos.x, pos.y);
             if (t) {
-                state.selectedText = t;
-                state.selectedArrow = null;
-                state.selectedShield = null;
-                state.selectedZone = null;
-                state.selectedPlayers.clear();
+                Store.selectEntity('text', t);
                 state.dragTarget = { type: "text", obj: t };
                 state.dragOffsetX = pos.x - t.x;
                 state.dragOffsetY = pos.y - t.y;
@@ -212,8 +191,11 @@ export const CanvasEvents = {
 
                 // Si shift está presionado o ya está en selección múltiple
                 if (e.shiftKey || e.ctrlKey || state.selectedPlayers.has(p)) {
-                    if (!state.selectedPlayers.has(p)) {
-                        state.selectedPlayers.add(p);
+                    // Logic kept locally for drag preparation, but selection update:
+                    if (e.shiftKey || e.ctrlKey) {
+                        Store.selectEntity('player', p, true);
+                    } else if (!state.selectedPlayers.has(p)) {
+                        Store.selectEntity('player', p, false);
                     }
 
                     // Iniciar arrastre grupal
@@ -225,8 +207,7 @@ export const CanvasEvents = {
                     };
                 } else {
                     // Selección única
-                    state.selectedPlayers.clear();
-                    state.selectedPlayers.add(p);
+                    Store.selectEntity('player', p, false);
                     state.dragTarget = {
                         type: "players",
                         players: [p],
@@ -235,10 +216,8 @@ export const CanvasEvents = {
                     };
                 }
 
-                state.selectedShield = null;
-                state.selectedZone = null;
-                state.selectedText = null;
-                state.selectedArrow = null;
+                Store.events.emit('selectionChanged'); // Explicitly notify if we bypassed parts of Store logic?
+                // Actually selectEntity emits it.
                 UI.updateDeleteButton();
                 Renderer.drawFrame();
                 return;
@@ -246,11 +225,7 @@ export const CanvasEvents = {
 
             // Si clic en el vacío
             if (!e.shiftKey && !e.ctrlKey) {
-                state.selectedPlayers.clear();
-                state.selectedZone = null;
-                state.selectedText = null;
-                state.selectedShield = null;
-                state.selectedArrow = null;
+                Store.clearSelection();
                 UI.updateDeleteButton();
                 Renderer.drawFrame();
             }
@@ -270,7 +245,7 @@ export const CanvasEvents = {
                     y: pos.y,
                     text: text
                 });
-                Mode.set("move");
+                Store.setMode("move");
                 Renderer.drawFrame();
                 History.push();
             }
@@ -447,6 +422,12 @@ export const CanvasEvents = {
 
     handleMouseUp() {
         if (state.draggingZone) {
+            // draggingZone is a local flag in older code?
+            // checking grep: state.draggingZone = true (line 170)
+            // It seems 'state.draggingZone' is also a state property!
+            // I should migrate this too, or assume setSelection handles it implicitly?
+            // Logic says it handles drag state. Let's create a setter or just manually fix here for now
+            // But Store.selectEntity handles selection. Dragging logic is usually separate.
             state.draggingZone = false;
         }
 
@@ -477,12 +458,12 @@ export const CanvasEvents = {
         // Si estábamos arrastrando un escudo en modo shield, volver a modo move
         if (state.draggingShield && state.mode === "shield") {
             state.draggingShield = null;
-            Mode.set("move");
+            Store.setMode("move");
             Renderer.drawFrame();
             return;
         }
 
-        state.draggingShield = null;
+        Store.setDraggingShield(null);
 
         if (state.dragTarget) {
             // Push history for ANY drag action completion (ball, text, players)

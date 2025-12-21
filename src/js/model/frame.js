@@ -4,7 +4,14 @@ import { canvas } from '../core/dom.js';
 // ==============================
 // FRAMES Y JUGADORES
 // ==============================
+/**
+ * @typedef {import('../types.js').Frame} Frame
+ * @typedef {import('../types.js').Player} Player
+ */
 export const Frame = {
+    /**
+     * @returns {Player[]}
+     */
     createEmptyPlayers() {
         const arr = [];
         for (let team of ["A", "B"]) {
@@ -22,6 +29,9 @@ export const Frame = {
         return arr;
     },
 
+    /**
+     * @returns {Frame} New empty frame
+     */
     create() {
         return {
             players: this.createEmptyPlayers(),
@@ -40,6 +50,10 @@ export const Frame = {
         };
     },
 
+    /**
+     * @param {Frame} f 
+     * @returns {Frame} Deep copy of frame
+     */
     clone(f) {
         return {
             players: f.players.map(p => ({ ...p })),

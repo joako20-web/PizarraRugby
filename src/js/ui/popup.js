@@ -1,3 +1,4 @@
+import DOMPurify from 'dompurify';
 import { I18n } from '../core/i18n.js';
 
 // ==============================
@@ -14,7 +15,7 @@ export const Popup = {
             const buttonsBox = document.getElementById("popup-buttons");
 
             modalTitle.textContent = title;
-            content.innerHTML = html;
+            content.innerHTML = DOMPurify.sanitize(html);
 
             // Resetear el texto de los botones a los valores por defecto o personalizados
             btnOk.textContent = okText;

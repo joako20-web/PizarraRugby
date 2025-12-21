@@ -2,7 +2,7 @@ import { CONFIG } from "./core/config.js";
 import { SETTINGS, DEFAULT_SHORTCUTS } from "./core/settings.js";
 import { state } from "./core/state.js";
 import { canvas } from "./core/dom.js";
-import { Utils, calculateFieldDimensions } from "./core/utils.js";
+import { Utils } from "./core/utils.js";
 import { Frame } from "./model/frame.js";
 import { Renderer } from "./renderer/renderer.js";
 import { Popup } from "./ui/popup.js";
@@ -10,16 +10,30 @@ import { I18n } from "./core/i18n.js";
 import { UI } from "./ui/ui.js";
 import { Players } from "./features/players.js"; // CRÍTICO: Usado en init() y eventos
 import { Formations } from "./features/formations.js";
-import { Mode } from "./features/mode.js";
 import { Animation } from "./features/animation.js";
 import { Tutorial } from "./features/tutorial.js";
-import { CanvasEvents } from "./features/canvasEvents.js";
 import { History } from "./features/history.js";
-import { Export } from "./features/export.js";
 import { SettingsUI } from "./features/settings-ui.js";
-// import { Gallery } from "./ui/gallery.js"; // Removed by user request
 import { ExportUI } from "./ui/export-ui.js";
 
+
+import { InputHandler } from "./core/input-handler.js";
+import { Store } from "./core/store.js";
+
+// CSS Imports
+import '../css/base/variables.css';
+import '../css/base/base.css';
+import '../css/layout/structure.css';
+import '../css/layout/responsive.css';
+import '../css/components/buttons.css';
+import '../css/components/panels.css';
+import '../css/components/forms.css';
+import '../css/components/settings.css';
+import '../css/components/modals.css';
+import '../css/components/toolbar.css';
+import '../css/components/floating.css';
+import '../css/features/presentation.css';
+import '../css/utilities/utils.css';
 
 function resetBoardForFieldChange() {
     // Vaciar frames
@@ -262,12 +276,23 @@ function updateButtonTooltips() {
 
 
 
+// ==============================
+// INICIALIZACIÓN DE EVENTOS
+// ==============================
+
+function updatePresentationPlayIcon() {
+    const icon = document.getElementById("pres-play-icon");
+    if (!icon) return;
+    if (state.isPlaying) {
+        icon.innerHTML = '<rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect>';
+    } else {
+        icon.innerHTML = '<polygon points="5 3 19 12 5 21 5 3"></polygon>';
+    }
+}
+
 function initEvents() {
     // Initialize i18n
     I18n.init();
-
-    // Initialize Gallery
-    // if (typeof Gallery !== "undefined") Gallery.init(); // Removed
 
     // Initialize ExportUI
     if (typeof ExportUI !== "undefined") ExportUI.init();
@@ -280,676 +305,135 @@ function initEvents() {
         updateButtonTooltips();
     });
 
-    // Historial
-    const btnUndo = document.getElementById("btn-undo");
-    const btnRedo = document.getElementById("btn-redo");
-
-    if (btnUndo) btnUndo.onclick = () => History.undo();
-    if (btnRedo) btnRedo.onclick = () => History.redo();
-
-    // Keyboard Shortcuts
-    window.addEventListener("keydown", (e) => {
-        // Ignorar si estamos escribiendo en un input
-        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-
-        // Undo/Redo (Hardcoded standard)
-        if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
-            e.preventDefault();
-            History.undo();
-            return;
-        }
-        if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'Z'))) {
-            e.preventDefault();
-            History.redo();
-            return;
-        }
-
-        // Custom Shortcuts Logic with Modifiers
-        // 1. Construct the string for the current press
-        // Ignorar modificadores sueltos
-        if (['Control', 'Alt', 'Shift', 'Meta'].includes(e.key)) return;
-
-        let currentKeys = [];
-        if (e.ctrlKey) currentKeys.push('Ctrl');
-        if (e.altKey) currentKeys.push('Alt');
-        if (e.shiftKey) currentKeys.push('Shift');
-
-        let mainKey = e.key;
-        if (e.code === 'Space') mainKey = 'Space';
-        if (mainKey.length === 1) mainKey = mainKey.toUpperCase();
-        currentKeys.push(mainKey);
-
-        const currentShortcut = currentKeys.join('+');
-        const s = SETTINGS.SHORTCUTS;
-
-        if (!s) return;
-
-        // Helper to check match
-        const isMatch = (settingKey) => {
-            if (!settingKey) return false;
-            // Normalize for comparison: ensure uppercase for single letters if manually edited
-            return settingKey.toUpperCase() === currentShortcut.toUpperCase();
-        };
-
-        let actionTriggered = false;
-
-        if (isMatch(s.MODE_MOVE)) { Mode.set("move"); actionTriggered = true; }
-        else if (isMatch(s.MODE_TEXT)) { Mode.set("text"); actionTriggered = true; }
-        else if (isMatch(s.MODE_SCRUM)) { Mode.set("scrum"); actionTriggered = true; }
-        else if (isMatch(s.MODE_ARROW)) { Mode.set("draw"); actionTriggered = true; }
-        else if (isMatch(s.MODE_FREEHAND)) { Mode.set("freehand"); actionTriggered = true; }
-        else if (isMatch(s.MODE_ERASER)) { Mode.set("eraser"); actionTriggered = true; }
-        else if (isMatch(s.MODE_ZONE)) { Mode.set("zone"); actionTriggered = true; }
-        else if (isMatch(s.MODE_SHIELD)) { Mode.set("shield"); actionTriggered = true; }
-        else if (isMatch(s.TOGGLE_BALL)) {
-            const btn = document.getElementById("toggle-ball");
-            if (btn) btn.click();
-            actionTriggered = true;
-        }
-        else if (isMatch(s.PRESENTATION_MODE)) {
-            const btn = document.getElementById("toggle-presentation");
-            if (btn) btn.click();
-            actionTriggered = true;
-        }
-        else if (isMatch(s.ANIMATION_PLAY)) {
-            if (state.isPlaying) Animation.pause();
-            else Animation.play();
-            updatePresentationPlayIcon(); // Fix bug: icon not syncing on shortcut
-            actionTriggered = true;
-        }
-        // Frames
-        else if (isMatch(s.FRAME_NEXT)) { document.getElementById("next-frame").click(); actionTriggered = true; }
-        else if (isMatch(s.FRAME_PREV)) { document.getElementById("prev-frame").click(); actionTriggered = true; }
-        else if (isMatch(s.FRAME_ADD)) { document.getElementById("add-frame").click(); actionTriggered = true; }
-        else if (isMatch(s.FRAME_REMOVE)) { document.getElementById("delete-frame").click(); actionTriggered = true; }
-
-        if (actionTriggered) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
+    // Pass dependencies to InputHandler
+    InputHandler.init({
+        resetApp,
+        resetBoard: resetBoardForFieldChange,
+        deleteSelection: deleteSelectedElement,
+        clearSelections: clearAllSelections,
+        handleResize,
+        toggleLeftSidebar,
+        toggleRightSidebar,
+        updateFieldUI: () => {
+            updateFieldTypeButtons();
+            updateFieldConfigInfo();
+        },
+        updatePresentationPlayIcon
     });
 
-    // Eventos touch para móviles
-    canvas.addEventListener("touchstart", e => {
-        e.preventDefault();
-        CanvasEvents.handleMouseDown(e);
-    }, { passive: false });
+    // Tutorial Events (Tutorial has its own internal event logic or we can migrate it later)
+    // initTutorialEvents() called separately in init()
 
-    canvas.addEventListener("touchmove", e => {
-        e.preventDefault();
-        CanvasEvents.handleMouseMove(e);
-    }, { passive: false });
-
-    canvas.addEventListener("touchend", e => {
-        e.preventDefault();
-        CanvasEvents.handleMouseUp();
-    }, { passive: false });
-
-    canvas.addEventListener("touchcancel", e => {
-        e.preventDefault();
-        CanvasEvents.handleMouseUp();
-    }, { passive: false });
-
-    // Eventos mouse
-    canvas.addEventListener("mousedown", e => CanvasEvents.handleMouseDown(e));
-    canvas.addEventListener("mousemove", e => CanvasEvents.handleMouseMove(e));
-    canvas.addEventListener("mouseup", () => CanvasEvents.handleMouseUp());
-    // Doble clic para editar texto
-    canvas.addEventListener("dblclick", e => CanvasEvents.handleDoubleClick(e));
-
-    window.addEventListener("keydown", e => {
-        // Global keys that are always active (unless input)
-        // Check for specific functional keys like Escape or Delete
-        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-
-        if (e.key === "Escape") {
-            if (document.body.classList.contains('presentation-mode')) {
-                document.body.classList.remove('presentation-mode');
-                handleResize(); // trigger smooth resize logic via helper if needed or direct
-            } else {
-                clearAllSelections();
-                Renderer.drawFrame();
-            }
-        }
-
-        if (e.key === "Delete" || e.key === "Supr") {
-            deleteSelectedElement();
-        }
-
-
-        if (e.key === "Delete" || e.key === "Supr") {
-            deleteSelectedElement();
-        }
+    // Listen to Store changes
+    Store.events.on('modeChanged', (mode) => {
+        updateModeUI(mode);
     });
-
-    // Botón de borrar
-    document.getElementById("delete-btn").onclick = deleteSelectedElement;
-
-    // Botón de Resetear Todo
-    const btnReset = document.getElementById("btn-reset-app");
-    if (btnReset) btnReset.onclick = resetApp;
-
-    // Frames
-    document.getElementById("add-frame").onclick = () => {
-        const nf = Frame.clone(Utils.getCurrentFrame());
-        state.frames.splice(state.currentFrameIndex + 1, 0, nf);
-        state.currentFrameIndex++;
-        Utils.getCurrentFrame().trailLines = [];
-        Animation.updateUI();
-        Renderer.drawFrame();
-        History.push();
-    };
-
-    document.getElementById("delete-frame").onclick = () => {
-        if (state.frames.length > 1) {
-            state.frames.splice(state.currentFrameIndex, 1);
-            state.currentFrameIndex = Math.max(0, state.currentFrameIndex - 1);
-            Utils.getCurrentFrame().trailLines = [];
-            Animation.updateUI();
-            Renderer.drawFrame();
-            Players.syncToggles();
-        }
-    };
-
-    document.getElementById("next-frame").onclick = () => {
-        if (state.currentFrameIndex < state.frames.length - 1) {
-            state.currentFrameIndex++;
-            Utils.getCurrentFrame().trailLines = [];
-            Animation.updateUI();
-            Renderer.drawFrame();
-            Players.syncToggles();
-        }
-    };
-
-    document.getElementById("prev-frame").onclick = () => {
-        if (state.currentFrameIndex > 0) {
-            state.currentFrameIndex--;
-            Utils.getCurrentFrame().trailLines = [];
-            Animation.updateUI();
-            Renderer.drawFrame();
-            Players.syncToggles();
-        }
-    };
-
-    // Animación
-    document.getElementById("play-animation").onclick = () => Animation.play();
-    const pauseBtn = document.getElementById("pause-animation");
-    if (pauseBtn) pauseBtn.onclick = () => Animation.pause();
-    // document.getElementById("export-webm").onclick = () => Animation.exportWebM(); // Handled by ExportUI
-    document.getElementById("export-image").onclick = () => Export.downloadImage();
-
-    // Presentation Mode
-    const togglePresentation = () => {
-        document.body.classList.toggle('presentation-mode');
-
-        // Redimensionar suavemente durante la transición CSS (400ms)
-        let start = null;
-        const duration = 500;
-
-        const step = (timestamp) => {
-            if (!start) start = timestamp;
-            const progress = timestamp - start;
-
-            handleResize();
-
-            if (progress < duration) {
-                window.requestAnimationFrame(step);
-            }
-        };
-
-        window.requestAnimationFrame(step);
-    };
-
-    document.getElementById("toggle-presentation").onclick = togglePresentation;
-
-    // Make Presentation Controls Draggable
-    const presControls = document.querySelector('.presentation-controls');
-    if (presControls) {
-        makeDraggable(presControls);
-    }
-
-    // Draggable Helper Function
-    function makeDraggable(element) {
-        let isDragging = false;
-        let startX, startY;
-
-        // Mouse Events
-        element.addEventListener('mousedown', dragStart);
-        document.addEventListener('mousemove', drag);
-        document.addEventListener('mouseup', dragEnd);
-
-        // Touch Events
-        element.addEventListener('touchstart', dragStart, { passive: false });
-        document.addEventListener('touchmove', drag, { passive: false });
-        document.addEventListener('touchend', dragEnd);
-
-        function dragStart(e) {
-            if (e.target.closest('button')) return;
-
-            const clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
-            const clientY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
-
-            // Switch to fixed positioning if not already
-            const rect = element.getBoundingClientRect();
-            element.style.bottom = 'auto';
-            element.style.left = rect.left + 'px';
-            element.style.top = rect.top + 'px';
-            element.style.transform = 'none';
-
-            isDragging = true;
-            startX = clientX;
-            startY = clientY;
-            element.style.transition = 'none'; // Disable transition for direct control
-        }
-
-        function drag(e) {
-            if (!isDragging) return;
-            e.preventDefault();
-
-            const clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
-            const clientY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
-
-            const dx = clientX - startX;
-            const dy = clientY - startY;
-
-            // Simple relative move
-            const rect = element.getBoundingClientRect();
-            element.style.left = (rect.left + dx) + 'px';
-            element.style.top = (rect.top + dy) + 'px';
-
-            startX = clientX;
-            startY = clientY;
-        }
-
-        function dragEnd() {
-            if (!isDragging) return;
-            isDragging = false;
-            element.style.transition = 'opacity 0.4s'; // Restore opacity transition, but keep position fixed
-        }
-    }
-
-    // Presentation Controls Logic
-    document.getElementById("pres-prev").onclick = () => {
-        document.getElementById("prev-frame").click(); // Reuse existing
-    };
-
-    document.getElementById("pres-next").onclick = () => {
-        document.getElementById("next-frame").click(); // Reuse existing
-    };
-
-    document.getElementById("pres-play").onclick = () => {
-        if (state.isPlaying) Animation.pause();
-        else Animation.play();
-        updatePresentationPlayIcon(); // Ensure icon updates immediately
-    };
-
-    // Update play icon helper
-    function updatePresentationPlayIcon() {
-        const icon = document.getElementById("pres-play-icon");
-        if (!icon) return;
-        if (state.isPlaying) {
-            // Pause icon
-            icon.innerHTML = '<rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect>';
-        } else {
-            // Play icon
-            icon.innerHTML = '<polygon points="5 3 19 12 5 21 5 3"></polygon>';
-        }
-    }
-
-    // Hook into Animation.play/pause to update icon globally?
-    // We can just add a setInterval or modify Animation module, but easiest is to 
-    // patch the existing Play/Pause listener or Animation state change.
-    // Ideally Animation.js triggers an event. For now, we'll patch the click handler above
-    // and also rely on the fact that Animation.play/pause updates UI.
-    // Better: Helper function called when toggling.
-
-    // Also update icon when normal play button is clicked
-    const origPlay = document.getElementById("play-animation").onclick;
-    document.getElementById("play-animation").onclick = () => {
-        if (origPlay) origPlay();
-        updatePresentationPlayIcon();
-    };
-
-    const origPause = document.getElementById("pause-animation");
-    if (origPause) {
-        const origPauseClick = origPause.onclick;
-        origPause.onclick = () => {
-            if (origPauseClick) origPauseClick();
-            updatePresentationPlayIcon();
-        };
-    }
-    document.getElementById("exit-presentation").onclick = () => {
-        document.body.classList.remove('presentation-mode');
-        // Usar la misma lógica de redimensionado suave al salir
-        let start = null;
-        const duration = 500;
-        const step = (timestamp) => {
-            if (!start) start = timestamp;
-            const progress = timestamp - start;
-            handleResize();
-            if (progress < duration) window.requestAnimationFrame(step);
-        };
-        window.requestAnimationFrame(step);
-    };
-
-    // Atajo de teclado (Escape)
-    window.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            document.body.classList.remove('presentation-mode');
-
-            // Redimensionado suave al salir con Escape
-            let start = null;
-            const duration = 500;
-            const step = (timestamp) => {
-                if (!start) start = timestamp;
-                const progress = timestamp - start;
-                handleResize();
-                if (progress < duration) window.requestAnimationFrame(step);
-            };
-            window.requestAnimationFrame(step);
-        }
-    });
-
-    // Theme Toggle - HANDLED BY SETTINGS UI NOW
-    // const updateThemeIcon = (isLight) => ...
-    // const toggleTheme = () => ...
-
-    // Bind to the new FAB - We can keep FAB functionality via SettingsUI or just redirect it
-    // REMOVED at user request
-
-
-    // Bind to the sidebar button - REMOVED
-    // const themeSidebar = document.getElementById("toggle-theme");
-    // if (themeSidebar) themeSidebar.onclick = toggleTheme;
-
-    // Load Theme Preference from localStorage - HANDLED BY SETTINGS UI
-    // const storedTheme = localStorage.getItem('pizarra_theme');
-    // ...
-
-    // Field Configuration
-    document.getElementById("field-type-full").onclick = () => {
-        state.fieldConfig.type = "full";
-        state.fieldConfig.orientation = "horizontal";  // Reset to horizontal
-        resetBoardForFieldChange();
-        updateFieldTypeButtons();
-        updateFieldConfigInfo();
-        Formations.updateSelector();
-        Renderer.drawFrame();
-    };
-
-    document.getElementById("field-type-half").onclick = () => {
-        state.fieldConfig.type = "half";
-        state.fieldConfig.halfSide = "top";
-        resetBoardForFieldChange();
-        const f = Utils.getCurrentFrame();
-
-        // Colocar balón en medio campo
-        f.ball.x = canvas.width / 2;
-        f.ball.y = CONFIG.MARGIN_Y + (canvas.height - CONFIG.MARGIN_Y * 2);
-        f.ball.visible = true;
-
-        updateFieldTypeButtons();
-        updateFieldConfigInfo();
-        Formations.updateSelector();
-        Renderer.drawFrame();
-    };
-
-
-    document.getElementById("rotate-field-btn").onclick = () => {
-        if (state.fieldConfig.type === "full") {
-            // Rotate full field: horizontal ↔ vertical
-            state.fieldConfig.orientation = state.fieldConfig.orientation === "horizontal" ? "vertical" : "horizontal";
-        } else {
-            // Switch visible half: top ↔ bottom
-            state.fieldConfig.halfSide = state.fieldConfig.halfSide === "top" ? "bottom" : "top";
-        }
-        // Reposicionar balón al medio campo
-        const f = Utils.getCurrentFrame();
-        f.ball.x = canvas.width / 2;
-        f.ball.y = state.fieldConfig.halfSide === "top"
-            ? CONFIG.MARGIN_Y + (canvas.height - CONFIG.MARGIN_Y * 2)
-            : CONFIG.MARGIN_Y;
-        resetBoardForFieldChange();
-        updateFieldConfigInfo();
-        Formations.updateSelector();
-        Renderer.drawFrame();
-    };
-
-    // Formaciones
-    document.getElementById("save-formation-btn").onclick = async () => {
-        const name = await Popup.prompt(I18n.t('prompt_formation_name'), I18n.t('prompt_formation_placeholder'));
-        if (name) {
-            await Formations.save(name);
-        }
-    };
-
-    document.getElementById("load-formation-btn").onclick = async () => {
-        const selector = document.getElementById("formation-selector");
-        const name = selector.value;
-        if (name) {
-            await Formations.load(name);
-        } else {
-            await Popup.show({
-                title: I18n.t('alert_select_formation'),
-                html: I18n.t('alert_select_formation_desc'),
-                showCancel: false
-            });
-        }
-    };
-
-    document.getElementById("delete-formation-btn").onclick = async () => {
-        const selector = document.getElementById("formation-selector");
-        const name = selector.value;
-        if (name) {
-            await Formations.delete(name);
-            selector.value = "";
-        } else {
-            await Popup.show({
-                title: I18n.t('alert_select_formation'),
-                html: I18n.t('alert_select_formation_desc'),
-                showCancel: false
-            });
-        }
-    };
-
-    // Flechas
-    document.querySelectorAll("#arrow-menu button").forEach(btn => {
-        btn.onclick = () => {
-            const type = btn.dataset.arrow;
-            if (type === "normal") {
-                Mode.set("draw");
-                document.getElementById("mode-arrow").textContent = "Flecha (Normal) ▼";
-            }
-            if (type === "kick") {
-                Mode.set("kick");
-                document.getElementById("mode-arrow").textContent = "Flecha (Patada) ▼";
-            }
-            document.getElementById("arrow-menu").classList.add("is-hidden");
-        };
-    });
-
-    // Modos
-    document.getElementById("mode-move").onclick = () => Mode.set("move");
-    const btnFreehand = document.getElementById("mode-freehand");
-    if (btnFreehand) btnFreehand.onclick = () => Mode.set("freehand");
-
-    const btnEraser = document.getElementById("mode-eraser");
-    if (btnEraser) btnEraser.onclick = () => Mode.set("eraser");
-
-    document.getElementById("mode-text").onclick = () => Mode.set("text");
-    document.getElementById("mode-scrum").onclick = () => Mode.set("scrum");
-    document.getElementById("mode-arrow").onclick = () => {
-        document.getElementById("arrow-menu").classList.toggle("is-hidden");
-    };
-    document.getElementById("mode-zone").onclick = () => Mode.set("zone");
-    document.getElementById("mode-shield").onclick = () => Mode.set("shield");
-
-    // Equipos
-    document.getElementById("show-team-a").onclick = () => Players.showTeam("A");
-    document.getElementById("show-team-b").onclick = () => Players.showTeam("B");
-
-    // Colores de zona
-    document.querySelectorAll(".color-picker__swatch").forEach(btn => {
-        btn.onclick = () => {
-            state.selectedZoneColor = btn.dataset.color;
-        };
-    });
-
-    // Limpiar
-    document.getElementById("clear-board").onclick = () => {
-        const f = Utils.getCurrentFrame();
-
-        f.players.forEach(p => {
-            p.visible = false;
-            p.x = null;
-            p.y = null;
-        });
-
-        f.arrows = [];
-        f.texts = [];
-        f.drawings = [];
-        f.trailLines = [];
-        f.trainingShields = [];
-
-        f.ball = {
-            x: canvas.width / 2,
-            y: canvas.height / 2,
-            rx: CONFIG.BALL_RX,
-            ry: CONFIG.BALL_RY,
-            visible: true
-        };
-
-        state.zones = [];
-        state.selectedPlayers.clear();
-        state.selectedZone = null;
-        state.selectedShield = null;
-        state.dragTarget = null;
-        state.previewArrow = null;
-        state.arrowStart = null;
-
-        UI.updateDeleteButton();
-        Players.syncToggles();
-        Renderer.drawFrame();
-        History.push(); // Guardar limpieza
-    };
-
-    // Toggle balón
-    document.getElementById("toggle-ball").onclick = () => {
-        const f = Utils.getCurrentFrame();
-        f.ball.visible = !f.ball.visible;
-        Renderer.drawFrame();
-    };
-
-    // ==============================
-    // GESTIÓN DE PANELES (UNIFICADO)
-    // ==============================
-    function isMobileView() {
-        return window.innerWidth <= 1024;
-    }
-
-    function toggleLeftSidebar() {
-        const sidebar = document.getElementById("sidebar");
-        const overlay = document.getElementById("mobile-overlay");
-        const menuBtn = document.getElementById("mobile-menu-btn");
-
-        if (isMobileView()) {
-            sidebar.classList.toggle("is-visible");
-            overlay.classList.toggle("is-visible");
-        } else {
-            // Desktop Logic
-            sidebar.classList.toggle("is-collapsed");
-            // Toggle button visibility via class
-            if (sidebar.classList.contains("is-collapsed")) {
-                menuBtn.classList.add("is-active");
-            } else {
-                menuBtn.classList.remove("is-active");
-            }
-        }
-
-        setTimeout(() => {
-            resizeCanvas(); // Ajustar canvas tras animación
-            Renderer.drawFrame();
-        }, 350);
-    }
-
-    function toggleRightSidebar() {
-        const rightPanel = document.getElementById("right-panel");
-        const overlay = document.getElementById("mobile-overlay");
-        const rightMenuBtn = document.getElementById("mobile-right-menu-btn");
-
-        if (isMobileView()) {
-            rightPanel.classList.toggle("is-visible");
-            overlay.classList.toggle("is-visible");
-        } else {
-            // Desktop Logic
-            rightPanel.classList.toggle("is-collapsed");
-            if (rightPanel.classList.contains("is-collapsed")) {
-                rightMenuBtn.classList.add("is-active");
-            } else {
-                rightMenuBtn.classList.remove("is-active");
-            }
-        }
-
-        setTimeout(() => {
-            resizeCanvas();
-            Renderer.drawFrame();
-        }, 350);
-    }
-
-    // Menú móvil - Sidebar izquierdo
-    // Menú móvil - Sidebar izquierdo
-    const mobileMenuBtn = document.getElementById("mobile-menu-btn");
-    if (mobileMenuBtn) {
-        mobileMenuBtn.onclick = (e) => {
-            e.stopPropagation();
-            toggleLeftSidebar();
-        };
-    }
-
-    // Botones de Cerrar (Close) - Sidebar Izquierdo
-    const closeLeftBtn = document.getElementById("close-sidebar-btn");
-    if (closeLeftBtn) {
-        closeLeftBtn.onclick = (e) => {
-            e.stopPropagation();
-            toggleLeftSidebar();
-        };
-    }
-
-    // Menú móvil - Panel derecho
-    const mobileRightMenuBtn = document.getElementById("mobile-right-menu-btn");
-    if (mobileRightMenuBtn) {
-        mobileRightMenuBtn.onclick = (e) => {
-            e.stopPropagation();
-            toggleRightSidebar();
-        };
-    }
-
-    // Botones de Cerrar (Close) - Panel Derecho
-    const closeRightBtn = document.getElementById("close-right-panel-btn");
-    if (closeRightBtn) {
-        closeRightBtn.onclick = (e) => {
-            e.stopPropagation();
-            toggleRightSidebar();
-        };
-    }
-
-    // Overlay móvil - Cerrar menús al hacer clic fuera
-    document.getElementById("mobile-overlay").onclick = () => {
-        const sidebar = document.getElementById("sidebar");
-        const rightPanel = document.getElementById("right-panel");
-        const overlay = document.getElementById("mobile-overlay");
-
-        sidebar.classList.remove("is-visible");
-        rightPanel.classList.remove("is-visible");
-        overlay.classList.remove("is-visible");
-    };
 }
 
 
 // ==============================
+// GESTIÓN DE PANELES (UNIFICADO)
+// ==============================
+
+function toggleLeftSidebar() {
+    const sidebar = document.getElementById("sidebar");
+    const overlay = document.getElementById("mobile-overlay");
+    const menuBtn = document.getElementById("mobile-menu-btn");
+
+    if (isMobileView()) {
+        sidebar.classList.toggle("is-visible");
+        overlay.classList.toggle("is-visible");
+    } else {
+        // Desktop Logic
+        sidebar.classList.toggle("is-collapsed");
+        // Toggle button visibility via class
+        if (sidebar.classList.contains("is-collapsed")) {
+            menuBtn.classList.add("is-active");
+        } else {
+            menuBtn.classList.remove("is-active");
+        }
+    }
+
+    setTimeout(() => {
+        resizeCanvas(); // Ajustar canvas tras animación
+        Renderer.drawFrame();
+    }, 350);
+}
+
+function toggleRightSidebar() {
+    const rightPanel = document.getElementById("right-panel");
+    const overlay = document.getElementById("mobile-overlay");
+    const rightMenuBtn = document.getElementById("mobile-right-menu-btn");
+
+    if (isMobileView()) {
+        rightPanel.classList.toggle("is-visible");
+        overlay.classList.toggle("is-visible");
+    } else {
+        // Desktop Logic
+        rightPanel.classList.toggle("is-collapsed");
+        if (rightPanel.classList.contains("is-collapsed")) {
+            rightMenuBtn.classList.add("is-active");
+        } else {
+            rightMenuBtn.classList.remove("is-active");
+        }
+    }
+
+    setTimeout(() => {
+        resizeCanvas();
+        Renderer.drawFrame();
+    }, 350);
+}
+
+// Menú móvil - Sidebar izquierdo
+// Menú móvil - Sidebar izquierdo
+const mobileMenuBtn = document.getElementById("mobile-menu-btn");
+if (mobileMenuBtn) {
+    mobileMenuBtn.onclick = (e) => {
+        e.stopPropagation();
+        toggleLeftSidebar();
+    };
+}
+
+// Botones de Cerrar (Close) - Sidebar Izquierdo
+const closeLeftBtn = document.getElementById("close-sidebar-btn");
+if (closeLeftBtn) {
+    closeLeftBtn.onclick = (e) => {
+        e.stopPropagation();
+        toggleLeftSidebar();
+    };
+}
+
+// Menú móvil - Panel derecho
+const mobileRightMenuBtn = document.getElementById("mobile-right-menu-btn");
+if (mobileRightMenuBtn) {
+    mobileRightMenuBtn.onclick = (e) => {
+        e.stopPropagation();
+        toggleRightSidebar();
+    };
+}
+
+// Botones de Cerrar (Close) - Panel Derecho
+const closeRightBtn = document.getElementById("close-right-panel-btn");
+if (closeRightBtn) {
+    closeRightBtn.onclick = (e) => {
+        e.stopPropagation();
+        toggleRightSidebar();
+    };
+}
+
+// Overlay móvil - Cerrar menús al hacer clic fuera
+document.getElementById("mobile-overlay").onclick = () => {
+    const sidebar = document.getElementById("sidebar");
+    const rightPanel = document.getElementById("right-panel");
+    const overlay = document.getElementById("mobile-overlay");
+
+    sidebar.classList.remove("is-visible");
+    rightPanel.classList.remove("is-visible");
+    overlay.classList.remove("is-visible");
+};
+// ==============================
 // REDIMENSIONAMIENTO PARA MÓVILES
 // ==============================
-// Renombrado a isMobileView para reflejar que es una comprobación de layout/viewport
 function isMobileView() {
     // Coincidir con el breakpoint CSS de 1024px
     return window.innerWidth <= 1024;
@@ -1233,4 +717,41 @@ if (window.errorHandler) {
     console.log('📊 Debug: errorHandler.getErrorHistory()');
 } else {
     console.log('✅ PizarraRugby v2.2 .0 iniciado');
+}
+
+// ==============================
+// STORE UI UPDATES
+// ==============================
+function updateModeUI(mode) {
+    // Clear active classes from sidebar
+    document.querySelectorAll("#sidebar button").forEach(b => b.classList.remove("is-active"));
+
+    // Activate current mode button
+    const modeMap = {
+        'move': 'mode-move',
+        'text': 'mode-text',
+        'scrum': 'mode-scrum',
+        'draw': 'mode-arrow', // Generic arrow button
+        'kick': 'mode-arrow',
+        'freehand': 'mode-freehand',
+        'eraser': 'mode-eraser',
+        'zone': 'mode-zone',
+        'shield': 'mode-shield'
+    };
+
+    const btnId = modeMap[mode];
+    if (btnId) {
+        const btn = document.getElementById(btnId);
+        if (btn) btn.classList.add("is-active");
+    }
+
+    // Toggle Zone Color Panel
+    const zonePanel = document.getElementById("zone-color-panel");
+    if (zonePanel) {
+        if (mode === "zone") {
+            zonePanel.classList.remove("is-hidden");
+        } else {
+            zonePanel.classList.add("is-hidden");
+        }
+    }
 }

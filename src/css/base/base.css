@@ -1,0 +1,42 @@
+* {
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+/* Enable smooth transitions globally for layout changes and colors */
+body,
+.sidebar,
+.main-content,
+.panel,
+.btn,
+.tutorial-box {
+    transition: background 0.3s ease, color 0.3s ease, transform 0.3s ease;
+}
+
+body {
+    margin: 0;
+    display: flex;
+    height: 100vh;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    overflow: hidden;
+}
+
+/* Custom Scrollbar Global */
+*::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+    background: var(--bg-input);
+    border-radius: 99px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+}

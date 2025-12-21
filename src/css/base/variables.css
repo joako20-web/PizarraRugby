@@ -1,0 +1,68 @@
+/* ========================================
+   1. BASE & VARIABLES
+   ======================================== */
+:root {
+    /* Color System - Dark Mode (Premium Slate) */
+    --bg-primary: #0f172a;
+    /* Slate 900 */
+    --bg-secondary: #1e293b;
+    /* Slate 800 */
+    --bg-panel: #334155;
+    /* Slate 700 */
+    --bg-input: #475569;
+    /* Slate 600 */
+    --bg-hover: #334155;
+    /* Slate 700 hover */
+
+    --text-primary: #f8fafc;
+    /* Slate 50 */
+    --text-secondary: #94a3b8;
+    /* Slate 400 */
+
+    --border-color: #334155;
+    /* Slate 700 */
+
+    --primary: #3b82f6;
+    /* Blue 500 */
+    --primary-hover: #2563eb;
+    /* Blue 600 */
+    --accent: #fbbf24;
+    /* Amber 400 (Gold) */
+    --danger: #ef4444;
+    /* Red 500 */
+    --success: #22c55e;
+    /* Green 500 */
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.light-theme {
+    /* Color System - Light Mode (Clean Paper) */
+    --bg-primary: #f1f5f9;
+    /* Slate 100 */
+    --bg-secondary: #ffffff;
+    /* White */
+    --bg-panel: #ffffff;
+    /* White Cards */
+    --bg-input: #f8fafc;
+    /* Slate 50 */
+    --bg-hover: #e2e8f0;
+    /* Slate 200 */
+
+    --text-primary: #0f172a;
+    /* Slate 900 */
+    --text-secondary: #64748b;
+    /* Slate 500 */
+
+    --border-color: #e2e8f0;
+    /* Slate 200 */
+
+    --primary: #3b82f6;
+    /* Blue 500 */
+    --primary-hover: #2563eb;
+    /* In light mode, increase shadow visibility for separation */
+    --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}

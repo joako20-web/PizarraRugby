@@ -1,0 +1,80 @@
+/* --- Panels --- */
+.panel {
+    margin: 5px;
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: transparent;
+}
+
+.panel__title {
+    margin-top: 0;
+    font-size: 1.1em;
+    margin-bottom: 10px;
+    color: var(--text-primary);
+}
+
+.panel__player-selector {
+    margin-bottom: 8px;
+}
+
+.player-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+    margin-top: 8px;
+}
+
+/* Player Toggle Tokens */
+.player-toggle {
+    padding: 6px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    text-align: center;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.player-toggle.is-active {
+    background: var(--primary);
+    outline: 2px solid var(--text-primary);
+    color: #fff;
+}
+
+.player-toggle.red {
+    background: #7f1d1d;
+    color: #ffffff;
+    border-color: #450a0a;
+}
+
+.player-toggle.red.is-active {
+    background: var(--danger);
+    color: #ffffff !important;
+    outline-color: #ffffff;
+}
+
+@media (hover: none) and (pointer: coarse) {
+    .player-toggle {
+        min-height: 44px;
+    }
+
+    .player-toggle:hover {
+        transform: none;
+    }
+}
+
+@media (max-width: 1024px) {
+    .panel {
+        margin: 0;
+        border: none;
+        border-bottom: 1px solid var(--border-color);
+        border-radius: 0;
+        padding: 16px;
+    }
+
+    .player-grid {
+        gap: 8px;
+    }
+}

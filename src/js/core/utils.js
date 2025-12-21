@@ -6,6 +6,9 @@ import { canvas } from './dom.js';
 // UTILIDADES BÁSICAS
 // ==============================
 export const Utils = {
+    /**
+     * @returns {Frame} Current frame object
+     */
     getCurrentFrame() {
         return state.frames[state.currentFrameIndex];
     },

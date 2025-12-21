@@ -28,5 +28,8 @@
     "prettier": "^3.7.4",
     "vite": "^5.4.11",
     "vitest": "^2.1.8"
+  },
+  "dependencies": {
+    "dompurify": "^3.3.1"
   }
 }

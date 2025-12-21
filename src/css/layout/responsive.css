@@ -1,0 +1,177 @@
+/* ========================================
+   5. RESPONSIVE (PROFESSIONAL & TOUCH OPTIMIZED)
+   ======================================== */
+
+.u-mobile-only {
+    display: none !important;
+}
+
+/* --- Mobile Navigation Buttons --- */
+.mobile-nav-btn {
+    position: fixed;
+    z-index: 1045;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    color: var(--text-primary);
+}
+
+/* --- Mobile Styling --- */
+@media (max-width: 1024px) {
+    .u-mobile-only {
+        display: flex !important;
+    }
+
+    .mobile-nav-btn {
+        top: 16px;
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: rgba(30, 41, 59, 0.85);
+        backdrop-filter: blur(8px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .light-theme .mobile-nav-btn {
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        color: #1e293b;
+    }
+
+    .mobile-nav-btn:active {
+        transform: scale(0.92);
+    }
+
+    .mobile-nav-btn--left {
+        left: 16px;
+    }
+
+    .mobile-nav-btn--right {
+        right: 16px;
+    }
+
+    /* Body Layout Reset */
+    body {
+        display: block;
+        overflow: hidden;
+        position: relative;
+    }
+
+    /* --- Off-Canvas Sidebars --- */
+    .sidebar {
+        position: fixed;
+        width: 280px;
+        max-width: 85vw;
+        height: 100%;
+        top: 0;
+        bottom: 0;
+        z-index: 1050;
+        background: var(--bg-secondary);
+        box-shadow: 4px 0 20px rgba(0, 0, 0, 0.5);
+    }
+
+    .sidebar:not(.sidebar--right) {
+        left: 0;
+        transform: translateX(-100%);
+        border-right: 1px solid var(--border-color);
+    }
+
+    .sidebar:not(.sidebar--right).is-visible {
+        transform: translateX(0);
+    }
+
+    .sidebar--right {
+        right: 0;
+        left: auto;
+        transform: translateX(100%);
+        border-left: 1px solid var(--border-color);
+        margin-right: 0 !important;
+    }
+
+    .sidebar--right.is-visible {
+        transform: translateX(0);
+    }
+
+    /* --- Main Canvas Area --- */
+    .main-content {
+        width: 100vw;
+        height: 100vh;
+        padding: 0;
+        position: relative;
+    }
+
+    .main-content__canvas {
+        width: 100% !important;
+        height: 100% !important;
+        border-radius: 0;
+        box-shadow: none;
+    }
+}
+
+/* --- Desktop Styling --- */
+@media (min-width: 1025px) {
+    .mobile-nav-btn {
+        top: 50%;
+        transform: translateY(-50%);
+        width: 32px;
+        height: 64px;
+        background: var(--bg-panel);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        border: 1px solid var(--border-color);
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(-50%) translateX(0);
+    }
+
+    .mobile-nav-btn--left {
+        left: 0;
+        border-top-right-radius: 12px;
+        border-bottom-right-radius: 12px;
+        border-left: none;
+        transform: translateY(-50%) translateX(-100%);
+    }
+
+    .mobile-nav-btn--right {
+        right: 0;
+        border-top-left-radius: 12px;
+        border-bottom-left-radius: 12px;
+        border-right: none;
+        transform: translateY(-50%) translateX(100%);
+    }
+
+    .mobile-nav-btn.is-active {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translateY(-50%) translateX(0);
+    }
+
+    .mobile-nav-btn:hover {
+        width: 40px;
+        background: var(--bg-hover);
+        color: var(--color-primary);
+    }
+
+    /* Desktop Collapsed State */
+    .sidebar.is-collapsed {
+        width: 0;
+        padding: 0;
+        overflow: hidden;
+        border: none;
+        margin: 0;
+        transform: translateX(0);
+    }
+}
+
+/* --- Landscape Mobile --- */
+@media (max-width: 900px) and (orientation: landscape) {
+    .main-content {
+        height: 100vh;
+    }
+}

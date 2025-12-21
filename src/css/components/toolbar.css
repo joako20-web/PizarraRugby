@@ -1,0 +1,317 @@
+/* --- Frame Bar --- */
+.frame-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 8px 0;
+    margin: 10px 0;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+}
+
+.frame-bar__btn {
+    width: 36px;
+    height: 32px;
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--text-primary);
+    font-size: 16px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.frame-bar__btn:hover {
+    background: var(--bg-hover);
+}
+
+.frame-bar__counter {
+    font-size: 14px;
+    color: var(--text-secondary);
+    text-align: center;
+    min-width: 120px;
+}
+
+.frame-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.frame-actions__btn {
+    width: auto;
+    padding: 6px 12px;
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--text-primary);
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+/* --- Field Configuration --- */
+.field-config__type-selector {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 8px;
+}
+
+.field-config__btn {
+    flex: 1;
+    padding: 6px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.field-config__btn.is-active {
+    background: var(--primary);
+    color: #fff;
+    border-color: #fff;
+}
+
+.field-config__info {
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-align: center;
+    padding: 4px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+}
+
+@media (hover: none) and (pointer: coarse) {
+    .field-config__btn {
+        min-height: 44px;
+    }
+}
+
+/* --- Formation Selector --- */
+.formation-selector {
+    width: 100%;
+    padding: 8px;
+    margin: 8px 0;
+    background: var(--bg-input);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    outline: none;
+}
+
+.formation-selector:focus {
+    border-color: var(--primary);
+}
+
+.formation-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.formation-actions button {
+    flex: 1;
+}
+
+/* --- Color Picker --- */
+.color-picker {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 10px;
+    z-index: 999;
+    width: 220px;
+    text-align: center;
+    box-shadow: var(--shadow-md);
+}
+
+.color-picker__title {
+    font-size: 14px;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+}
+
+.color-picker__colors {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.color-picker__swatch {
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 2px solid white;
+}
+
+.color-picker__swatch--1 {
+    background: #00aaff;
+}
+
+.color-picker__swatch--2 {
+    background: #ff3333;
+}
+
+.color-picker__swatch--3 {
+    background: #ffd000;
+}
+
+.color-picker__swatch--4 {
+    background: #00cc66;
+}
+
+.color-picker__swatch--5 {
+    background: #ff9100;
+}
+
+@media (hover: none) and (pointer: coarse) {
+    .color-picker__swatch {
+        min-height: 44px;
+    }
+}
+
+/* --- Icons --- */
+.icon {
+    width: 24px;
+    height: 24px;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.icon--sm {
+    width: 18px;
+    height: 18px;
+}
+
+/* --- Dropdowns --- */
+.dropdown {
+    position: relative;
+    width: 100%;
+}
+
+.dropdown__menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    padding: 5px;
+    border-radius: 6px;
+    width: 100%;
+    z-index: 50;
+    margin-top: 4px;
+}
+
+.dropdown__item {
+    width: 100%;
+    margin: 2px 0;
+    padding: 6px;
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    text-align: left;
+    cursor: pointer;
+    display: block;
+}
+
+/* --- Shortcuts List --- */
+.shortcuts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.shortcut-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    transition: border-color 0.2s;
+}
+
+.shortcut-item:hover {
+    border-color: var(--text-secondary);
+}
+
+.light-theme .shortcut-item {
+    background: rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.shortcut-item label {
+    font-size: 14px;
+    font-weight: 500;
+    margin: 0;
+}
+
+.shortcut-item button {
+    width: auto;
+    min-width: 80px;
+    padding: 6px 12px;
+    font-size: 13px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.shortcut-item button:hover {
+    background: var(--bg-input);
+}
+
+.shortcut-item button.is-active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+    animation: pulse 1s infinite;
+}
+
+@media (hover: none) and (pointer: coarse) {
+    .shortcut-item button {
+        min-height: 32px;
+    }
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+/* --- Other Utilities --- */
+.history-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.drawing-controls {
+    display: flex;
+    gap: 5px;
+    margin: 4px 0;
+}

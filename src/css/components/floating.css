@@ -1,0 +1,161 @@
+/* --- Notifications --- */
+.notification {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 4px;
+    z-index: 10000;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    transition: opacity 0.3s, transform 0.3s;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.notification.is-visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* --- Help / Floating Buttons --- */
+.theme-btn {
+    position: fixed;
+    bottom: 10px;
+    left: 10px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--bg-panel);
+    color: var(--accent);
+    border: 2px solid var(--border-color);
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 1001;
+    transition: all 0.3s ease;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.theme-btn:hover {
+    transform: scale(1.1) rotate(15deg);
+    background: var(--bg-hover);
+    border-color: var(--text-primary);
+}
+
+@media (max-width: 1024px) {
+    .theme-btn {
+        display: none;
+    }
+
+    /* Hide on mobile to save space */
+}
+
+.help-btn {
+    position: fixed;
+    bottom: 10px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: white;
+    border: 3px solid #fff;
+    font-size: 28px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.5);
+    z-index: 1001;
+    transition: all 0.3s ease;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.help-btn:hover {
+    transform: scale(1.1);
+}
+
+.delete-btn {
+    position: fixed;
+    bottom: 90px;
+    right: 20px;
+    width: auto;
+    min-width: 100px;
+    padding: 10px 20px;
+    background: #ff3333;
+    color: white;
+    border: 2px solid #fff;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(255, 51, 51, 0.5);
+    z-index: 1001;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.delete-btn:hover {
+    background: #ff5555;
+    transform: translateY(-2px);
+}
+
+.delete-btn.is-hidden {
+    display: none;
+}
+
+.version-indicator {
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.6);
+    color: #aaa;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-family: monospace;
+    z-index: 100;
+    pointer-events: none;
+    user-select: none;
+}
+
+/* Mobile Tweaks */
+@media (max-width: 1024px) {
+    .version-indicator {
+        bottom: auto;
+        top: 60px;
+        right: 10px;
+        opacity: 0.5;
+    }
+
+    .help-btn {
+        bottom: 20px;
+        right: 20px;
+    }
+
+    .delete-btn {
+        bottom: 80px;
+        right: 20px;
+        padding: 12px 20px;
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 768px) {
+    .delete-btn {
+        bottom: 85px;
+        right: 16px;
+    }
+
+    .help-btn {
+        right: 16px;
+        bottom: 20px;
+    }
+}
