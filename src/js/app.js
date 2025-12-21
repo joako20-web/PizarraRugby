@@ -2,7 +2,7 @@ import { CONFIG } from "./core/config.js";
 import { SETTINGS, DEFAULT_SHORTCUTS } from "./core/settings.js";
 import { state } from "./core/state.js";
 import { canvas } from "./core/dom.js";
-import { Utils } from "./core/utils.js";
+import { Utils, calculateFieldDimensions } from "./core/utils.js";
 import { Frame } from "./model/frame.js";
 import { Renderer } from "./renderer/renderer.js";
 import { Popup } from "./ui/popup.js";
