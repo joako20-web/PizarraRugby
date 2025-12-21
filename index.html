@@ -109,7 +109,7 @@
             <h3 class="panel__title" data-i18n="panel_modes_title">Modos</h3>
 
             <!-- Control Historial -->
-            <div class="history-controls" style="display: flex; gap: 10px; margin-bottom: 10px;">
+            <div class="history-controls">
                 <button id="btn-undo" class="btn btn--secondary" title="Deshacer (Ctrl+Z)"
                     data-i18n-title="btn_undo_title" disabled>
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -145,11 +145,9 @@
             </div>
 
             <!-- Modo dibujo y goma (agrupados) -->
-            <div style="display: flex; gap: 5px; margin: 4px 0;">
-                <button id="mode-freehand" class="btn btn--mode" style="flex: 1; margin: 0;"
-                    data-i18n="mode_draw">Dibujo</button>
-                <button id="mode-eraser" class="btn btn--mode"
-                    style="flex: 0 0 40px; padding: 0; margin: 0; justify-content: center;" title="Goma de borrar"
+            <div class="drawing-controls">
+                <button id="mode-freehand" class="btn btn--mode btn--flex-grow" data-i18n="mode_draw">Dibujo</button>
+                <button id="mode-eraser" class="btn btn--mode btn--icon-only" title="Goma de borrar"
                     data-i18n-title="mode_eraser_title">
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M7 16l9-9 4 4-9 9-4-4" />
@@ -217,7 +215,7 @@
         <div id="frame-controls" class="sidebar__group">
             <!-- Barra moderna de frames -->
             <div id="frame-bar" class="frame-bar">
-                <button id="prev-frame" class="frame-bar__btn">
+                <button id="prev-frame" class="frame-bar__btn" aria-label="Frame anterior" title="Frame anterior">
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
                     </svg>
@@ -229,7 +227,7 @@
                     <span id="total-frames">1</span>
                 </div>
 
-                <button id="next-frame" class="frame-bar__btn">
+                <button id="next-frame" class="frame-bar__btn" aria-label="Siguiente frame" title="Siguiente frame">
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
                     </svg>
@@ -253,8 +251,8 @@
         <!-- Contenedor de reproducción y exportación (para tutorial) -->
         <div id="playback-controls" class="sidebar__group">
             <!-- Controles de reproducción -->
-            <div class="form-group" style="margin-bottom: 10px;">
-                <label for="playback-speed" style="display: flex; justify-content: space-between;">
+            <div class="form-group form-group--sm">
+                <label for="playback-speed" class="label--flex">
                     <span data-i18n="lbl_playback_speed">Velocidad</span>
                     <span id="speed-display">1.0x</span>
                 </label>

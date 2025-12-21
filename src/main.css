@@ -1844,3 +1844,39 @@ body.presentation-mode .presentation-controls {
     color: var(--text-secondary);
     font-size: 1.2rem;
 }
+
+/* ========================================
+   4. NEW UTILITIES (Refactored from inline)
+   ======================================== */
+.history-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.drawing-controls {
+    display: flex;
+    gap: 5px;
+    margin: 4px 0;
+}
+
+.btn--flex-grow {
+    flex: 1;
+    margin: 0;
+}
+
+.btn--icon-only {
+    flex: 0 0 40px;
+    padding: 0;
+    margin: 0;
+    justify-content: center;
+}
+
+.form-group--sm {
+    margin-bottom: 10px;
+}
+
+.label--flex {
+    display: flex;
+    justify-content: space-between;
+}
