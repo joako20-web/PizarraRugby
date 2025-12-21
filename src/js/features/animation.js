@@ -27,7 +27,24 @@ export const Animation = {
             return;
         }
 
+        // Si ya está reproduciendo, ignorar
         if (state.isPlaying) return;
+
+        // Si estaba pausado, simplemente reanudar (la loop vieja sigue viva esperando)
+        if (state.isPaused) {
+            state.isPlaying = true;
+            state.isPaused = false;
+            state.cancelPlay = false;
+
+            document.getElementById('play-animation')?.classList.add('is-hidden');
+            document.getElementById('pause-animation')?.classList.remove('is-hidden');
+            canvas.style.pointerEvents = 'none';
+            return; // IMPORTANTE: No iniciar nueva loop
+        }
+
+        // Si por alguna razón hay una loop corriendo (aunque no esté playing/paused), evitar duplicados
+        if (this.isLoopRunning) return;
+
         state.isPlaying = true;
         state.cancelPlay = false;
         state.isPaused = false;
@@ -39,7 +56,10 @@ export const Animation = {
         // Deshabilitar edición
         canvas.style.pointerEvents = 'none';
 
-        this._playLoop();
+        this.isLoopRunning = true;
+        this._playLoop().finally(() => {
+            this.isLoopRunning = false;
+        });
     },
 
     pause() {
@@ -53,7 +73,7 @@ export const Animation = {
     stop() {
         state.isPlaying = false;
         state.cancelPlay = true;
-        state.isPaused = false;
+        state.isPaused = false; // Romper el while(isPaused) de la loop
 
         document.getElementById('play-animation')?.classList.remove('is-hidden');
         document.getElementById('pause-animation')?.classList.add('is-hidden');
@@ -64,6 +84,10 @@ export const Animation = {
     },
 
     async _playLoop() {
+        // ... Logic continues ...
+        // Note: The caller sets isLoopRunning=true and handles finally=false.
+        // We just execute the logic.
+
         // Si estamos en el último frame, volver al inicio
         if (state.currentFrameIndex >= state.frames.length - 1) {
             state.currentFrameIndex = 0;
@@ -121,7 +145,14 @@ export const Animation = {
         const effectiveDuration = CONFIG.INTERP_DURATION / CONFIG.PLAYBACK_SPEED;
 
         for (let step = 0; step <= CONFIG.INTERP_STEPS; step++) {
-            if (state.cancelPlay || state.isPaused) break;
+            if (state.cancelPlay) break;
+
+            // FIX: Si se pausa, ESPERAR aquí en lugar de romper el loop
+            while (state.isPaused) {
+                if (state.cancelPlay) break;
+                await new Promise(r => setTimeout(r, 100));
+            }
+            if (state.cancelPlay) break; // Re-check after resume
 
             const t = step / CONFIG.INTERP_STEPS;
             Renderer.drawInterpolatedFrame(frameA, frameB, t);

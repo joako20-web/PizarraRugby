@@ -1523,6 +1523,9 @@ body.presentation-mode .main-content {
     padding: 0;
     width: 100vw;
     height: 100vh;
+    /* Fallback */
+    height: 100dvh;
+    /* Dynamic Viewport Height for Mobile/iPad */
 }
 
 body.presentation-mode .main-content__canvas {
@@ -1568,6 +1571,75 @@ body.presentation-mode .exit-presentation-btn {
 
 body.presentation-mode .exit-presentation-btn:hover {
     background: rgba(0, 0, 0, 0.8);
+}
+
+/* --- Presentation Controls (Simple Bottom Bar) --- */
+.presentation-controls {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(50px);
+    background: rgba(15, 23, 42, 0.85);
+    /* Dark Slate 900 transparent */
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 10px 20px;
+    border-radius: 50px;
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    z-index: 10000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    cursor: move;
+    /* Indicar arrastrable */
+    touch-action: none;
+    /* Prevenir scroll al arrastrar */
+}
+
+body.presentation-mode .presentation-controls {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+    pointer-events: auto;
+}
+
+.pres-btn {
+    background: transparent;
+    border: none;
+    color: #cbd5e1;
+    /* Slate 300 */
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.pres-btn:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+    transform: scale(1.1);
+}
+
+.pres-btn svg {
+    width: 24px;
+    height: 24px;
+    stroke-width: 2.5;
+}
+
+.pres-btn--main {
+    background: var(--primary);
+    color: white;
+    padding: 12px;
+}
+
+.pres-btn--main:hover {
+    background: var(--primary-hover);
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
 }
 
 /* --- Light Theme Overrides for Settings --- */

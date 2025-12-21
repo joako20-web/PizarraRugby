@@ -354,6 +354,7 @@ function initEvents() {
         else if (isMatch(s.ANIMATION_PLAY)) {
             if (state.isPlaying) Animation.pause();
             else Animation.play();
+            updatePresentationPlayIcon(); // Fix bug: icon not syncing on shortcut
             actionTriggered = true;
         }
         // Frames
@@ -500,6 +501,123 @@ function initEvents() {
     };
 
     document.getElementById("toggle-presentation").onclick = togglePresentation;
+
+    // Make Presentation Controls Draggable
+    const presControls = document.querySelector('.presentation-controls');
+    if (presControls) {
+        makeDraggable(presControls);
+    }
+
+    // Draggable Helper Function
+    function makeDraggable(element) {
+        let isDragging = false;
+        let startX, startY;
+
+        // Mouse Events
+        element.addEventListener('mousedown', dragStart);
+        document.addEventListener('mousemove', drag);
+        document.addEventListener('mouseup', dragEnd);
+
+        // Touch Events
+        element.addEventListener('touchstart', dragStart, { passive: false });
+        document.addEventListener('touchmove', drag, { passive: false });
+        document.addEventListener('touchend', dragEnd);
+
+        function dragStart(e) {
+            if (e.target.closest('button')) return;
+
+            const clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
+            const clientY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
+
+            // Switch to fixed positioning if not already
+            const rect = element.getBoundingClientRect();
+            element.style.bottom = 'auto';
+            element.style.left = rect.left + 'px';
+            element.style.top = rect.top + 'px';
+            element.style.transform = 'none';
+
+            isDragging = true;
+            startX = clientX;
+            startY = clientY;
+            element.style.transition = 'none'; // Disable transition for direct control
+        }
+
+        function drag(e) {
+            if (!isDragging) return;
+            e.preventDefault();
+
+            const clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
+            const clientY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
+
+            const dx = clientX - startX;
+            const dy = clientY - startY;
+
+            // Simple relative move
+            const rect = element.getBoundingClientRect();
+            element.style.left = (rect.left + dx) + 'px';
+            element.style.top = (rect.top + dy) + 'px';
+
+            startX = clientX;
+            startY = clientY;
+        }
+
+        function dragEnd() {
+            if (!isDragging) return;
+            isDragging = false;
+            element.style.transition = 'opacity 0.4s'; // Restore opacity transition, but keep position fixed
+        }
+    }
+
+    // Presentation Controls Logic
+    document.getElementById("pres-prev").onclick = () => {
+        document.getElementById("prev-frame").click(); // Reuse existing
+    };
+
+    document.getElementById("pres-next").onclick = () => {
+        document.getElementById("next-frame").click(); // Reuse existing
+    };
+
+    document.getElementById("pres-play").onclick = () => {
+        if (state.isPlaying) Animation.pause();
+        else Animation.play();
+        updatePresentationPlayIcon(); // Ensure icon updates immediately
+    };
+
+    // Update play icon helper
+    function updatePresentationPlayIcon() {
+        const icon = document.getElementById("pres-play-icon");
+        if (!icon) return;
+        if (state.isPlaying) {
+            // Pause icon
+            icon.innerHTML = '<rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect>';
+        } else {
+            // Play icon
+            icon.innerHTML = '<polygon points="5 3 19 12 5 21 5 3"></polygon>';
+        }
+    }
+
+    // Hook into Animation.play/pause to update icon globally?
+    // We can just add a setInterval or modify Animation module, but easiest is to 
+    // patch the existing Play/Pause listener or Animation state change.
+    // Ideally Animation.js triggers an event. For now, we'll patch the click handler above
+    // and also rely on the fact that Animation.play/pause updates UI.
+    // Better: Helper function called when toggling.
+
+    // Also update icon when normal play button is clicked
+    const origPlay = document.getElementById("play-animation").onclick;
+    document.getElementById("play-animation").onclick = () => {
+        if (origPlay) origPlay();
+        updatePresentationPlayIcon();
+    };
+
+    const origPause = document.getElementById("pause-animation");
+    if (origPause) {
+        const origPauseClick = origPause.onclick;
+        origPause.onclick = () => {
+            if (origPauseClick) origPauseClick();
+            updatePresentationPlayIcon();
+        };
+    }
     document.getElementById("exit-presentation").onclick = () => {
         document.body.classList.remove('presentation-mode');
         // Usar la misma lógica de redimensionado suave al salir
