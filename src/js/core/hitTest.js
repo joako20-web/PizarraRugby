@@ -98,7 +98,7 @@ export const HitTest = {
             const arrow = f.arrows[i];
 
             if (arrow.type === "kick") {
-                // Para flechas curvas, verificar proximidad a la curva
+                // Para flechas curvas, verificar proximidad a la curva (solo legacy format)
                 const mx = (arrow.x1 + arrow.x2) / 2;
                 const my = (arrow.y1 + arrow.y2) / 2 - state.kickArcHeight;
 
@@ -112,8 +112,30 @@ export const HitTest = {
                         return arrow;
                     }
                 }
+            } else if (arrow.points && arrow.points.length >= 2) {
+                // Multi-point arrow: check each segment
+                for (let j = 0; j < arrow.points.length - 1; j++) {
+                    const p1 = arrow.points[j];
+                    const p2 = arrow.points[j + 1];
+
+                    const dx = p2.x - p1.x;
+                    const dy = p2.y - p1.y;
+                    const length = Math.hypot(dx, dy);
+
+                    if (length === 0) continue;
+
+                    // Proyección del punto en la línea
+                    const t = Math.max(0, Math.min(1, ((x - p1.x) * dx + (y - p1.y) * dy) / (length * length)));
+                    const projX = p1.x + t * dx;
+                    const projY = p1.y + t * dy;
+
+                    const dist = Math.hypot(x - projX, y - projY);
+                    if (dist <= threshold) {
+                        return arrow;
+                    }
+                }
             } else {
-                // Para flechas rectas, verificar distancia a la línea
+                // Legacy format: simple line from (x1,y1) to (x2,y2)
                 const dx = arrow.x2 - arrow.x1;
                 const dy = arrow.y2 - arrow.y1;
                 const length = Math.hypot(dx, dy);

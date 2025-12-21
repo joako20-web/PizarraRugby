@@ -8,6 +8,7 @@ export const Mode = {
     set(m) {
         state.mode = m;
         state.arrowStart = null;
+        state.arrowPoints = [];
         state.previewArrow = null;
 
         document.querySelectorAll("#sidebar button")

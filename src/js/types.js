@@ -21,10 +21,11 @@
 /**
  * @typedef {Object} Arrow
  * @property {string} type - Arrow type ('normal', 'kick', 'pass')
- * @property {number} x1 - Start X
- * @property {number} y1 - Start Y
- * @property {number} x2 - End X
- * @property {number} y2 - End Y
+ * @property {Array<{x: number, y: number}>} [points] - Array of points defining the arrow path (for multi-point arrows)
+ * @property {number} [x1] - Start X (legacy format)
+ * @property {number} [y1] - Start Y (legacy format)
+ * @property {number} [x2] - End X (legacy format)
+ * @property {number} [y2] - End Y (legacy format)
  * @property {string} color - Arrow color
  */
 

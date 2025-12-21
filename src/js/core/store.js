@@ -12,6 +12,7 @@ export const Store = {
     setMode(mode) {
         state.mode = mode;
         state.arrowStart = null;
+        state.arrowPoints = [];
         state.previewArrow = null;
 
         // Notify UI about mode change (In a React/Vue world this would be computed)

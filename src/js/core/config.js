@@ -28,8 +28,8 @@ export const CONFIG = {
     // ============================================
     // BALÓN
     // ============================================
-    BALL_RX: 24,                 // Radio X del balón (elipse)
-    BALL_RY: 16,                 // Radio Y del balón (elipse)
+    BALL_RX: 12,                 // Radio X del balón (elipse)
+    BALL_RY: 8,                 // Radio Y del balón (elipse)
 
     // ============================================
     // ESCUDOS DE ENTRENAMIENTO

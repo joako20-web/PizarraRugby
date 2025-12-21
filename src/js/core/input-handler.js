@@ -46,6 +46,15 @@ export const InputHandler = {
 
             // Global keys
             if (e.key === "Escape") {
+                // Cancel arrow creation if in progress
+                if ((state.mode === "draw" || state.mode === "kick") && (state.arrowPoints.length > 0 || state.arrowStart)) {
+                    state.arrowStart = null;
+                    state.arrowPoints = [];
+                    state.previewArrow = null;
+                    Renderer.drawFrame();
+                    return;
+                }
+
                 if (document.body.classList.contains('presentation-mode')) {
                     document.body.classList.remove('presentation-mode');
                     if (this.callbacks.handleResize) this.callbacks.handleResize();

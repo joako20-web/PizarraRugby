@@ -212,8 +212,28 @@ export const CanvasEvents = {
                         type: "players",
                         players: [p],
                         startPositions: [{ x: p.x, y: p.y }],
+                        players: [p],
+                        startPositions: [{ x: p.x, y: p.y }],
                         offsets: [{ dx: pos.x - p.x, dy: pos.y - p.y }]
                     };
+                }
+
+                // Ball Carrier Logic (Sticky Ball)
+                // Check if ball is "on" any of the dragged players
+                const f = Utils.getCurrentFrame();
+                const ball = f.ball;
+                // Find a carrier among the dragged players
+                const carrier = state.dragTarget.players.find(pl => {
+                    const dist = Math.hypot(pl.x - ball.x, pl.y - ball.y);
+                    // Use a slightly generous threshold (player radius + ball radius seems fair, or just radius)
+                    // Let's use 25px (approx player radius + leeway)
+                    return dist < 25;
+                });
+
+                if (carrier) {
+                    state.dragTarget.carryBall = true;
+                    state.dragTarget.ballOffset = { dx: carrier.x - ball.x, dy: carrier.y - ball.y };
+                    state.dragTarget.carrier = carrier;
                 }
 
                 Store.events.emit('selectionChanged'); // Explicitly notify if we bypassed parts of Store logic?
@@ -253,22 +273,63 @@ export const CanvasEvents = {
 
         // Modo flecha
         if (state.mode === "draw" || state.mode === "kick") {
-            if (!state.arrowStart) {
-                state.arrowStart = pos;
-            } else {
+            // Kick arrows use legacy format (2 points only, no multi-point support)
+            if (state.mode === "kick") {
+                if (!state.arrowStart) {
+                    state.arrowStart = pos;
+                } else {
+                    const f = Utils.getCurrentFrame();
+                    f.arrows.push({
+                        type: "kick",
+                        x1: state.arrowStart.x,
+                        y1: state.arrowStart.y,
+                        x2: pos.x,
+                        y2: pos.y,
+                        color: "yellow"
+                    });
+                    state.arrowStart = null;
+                    state.previewArrow = null;
+                    Renderer.drawFrame();
+                    History.push();
+                }
+                return;
+            }
+
+            // Normal arrows support multi-point (corners)
+            // Right-click finalizes arrow if in progress
+            if (e.button === 2 && state.arrowPoints.length > 0) {
                 const f = Utils.getCurrentFrame();
                 f.arrows.push({
-                    type: (state.mode === "kick") ? "kick" : "normal",
-                    x1: state.arrowStart.x,
-                    y1: state.arrowStart.y,
-                    x2: pos.x,
-                    y2: pos.y,
-                    color: (state.mode === "kick") ? "yellow" : "white"
+                    type: "normal",
+                    points: [...state.arrowPoints],
+                    color: "white"
                 });
                 state.arrowStart = null;
+                state.arrowPoints = [];
                 state.previewArrow = null;
                 Renderer.drawFrame();
                 History.push();
+                return;
+            }
+
+            if (!state.arrowStart) {
+                // First click: start arrow
+                state.arrowStart = pos;
+                state.arrowPoints = [{ x: pos.x, y: pos.y }];
+            } else {
+                // Subsequent clicks: add point with delay to detect double-click
+                // Clear any pending timeout
+                if (state.clickTimeout) {
+                    clearTimeout(state.clickTimeout);
+                    state.clickTimeout = null;
+                }
+
+                // Set timeout to add point (will be cancelled if double-click happens)
+                state.clickTimeout = setTimeout(() => {
+                    state.arrowPoints.push({ x: pos.x, y: pos.y });
+                    Renderer.drawFrame();
+                    state.clickTimeout = null;
+                }, 250); // 250ms delay to detect double-click
             }
         } else if (state.mode === "scrum") {
             await Scrum.place(pos.x, pos.y);
@@ -338,6 +399,14 @@ export const CanvasEvents = {
                     pl.x = pos.x - offsets[i].dx;
                     pl.y = pos.y - offsets[i].dy;
                 });
+
+                // Move Ball if carried
+                if (state.dragTarget.carryBall && state.dragTarget.carrier) {
+                    const f = Utils.getCurrentFrame();
+                    const carrier = state.dragTarget.carrier;
+                    f.ball.x = carrier.x - state.dragTarget.ballOffset.dx;
+                    f.ball.y = carrier.y - state.dragTarget.ballOffset.dy;
+                }
             }
             Renderer.drawFrame();
             return;
@@ -366,14 +435,25 @@ export const CanvasEvents = {
 
         // Preview flecha
         if ((state.mode === "draw" || state.mode === "kick") && state.arrowStart) {
-            state.previewArrow = {
-                type: (state.mode === "kick") ? "kick" : "normal",
-                x1: state.arrowStart.x,
-                y1: state.arrowStart.y,
-                x2: pos.x,
-                y2: pos.y,
-                color: "rgba(255,255,255,0.5)"
-            };
+            if (state.mode === "kick") {
+                // Kick arrows use legacy format
+                state.previewArrow = {
+                    type: "kick",
+                    x1: state.arrowStart.x,
+                    y1: state.arrowStart.y,
+                    x2: pos.x,
+                    y2: pos.y,
+                    color: "rgba(255,255,0,0.5)"
+                };
+            } else {
+                // Normal arrows use multi-point format
+                const previewPoints = [...state.arrowPoints, { x: pos.x, y: pos.y }];
+                state.previewArrow = {
+                    type: "normal",
+                    points: previewPoints,
+                    color: "rgba(255,255,255,0.5)"
+                };
+            }
             Renderer.drawFrame();
         }
 
@@ -502,6 +582,37 @@ export const CanvasEvents = {
     async handleDoubleClick(e) {
         const pos = Utils.canvasPos(e);
         const f = Utils.getCurrentFrame();
+
+        // If creating a normal arrow (not kick), finalize it on double-click
+        if (state.mode === "draw" && state.arrowPoints.length > 0) {
+            // Clear any pending single-click add (which might have been set by the first click of the dbl-click)
+            if (state.clickTimeout) {
+                clearTimeout(state.clickTimeout);
+                state.clickTimeout = null;
+            }
+
+            // Ensure the final point (where double-click happened) is added
+            const lastPoint = state.arrowPoints[state.arrowPoints.length - 1];
+            const dist = Math.hypot(pos.x - lastPoint.x, pos.y - lastPoint.y);
+
+            // Add point if it's distinct enough from the last confirmed point
+            if (dist > 5) {
+                state.arrowPoints.push({ x: pos.x, y: pos.y });
+            }
+
+            // Finalize with existing points
+            f.arrows.push({
+                type: "normal",
+                points: [...state.arrowPoints],
+                color: "white"
+            });
+            state.arrowStart = null;
+            state.arrowPoints = [];
+            state.previewArrow = null;
+            Renderer.drawFrame();
+            History.push();
+            return;
+        }
 
         // Verificar si se hizo doble clic en un texto
         const t = HitTest.findTextAt(pos.x, pos.y);

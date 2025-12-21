@@ -29,9 +29,11 @@ export const state = {
 
     // Flechas y Dibujo Libre
     arrowStart: null,
+    arrowPoints: [], // Array of points for multi-point arrows in progress
     previewArrow: null,
     currentPath: null,
     kickArcHeight: CONFIG.KICK_ARC_HEIGHT,
+    clickTimeout: null, // For detecting double-clicks
 
     // Zonas
     zones: [],

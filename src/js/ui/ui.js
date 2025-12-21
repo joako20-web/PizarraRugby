@@ -93,6 +93,68 @@ export const UI = {
             }
         }
 
+        // 2. Button Positioning and Icons
+        const toolsBtn = document.getElementById("mobile-menu-btn");
+        const animBtn = document.getElementById("mobile-right-menu-btn");
+        const closeToolsBtn = document.getElementById("close-sidebar-btn");
+        const closeAnimBtn = document.getElementById("close-right-panel-btn");
+
+        // Helper to update Close Button Icon
+        const setCloseIcon = (btn, direction) => {
+            if (!btn) return;
+            const svg = btn.querySelector("svg");
+            if (svg) {
+                // Chevron Left: M15 19l-7-7 7-7
+                // Chevron Right: M9 5l7 7-7 7
+                const path = direction === 'left' ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7";
+                svg.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" d="${path}" />`;
+            }
+        };
+
+        // Helper to update Open Button Position
+        const setOpenBtnPos = (btn, side) => {
+            if (!btn) return;
+            if (side === 'left') {
+                btn.classList.add("mobile-nav-btn--left");
+                btn.classList.remove("mobile-nav-btn--right");
+            } else {
+                btn.classList.add("mobile-nav-btn--right");
+                btn.classList.remove("mobile-nav-btn--left");
+            }
+        };
+
+        const toolsPos = ui.toolsPanelPosition || 'left';
+        const animPos = ui.animationPanelPosition || 'right';
+
+        // Update Open Buttons classes
+        setOpenBtnPos(toolsBtn, toolsPos);
+        setOpenBtnPos(animBtn, animPos);
+
+        // Update Close Buttons icons based on where the panel IS
+        // If panel is LEFT, close button should point LEFT (<)
+        // If panel is RIGHT, close button should point RIGHT (>)
+        // ...Wait, standard UI pattern:
+        // Sidebar on Left -> Close button points LEFT (<) to collapse it into the left.
+        // Sidebar on Right -> Close button points RIGHT (>) to collapse it into the right.
+        setCloseIcon(closeToolsBtn, toolsPos);
+        setCloseIcon(closeAnimBtn, animPos);
+
+        // Handle Overlap (if both on same side)
+        if (toolsBtn && animBtn) {
+            // Reset tops
+            toolsBtn.style.top = "";
+            animBtn.style.top = "";
+
+            if (toolsPos === animPos) {
+                // Determine order. We established in Layout 1 that:
+                // If both LEFT: Tools(1), Anim(2). Tools is "outer" visually? 
+                // Let's just separate them vertically.
+                // Standard is 50%. Let's do 45% and 55%.
+                toolsBtn.style.top = "42%";
+                animBtn.style.top = "58%";
+            }
+        }
+
         // 2. Tool Visibility
         const toolMap = {
             move: "mode-move",

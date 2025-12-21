@@ -405,13 +405,35 @@ export const Renderer = {
         const isSelected = a === state.selectedArrow;
         targetCtx.strokeStyle = isSelected ? CONFIG.SELECTION_COLOR : "white";
         targetCtx.lineWidth = isSelected ? 4 : 3;
-        targetCtx.beginPath();
-        targetCtx.moveTo(a.x1, a.y1);
-        targetCtx.lineTo(a.x2, a.y2);
-        targetCtx.stroke();
 
-        const angle = Math.atan2(a.y2 - a.y1, a.x2 - a.x1);
-        this.drawArrowHead(a.x2, a.y2, angle, isSelected, targetCtx);
+        // Support both legacy format (x1,y1,x2,y2) and new multi-point format
+        if (a.points && a.points.length >= 2) {
+            // Multi-point arrow
+            targetCtx.beginPath();
+            targetCtx.moveTo(a.points[0].x, a.points[0].y);
+            for (let i = 1; i < a.points.length; i++) {
+                targetCtx.lineTo(a.points[i].x, a.points[i].y);
+            }
+            targetCtx.stroke();
+
+            // Draw arrow head at the last point
+            const lastIdx = a.points.length - 1;
+            const prevIdx = lastIdx - 1;
+            const angle = Math.atan2(
+                a.points[lastIdx].y - a.points[prevIdx].y,
+                a.points[lastIdx].x - a.points[prevIdx].x
+            );
+            this.drawArrowHead(a.points[lastIdx].x, a.points[lastIdx].y, angle, isSelected, targetCtx);
+        } else {
+            // Legacy format: simple line from (x1,y1) to (x2,y2)
+            targetCtx.beginPath();
+            targetCtx.moveTo(a.x1, a.y1);
+            targetCtx.lineTo(a.x2, a.y2);
+            targetCtx.stroke();
+
+            const angle = Math.atan2(a.y2 - a.y1, a.x2 - a.x1);
+            this.drawArrowHead(a.x2, a.y2, angle, isSelected, targetCtx);
+        }
     },
 
     drawKickArrow(a, targetCtx = ctx) {
