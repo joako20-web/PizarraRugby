@@ -105,6 +105,10 @@ export const SettingsUI = {
                         <svg class="icon icon--sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" /></svg>
                         ${I18n.t('settings_tab_layout')}
                     </button>
+                    <button class="settings-tab" data-tab="export" data-i18n="settings_tab_export">
+                        <svg class="icon icon--sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" /></svg>
+                        ${I18n.t('settings_tab_export')}
+                    </button>
                 </div>
                 <div id="settings-tab-content" class="settings-content">
                     <!-- Content injected here -->
@@ -127,8 +131,17 @@ export const SettingsUI = {
 
         const result = await promise;
 
-        if (result && this.currentTab === 'general') {
-            this.saveGeneralSettings();
+
+
+        if (result) {
+            if (this.currentTab === 'general') {
+                this.saveGeneralSettings();
+            } else if (this.currentTab === 'export') {
+                this.saveExportSettings();
+            } else if (this.currentTab === 'layout') {
+                // Layout saves immediately on change usually, but if we had pending changes...
+                // SettingsLayout.bindEvents saves immediately.
+            }
         }
     },
 
@@ -145,6 +158,9 @@ export const SettingsUI = {
         } else if (this.currentTab === 'layout') {
             container.innerHTML = SettingsLayout.render();
             SettingsLayout.bindEvents((newSettings) => this.save(newSettings));
+        } else if (this.currentTab === 'export') {
+            container.innerHTML = this.getExportHTML();
+            this.bindExportEvents();
         }
     },
 
@@ -156,6 +172,10 @@ export const SettingsUI = {
                     this.saveGeneralSettings();
                 }
 
+                if (this.currentTab === 'export') {
+                    this.saveExportSettings();
+                }
+
                 // UI Update
                 tabs.forEach(t => t.classList.remove('active'));
                 tab.classList.add('active');
@@ -164,6 +184,71 @@ export const SettingsUI = {
                 this.renderTabContent();
             };
         });
+    },
+
+    getExportHTML() {
+        const s = SETTINGS.EXPORT || { RESOLUTION: '2k', FPS: 60, BITRATE: 20 };
+        return `
+            <div style="display: flex; flex-direction: column; gap: 15px;">
+                <p style="font-size: 0.9rem; color: #888; margin-bottom: 10px;">
+                    ${I18n.t('settings_export_desc')}
+                </p>
+
+                <div class="form-group">
+                    <label>${I18n.t('settings_export_res')}</label>
+                    <select id="set-export-res" style="width:100%; height:40px;">
+                        <option value="current" ${s.RESOLUTION === 'current' ? 'selected' : ''}>${I18n.t('settings_export_res_current')}</option>
+                        <option value="1080p" ${s.RESOLUTION === '1080p' ? 'selected' : ''}>1080p (FHD)</option>
+                        <option value="2k" ${s.RESOLUTION === '2k' ? 'selected' : ''}>2K (QHD)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>${I18n.t('settings_export_fps')}</label>
+                    <select id="set-export-fps" style="width:100%; height:40px;">
+                        <option value="30" ${s.FPS === 30 ? 'selected' : ''}>30 FPS</option>
+                        <option value="60" ${s.FPS === 60 ? 'selected' : ''}>60 FPS (Fluido)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>${I18n.t('settings_export_bitrate')}: <span id="bitrate-val">${s.BITRATE} Mbps</span></label>
+                    <input type="range" id="set-export-bitrate" min="2" max="25" step="1" value="${Math.min(s.BITRATE, 25)}" style="width:100%;">
+                    <div style="display:flex; justify-content:space-between; font-size: 0.8rem; color:#666;">
+                        <span>Low (2)</span>
+                        <span>High (25)</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
+    bindExportEvents() {
+        const slider = document.getElementById("set-export-bitrate");
+        const val = document.getElementById("bitrate-val");
+        if (slider && val) {
+            slider.oninput = (e) => {
+                val.textContent = e.target.value + " Mbps";
+            };
+        }
+    },
+
+    saveExportSettings() {
+        const res = document.getElementById("set-export-res");
+        if (res) {
+            const fps = parseInt(document.getElementById("set-export-fps").value);
+            const bitrate = parseInt(document.getElementById("set-export-bitrate").value);
+
+            const newExport = {
+                RESOLUTION: res.value,
+                FPS: fps,
+                BITRATE: bitrate
+            };
+
+            // Merge with existing settings structure
+            const newSettings = { EXPORT: newExport };
+            this.save(newSettings);
+        }
     },
 
     getGeneralHTML() {

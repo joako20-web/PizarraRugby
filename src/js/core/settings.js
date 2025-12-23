@@ -27,6 +27,11 @@ export const SETTINGS = {
     BALL_SCALE: 1.0,
 
     SHORTCUTS: { ...DEFAULT_SHORTCUTS },
+    EXPORT: {
+        RESOLUTION: '2k', // 'current', '1080p', '2k', '4k'
+        FPS: 60,          // 30, 60
+        BITRATE: 20       // Mbps
+    },
     UI: {
         toolsPanelPosition: 'left',
         animationPanelPosition: 'right',

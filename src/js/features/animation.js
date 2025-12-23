@@ -85,11 +85,15 @@ export const Animation = {
         const dt = timestamp - this.lastTime;
         this.lastTime = timestamp;
 
+        // Cap dt to prevent jumps (max 100ms per frame)
+        // This solves the issue where animation speeds up after a freeze
+        const safeDt = Math.min(Math.max(0, dt), CONFIG.MAX_DELTA_TIME);
+
         // Duración total de la transición entre dos frames
         const duration = CONFIG.INTERP_DURATION / CONFIG.PLAYBACK_SPEED;
 
         // Avanzar el progreso
-        this.transitionProgress += dt / duration;
+        this.transitionProgress += safeDt / duration;
 
         // Manejar cambio de frame
         if (this.transitionProgress >= 1) {
@@ -191,28 +195,55 @@ export const Animation = {
         this._showExportOverlay(); // SHOW OVERLAY
 
         const fps = options.fps || 30;
-        const qualityMap = {
-            'standard': 5000000,
-            'high': 8000000,
-            'ultra': 15000000
-        };
-        const bitrate = qualityMap[options.quality] || 8000000;
+
+        let bitrate;
+        if (options.bitrate) {
+            bitrate = options.bitrate;
+        } else {
+            const qualityMap = {
+                'standard': 5000000,
+                'high': 8000000,
+                'ultra': 15000000
+            };
+            bitrate = qualityMap[options.quality] || 8000000;
+        }
 
         let targetWidth = canvas.width;
         let targetHeight = canvas.height;
 
         if (options.resolution !== 'current') {
-            const parts = options.resolution.split('x');
-            if (parts.length === 2) {
-                targetWidth = parseInt(parts[0]);
-                targetHeight = parseInt(parts[1]);
+            if (options.resolution === '4k') {
+                targetWidth = 3840;
+                targetHeight = 2160;
+            } else if (options.resolution === '2k') {
+                targetWidth = 2560;
+                targetHeight = 1440;
+            } else if (options.resolution === '1080p') {
+                targetWidth = 1920;
+                targetHeight = 1080;
+            } else if (options.resolution.includes('x')) {
+                const parts = options.resolution.split('x');
+                if (parts.length === 2) {
+                    targetWidth = parseInt(parts[0]);
+                    targetHeight = parseInt(parts[1]);
+                }
             }
         }
 
-        // Crear canvas para exportación (Offscreen)
+        // Crear canvas para exportación
         const exportCanvas = document.createElement('canvas');
         exportCanvas.width = targetWidth;
         exportCanvas.height = targetHeight;
+
+        // HACK: Append to DOM to prevent throttling of disconnected canvas
+        exportCanvas.style.position = 'fixed';
+        exportCanvas.style.left = '0';
+        exportCanvas.style.top = '0';
+        exportCanvas.style.opacity = '0.01';
+        exportCanvas.style.pointerEvents = 'none';
+        exportCanvas.style.zIndex = '-1000';
+        document.body.appendChild(exportCanvas);
+
         const exportCtx = exportCanvas.getContext('2d');
 
         // Dimensiones lógicas (originales) para el Renderer
@@ -242,6 +273,10 @@ export const Animation = {
         } else if (MediaRecorder.isTypeSupported("video/mp4")) {
             mimeType = "video/mp4";
             extension = ".mp4";
+        } else if (MediaRecorder.isTypeSupported("video/webm;codecs=h264")) {
+            // Prefer H.264 for WebM if available (faster encoding for 4K)
+            mimeType = "video/webm;codecs=h264";
+            extension = ".webm";
         } else if (MediaRecorder.isTypeSupported("video/webm;codecs=vp9")) {
             mimeType = "video/webm;codecs=vp9";
             extension = ".webm";
@@ -264,11 +299,20 @@ export const Animation = {
             videoBitsPerSecond: bitrate
         });
 
+        rec.onerror = (e) => {
+            console.error("MediaRecorder Error:", e);
+            document.body.removeChild(exportCanvas);
+            this._hideExportOverlay();
+            alert("Error durante la grabación: " + (e.error ? e.error.message : "Desconocido"));
+        };
+
         rec.ondataavailable = e => {
             if (e.data.size > 0) chunks.push(e.data);
         };
 
         rec.onstop = () => {
+            document.body.removeChild(exportCanvas); // Cleanup
+
             const blob = new Blob(chunks, { type: mimeType });
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
@@ -285,13 +329,35 @@ export const Animation = {
             Notificacion.show(I18n.t ? I18n.t('export_success') : "Exportación completada exitosamente.");
         };
 
-        rec.start();
+        rec.start(1000); // 1s chunks to prevent OOM
+
+        // ============================================
+        // OPTIMIZATION: Cache Static Pitch
+        // ============================================
+        const pitchCacheCanvas = document.createElement('canvas');
+        pitchCacheCanvas.width = targetWidth;
+        pitchCacheCanvas.height = targetHeight;
+        const pitchCacheCtx = pitchCacheCanvas.getContext('2d');
+
+        // Render pitch ONCE to cache
+        // We need to setup context transform similar to exportCtx
+        pitchCacheCtx.fillStyle = "black";
+        pitchCacheCtx.fillRect(0, 0, targetWidth, targetHeight);
+        pitchCacheCtx.translate(offsetX, offsetY);
+        pitchCacheCtx.scale(scale, scale);
+
+        Renderer.drawPitch(pitchCacheCtx, logicalW, logicalH);
 
         const drawExportFrame = (frameOrA, b, t) => {
             if (b === undefined) {
-                Renderer.drawFrame(exportCtx, logicalW, logicalH);
+                // Single frame (pauses)
+                // We fake "interpolated" call to use our optimized cache
+                // Or we update drawFrame? drawFrame doesn't support cache arg yet.
+                // Let's us drawInterpolatedFrame with t=0? 
+                // Wait, drawInterpolatedFrame handles t=0 logic mostly.
+                Renderer.drawInterpolatedFrame(frameOrA, frameOrA, 0, exportCtx, logicalW, logicalH, pitchCacheCanvas);
             } else {
-                Renderer.drawInterpolatedFrame(frameOrA, b, t, exportCtx, logicalW, logicalH);
+                Renderer.drawInterpolatedFrame(frameOrA, b, t, exportCtx, logicalW, logicalH, pitchCacheCanvas);
             }
         };
 
@@ -304,8 +370,27 @@ export const Animation = {
         const waitNextFrame = async () => {
             nextFrameTime += frameInterval;
             const now = performance.now();
-            const delay = Math.max(0, nextFrameTime - now);
-            await new Promise(r => setTimeout(r, delay));
+            let delay = nextFrameTime - now;
+
+            // If we are significantly behind (more than 1 frame), we shouldn't try to catch up
+            // by skipping frames, as that causes "teleporting".
+            // We also shouldn't hammer the CPU without yielding.
+            // requestAnimationFrame is the smoothest way to yield to the browser's compositor/media engine.
+
+            if (delay < 5) {
+                // If we have less than 5ms buffer (or are late), just wait for next RAF.
+                // This ensures we yield fully.
+                await new Promise(r => requestAnimationFrame(r));
+            } else {
+                // We are ahead of time, wait precisely using timeout then RAF?
+                // Just setTimeout is fine for staying in sync with wall clock, 
+                // but RAF is better for smoothness.
+                // Let's combine: wait most of the time, then RAF.
+                if (delay > 16) {
+                    await new Promise(r => setTimeout(r, delay - 10));
+                }
+                await new Promise(r => requestAnimationFrame(r));
+            }
         };
 
         // Estimación de frames totales para la barra de progreso

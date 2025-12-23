@@ -728,13 +728,24 @@ export const Renderer = {
     },
 
     // === Animation Interpolation ===
-    drawInterpolatedFrame(a, b, t, targetCtx = ctx, width, height) {
+    drawInterpolatedFrame(a, b, t, targetCtx = ctx, width, height, pitchImage = null) {
         // En frames interpolados también usamos la optimización del drawPitch
         // 1. Fondo
         const w = width || targetCtx.canvas.width;
         const h = height || targetCtx.canvas.height;
-        targetCtx.clearRect(0, 0, w, h);
-        this.drawPitch(targetCtx, width, height);
+        if (pitchImage) {
+            // "pitchImage" is a pre-rendered opaque background (usually 4K/scaled).
+            // It includes the field, static elements, and potential black bars.
+            // We must draw it in SCREEN SPACE (Identity transform) to avoid applying the context's scale twice.
+            targetCtx.save();
+            targetCtx.setTransform(1, 0, 0, 1, 0, 0);
+            targetCtx.clearRect(0, 0, targetCtx.canvas.width, targetCtx.canvas.height);
+            targetCtx.drawImage(pitchImage, 0, 0);
+            targetCtx.restore();
+        } else {
+            targetCtx.clearRect(0, 0, w, h);
+            this.drawPitch(targetCtx, width, height);
+        }
 
         // 2. Elementos estáticos intermedios (zonas)
         this.drawZones(targetCtx);
