@@ -19,6 +19,7 @@ import { ExportUI } from "./ui/export-ui.js";
 
 import { InputHandler } from "./core/input-handler.js";
 import { Store } from "./core/store.js";
+import { Playbook } from './features/playbook.js';
 
 // CSS Imports
 import '../css/base/variables.css';
@@ -596,6 +597,14 @@ function init() {
     updateButtonTooltips();
     window.addEventListener('shortcuts-changed', () => updateButtonTooltips());
 
+    // Evento personalizado para actualizar UI de campo desde módulos (e.g. Formations)
+    window.addEventListener('field-config-changed', () => {
+        updateFieldTypeButtons();
+        updateFieldConfigInfo();
+        Formations.updateSelector(); // Filter formations for new field
+        Renderer.drawFrame(); // Redibujar campo nuevo
+    });
+
     // Configurar callback de restauración
     History.onStateRestored = () => {
         updateFieldTypeButtons();
@@ -607,6 +616,28 @@ function init() {
 
     History.init(); // Iniciar historial con estado base (y restaurar si existe)
     initEvents();
+
+    // --- PLAYBOOK EVENTS (Injected here to ensure binding) ---
+    const btnOpenLib = document.getElementById('open-library-btn');
+    if (btnOpenLib) {
+        btnOpenLib.onclick = (e) => {
+            e.stopPropagation(); // Prevent propagation just in case
+            Playbook.openLibrary();
+        };
+    } else {
+        console.warn("Playbook Button 'open-library-btn' NOT FOUND");
+    }
+
+    const btnSavePlay = document.getElementById('save-play-btn');
+    if (btnSavePlay) {
+        btnSavePlay.onclick = (e) => {
+            e.stopPropagation();
+            Playbook.saveCurrentPlay();
+        };
+    } else {
+        console.warn("Playbook Button 'save-play-btn' NOT FOUND");
+    }
+    // -------------------------------------------------------
 
     // Ajustar tamaño inicial para móviles y desktop (con pequeño un delay para asegurar layout)
     setTimeout(handleResize, 100);

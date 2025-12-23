@@ -4,6 +4,7 @@ import { Popup } from '../ui/popup.js';
 import { Renderer } from '../renderer/renderer.js';
 import { Players } from './players.js';
 import { I18n } from '../core/i18n.js';
+import { SETTINGS } from '../core/settings.js';
 
 
 // ==============================
@@ -39,11 +40,66 @@ export const Formations = {
             return;
         }
 
+        // Capture Clean Thumbnail (No Trails, Full Field)
+        let previewImage = null;
+        try {
+            const canvas = document.getElementById('pitch');
+            if (canvas) {
+                // 1. Temp High-Res Canvas (Match source size to use absolute coords)
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = canvas.width;
+                tempCanvas.height = canvas.height;
+                const tCtx = tempCanvas.getContext('2d');
+
+                // 2. Draw Pitch Only (Clean Background)
+                Renderer.drawPitch(tCtx);
+
+                // 3. Draw Players Only (Manual loop to skip trails/arrows)
+                const isMobile = canvas.width <= 1024;
+                const baseScale = isMobile ? 0.6 : 1.0;
+
+                visiblePlayers.forEach(p => {
+                    // Responsive Radius Logic
+                    let radius = (state.fieldConfig.type === "full" && state.fieldConfig.orientation === "horizontal" && !isMobile)
+                        ? p.radius * 1.2
+                        : p.radius;
+                    radius *= (SETTINGS.PLAYER_SCALE || 1) * baseScale;
+
+                    // Draw Circle
+                    tCtx.beginPath();
+                    tCtx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+                    tCtx.fillStyle = p.team === "A" ? (SETTINGS.TEAM_A_COLOR || "#2563eb") : (SETTINGS.TEAM_B_COLOR || "#ef4444");
+                    tCtx.fill();
+
+                    // Draw Number
+                    if (SETTINGS.SHOW_NUMBERS) {
+                        tCtx.fillStyle = "white";
+                        tCtx.font = "bold 14px Arial";
+                        tCtx.textAlign = "center";
+                        tCtx.textBaseline = "middle";
+                        tCtx.fillText(p.number, p.x, p.y);
+                    }
+                });
+
+                // 4. Scale down to Thumbnail
+                const thumbW = 800;
+                const thumbH = 450;
+                const thumbCanvas = document.createElement('canvas');
+                thumbCanvas.width = thumbW;
+                thumbCanvas.height = thumbH;
+                const ctx = thumbCanvas.getContext('2d');
+
+                // Draw temp (High Res) -> Thumb (Scaled to fit)
+                ctx.drawImage(tempCanvas, 0, 0, thumbW, thumbH);
+                previewImage = thumbCanvas.toDataURL('image/jpeg', 0.8);
+            }
+        } catch (e) { console.error("Thumbnail error", e); }
+
         // Guardar solo las posiciones de jugadores visibles
         const formation = {
             name: name.trim(),
             date: new Date().toISOString(),
-            // image: canvas.toDataURL('image/jpeg', 0.4), // Removed by user request
+            image: previewImage, // Stored here
             fieldConfig: { ...state.fieldConfig },
             players: visiblePlayers.map(p => ({
                 team: p.team,
@@ -80,42 +136,28 @@ export const Formations = {
 
         const f = Utils.getCurrentFrame();
 
-        // Restaurar configuración del campo si existe
+        // Validar configuración del campo (Strict Mode requested by user)
         if (formation.fieldConfig) {
-            state.fieldConfig = { ...formation.fieldConfig };
+            const current = state.fieldConfig;
+            const target = formation.fieldConfig;
+            let match = false;
 
-            // OJO: La actualización de la UI del campo se realizará mediante eventos o callbacks si es necesario.
-            // Por ahora, asumimos que app.js o el módulo principal manejará la UI de los botones si cambiamos el estado.
-            // Para mantener el desacoplamiento, idealmente dispararíamos un evento o tendríamos una función de UI update.
-            // Dado el enfoque "no code changes", mantenemos la lógica pero debemos exponer una forma de actualizar la UI de los botones en app.js.
-            // Sin embargo, como estamos moviendo esto a un módulo, no podemos acceder directamente a funciones internas de app.js.
-            // Solución: Dejaremos que Formations actualice el estado y que app.js exponga una función pública o maneje el cambio.
-            // PERO: El código original manipulaba el DOM directamente aquí. Lo mantendré para compatibilidad.
-
-            // Actualizar UI de configuración del campo
-            const fullBtn = document.getElementById("field-type-full");
-            const halfBtn = document.getElementById("field-type-half");
-
-            if (state.fieldConfig.type === "full") {
-                fullBtn.classList.add("is-active");
-                halfBtn.classList.remove("is-active");
-            } else {
-                fullBtn.classList.remove("is-active");
-                halfBtn.classList.add("is-active");
+            if (current.type === target.type) {
+                if (current.type === 'full' || current.type === 'vertical') {
+                    match = current.orientation === target.orientation;
+                } else if (current.type === 'half') {
+                    match = current.halfSide === target.halfSide;
+                }
             }
 
-            // Actualizar info de configuración
-            const info = document.getElementById("field-config-info");
-            const cfg = state.fieldConfig;
-            let text = "";
-
-            if (cfg.type === "full") {
-                text = cfg.orientation === "horizontal" ? "Campo Completo - Horizontal" : "Campo Completo - Vertical";
-            } else {
-                text = cfg.halfSide === "top" ? "Mitad de Campo - Superior" : "Mitad de Campo - Inferior";
+            if (!match) {
+                await Popup.show({
+                    title: I18n.t('error_title') || "Error",
+                    html: (I18n.t('error_formation_field_mismatch') || "Esta formación es para otro tipo de campo o orientación."),
+                    showCancel: false
+                });
+                return; // Stop loading
             }
-
-            info.textContent = text;
         }
 
         // Ocultar todos los jugadores primero
@@ -141,17 +183,17 @@ export const Formations = {
         });
     },
 
-    async delete(name) {
-        const confirmed = await Popup.show({
-            title: I18n.t('delete_formation_title'),
-            html: `${I18n.t('delete_formation_msg')} "<strong>${name}</strong>"`,
-            showCancel: true,
-            okText: I18n.t('btn_delete'),
-            cancelText: I18n.t('btn_cancel')
-        });
+    async delete(name, force = false) {
+        if (!force) {
+            const confirmed = await Popup.show({
+                title: I18n.t('delete_formation_title'),
+                html: `${I18n.t('delete_formation_msg')} "<strong>${name}</strong>"`,
+                showCancel: true,
+                okText: I18n.t('btn_delete'),
+                cancelText: I18n.t('btn_cancel')
+            });
 
-        if (!confirmed) {
-            return;
+            if (!confirmed) return;
         }
 
         const formations = this.getAll();
@@ -159,15 +201,20 @@ export const Formations = {
         localStorage.setItem(this.STORAGE_KEY, JSON.stringify(formations));
 
         this.updateSelector();
-        await Popup.show({
-            title: "Eliminado",
-            html: `Formación "<strong>${name}</strong>" eliminada correctamente`,
-            showCancel: false
-        });
+
+        if (!force) {
+            await Popup.show({
+                title: "Eliminado",
+                html: `Formación "<strong>${name}</strong>" eliminada correctamente`,
+                showCancel: false
+            });
+        }
     },
 
     updateSelector() {
         const selector = document.getElementById('formation-selector');
+        if (!selector) return; // Exit if element is removed from DOM
+
         const formations = this.getAll();
         const names = Object.keys(formations).sort();
         const currentConfig = state.fieldConfig;

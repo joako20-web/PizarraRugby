@@ -316,24 +316,36 @@ export const InputHandler = {
         });
 
         // --- Formations ---
-        document.getElementById("save-formation-btn").onclick = async () => {
-            const name = await Popup.prompt(I18n.t('prompt_formation_name'), I18n.t('prompt_formation_placeholder'));
-            if (name) await Formations.save(name);
-        };
-        document.getElementById("load-formation-btn").onclick = async () => {
-            const selector = document.getElementById("formation-selector");
-            if (selector.value) await Formations.load(selector.value);
-            else await Popup.show({ title: I18n.t('alert_select_formation'), html: I18n.t('alert_select_formation_desc'), showCancel: false });
-        };
-        document.getElementById("delete-formation-btn").onclick = async () => {
-            const selector = document.getElementById("formation-selector");
-            if (selector.value) {
-                await Formations.delete(selector.value);
-                selector.value = "";
-            } else {
-                await Popup.show({ title: I18n.t('alert_select_formation'), html: I18n.t('alert_select_formation_desc'), showCancel: false });
-            }
-        };
+        // --- Formations (Legacy / Optional) ---
+        const btnSaveForm = document.getElementById("save-formation-btn");
+        if (btnSaveForm) {
+            btnSaveForm.onclick = async () => {
+                const name = await Popup.prompt(I18n.t('prompt_formation_name'), I18n.t('prompt_formation_placeholder'));
+                if (name) await Formations.save(name);
+            };
+        }
+
+        const btnLoadForm = document.getElementById("load-formation-btn");
+        if (btnLoadForm) {
+            btnLoadForm.onclick = async () => {
+                const selector = document.getElementById("formation-selector");
+                if (selector.value) await Formations.load(selector.value);
+                else await Popup.show({ title: I18n.t('alert_select_formation'), html: I18n.t('alert_select_formation_desc'), showCancel: false });
+            };
+        }
+
+        const btnDelForm = document.getElementById("delete-formation-btn");
+        if (btnDelForm) {
+            btnDelForm.onclick = async () => {
+                const selector = document.getElementById("formation-selector");
+                if (selector.value) {
+                    await Formations.delete(selector.value);
+                    selector.value = "";
+                } else {
+                    await Popup.show({ title: I18n.t('alert_select_formation'), html: I18n.t('alert_select_formation_desc'), showCancel: false });
+                }
+            };
+        }
 
         // --- Teams ---
         document.getElementById("show-team-a").onclick = () => Players.showTeam("A");

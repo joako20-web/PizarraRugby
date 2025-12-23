@@ -212,8 +212,6 @@ export const CanvasEvents = {
                         type: "players",
                         players: [p],
                         startPositions: [{ x: p.x, y: p.y }],
-                        players: [p],
-                        startPositions: [{ x: p.x, y: p.y }],
                         offsets: [{ dx: pos.x - p.x, dy: pos.y - p.y }]
                     };
                 }

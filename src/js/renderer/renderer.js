@@ -128,13 +128,13 @@ export const Renderer = {
         const lines = {
             xTryLeft,
             xTryRight,
-            x5L: xTryLeft + mainField * 0.05,
-            x22L: xTryLeft + mainField * 0.22,
-            xMid: xTryLeft + mainField * 0.50,
-            x10L: xTryLeft + mainField * 0.40,
-            x10R: xTryLeft + mainField * 0.60,
-            x22R: xTryLeft + mainField * 0.78,
-            x5R: xTryLeft + mainField * 0.95
+            x5L: xTryLeft + mainField * CONFIG.FIELD_LINES.FIVE_METER,
+            x22L: xTryLeft + mainField * CONFIG.FIELD_LINES.TWENTY_TWO,
+            xMid: xTryLeft + mainField * CONFIG.FIELD_LINES.MIDFIELD,
+            x10L: xTryLeft + mainField * CONFIG.FIELD_LINES.TEN_METER_LEFT,
+            x10R: xTryLeft + mainField * CONFIG.FIELD_LINES.TEN_METER_RIGHT,
+            x22R: xTryLeft + mainField * CONFIG.FIELD_LINES.TWENTY_TWO_RIGHT,
+            x5R: xTryLeft + mainField * CONFIG.FIELD_LINES.FIVE_METER_RIGHT
         };
 
         const drawVertical = (x, dash = [], width = 2) => {
@@ -217,13 +217,13 @@ export const Renderer = {
         const lines = {
             yTryTop,
             yTryBottom,
-            y5T: yTryTop + mainField * 0.05,
-            y22T: yTryTop + mainField * 0.22,
-            yMid: yTryTop + mainField * 0.50,
-            y10T: yTryTop + mainField * 0.40,
-            y10B: yTryTop + mainField * 0.60,
-            y22B: yTryTop + mainField * 0.78,
-            y5B: yTryTop + mainField * 0.95
+            y5T: yTryTop + mainField * CONFIG.FIELD_LINES.FIVE_METER,
+            y22T: yTryTop + mainField * CONFIG.FIELD_LINES.TWENTY_TWO,
+            yMid: yTryTop + mainField * CONFIG.FIELD_LINES.MIDFIELD,
+            y10T: yTryTop + mainField * CONFIG.FIELD_LINES.TEN_METER_LEFT,
+            y10B: yTryTop + mainField * CONFIG.FIELD_LINES.TEN_METER_RIGHT,
+            y22B: yTryTop + mainField * CONFIG.FIELD_LINES.TWENTY_TWO_RIGHT,
+            y5B: yTryTop + mainField * CONFIG.FIELD_LINES.FIVE_METER_RIGHT
         };
 
         const drawHorizontal = (y, dash = [], width = 2) => {

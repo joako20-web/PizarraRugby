@@ -52,7 +52,10 @@ export const es = {
 
     // Sidebar - Formaciones
     "panel_formations_title": "Formaciones",
+    "panel_library_title": "Biblioteca",
     "btn_save_formation": "Guardar Formación",
+    "btn_open_library": "Abrir Biblioteca",
+    "btn_save_play": "Guardar Jugada",
     "select_formation_placeholder": "-- Seleccionar formación --",
     "btn_load_formation": "Cargar",
     "btn_delete_formation": "Eliminar",
@@ -182,5 +185,19 @@ export const es = {
     // Settings Reset
     "settings_reset_confirm_title": "¿Restaurar valores de fábrica?",
     "settings_reset_confirm_text": "Se restablecerán todos los ajustes, nombres y atajos.",
-    "settings_reset_confirm_btn": "Restaurar"
+    "settings_reset_confirm_btn": "Restaurar",
+
+    // Playbook
+    "prompt_play_name": "Nombre de la jugada",
+    "play_start_default_name": "Nueva Jugada",
+    "playbook_title": "Librería de Jugadas",
+    "playbook_saved_title": "Guardado",
+    "playbook_saved_msg": "Jugada \"<strong>{name}</strong>\" guardada en la librería.",
+    "playbook_error_title": "Error",
+    "playbook_error_msg": "No se pudo guardar la jugada.",
+    "playbook_delete_confirm": "Eliminar",
+    "playbook_delete_confirm_msg": "¿Seguro que quieres borrar este elemento de la librería?",
+    "playbook_no_plays": "No hay jugadas guardadas.",
+    "playbook_btn_load": "Cargar",
+    "playbook_btn_delete": "Del"
 };

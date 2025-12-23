@@ -182,5 +182,50 @@ export const en = {
     // Settings Reset
     "settings_reset_confirm_title": "Restore Factory Defaults?",
     "settings_reset_confirm_text": "All settings, names, and shortcuts will be reset.",
-    "settings_reset_confirm_btn": "Restore"
+    "settings_reset_confirm_btn": "Restore",
+
+    // Sidebar - Formations/Library
+    "panel_formations_title": "Formations",
+    "panel_library_title": "Library",
+    "btn_save_formation": "Save Formation",
+    "btn_open_library": "Open Library",
+    "btn_save_play": "Save Play",
+    "select_formation_placeholder": "-- Select formation --",
+    "btn_load_formation": "Load",
+    "btn_delete_formation": "Delete",
+    "prompt_formation_name": "Formation Name",
+    "prompt_formation_placeholder": "Ex: Attack 1",
+    "alert_select_formation": "Select formation",
+    "alert_select_formation_desc": "Please select a formation from the list",
+    "action_show": "Show",
+    "action_hide": "Hide",
+
+    // Formations Logic
+    "error_title": "Error",
+    "error_no_formation_name": "Please enter a name for the formation.",
+    "error_no_visible_players": "No visible players to save.",
+    "formation_saved_title": "Formation Saved",
+    "formation_saved_msg": "Formation saved successfully:",
+    "formation_not_found": "Formation not found.",
+    "error_formation_field_mismatch": "This formation is designed for a different field type or orientation.",
+    "formation_loaded_title": "Loaded",
+    "formation_loaded_msg": "Formation loaded:",
+    "delete_formation_title": "Delete Formation",
+    "delete_formation_msg": "Are you sure you want to delete formation",
+    "btn_delete": "Delete",
+    "btn_cancel": "Cancel",
+
+    // Playbook
+    "prompt_play_name": "Play Name",
+    "play_start_default_name": "New Play",
+    "playbook_title": "Playbook Library",
+    "playbook_saved_title": "Saved",
+    "playbook_saved_msg": "Play \"<strong>{name}</strong>\" saved.",
+    "playbook_error_title": "Error",
+    "playbook_error_msg": "Could not save play.",
+    "playbook_delete_confirm": "Delete",
+    "playbook_delete_confirm_msg": "Are you sure you want to delete this item?",
+    "playbook_no_plays": "No saved plays.",
+    "playbook_btn_load": "Load",
+    "playbook_btn_delete": "Del"
 };

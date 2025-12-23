@@ -13,9 +13,18 @@ export const Popup = {
             const btnCancel = document.getElementById("popup-cancel");
             const btnOk = document.getElementById("popup-ok");
             const buttonsBox = document.getElementById("popup-buttons");
+            const modal = document.getElementById("popup-modal"); // Container for focus trap
+
+            // Save previous focus
+            const previousActiveElement = document.activeElement;
 
             modalTitle.textContent = title;
-            content.innerHTML = DOMPurify.sanitize(html);
+            if (html instanceof Node) {
+                content.innerHTML = '';
+                content.appendChild(html);
+            } else {
+                content.innerHTML = DOMPurify.sanitize(html);
+            }
 
             // Resetear el texto de los botones a los valores por defecto o personalizados
             btnOk.textContent = okText;
@@ -31,30 +40,77 @@ export const Popup = {
 
             overlay.classList.remove("is-hidden");
 
-            btnOk.onclick = () => {
-                overlay.classList.add("is-hidden");
-                resolve(true);
+            // --- FOCUS TRAP LOGIC ---
+            // Find all focusable elements
+            const focusableElementsString = 'a[href], area[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), iframe, object, embed, [tabindex="0"], [contenteditable]';
+            let focusableElements = modal.querySelectorAll(focusableElementsString);
+            focusableElements = Array.prototype.slice.call(focusableElements);
+
+            const firstTabStop = focusableElements[0];
+            const lastTabStop = focusableElements[focusableElements.length - 1];
+
+            // Set initial focus (to input if exists, or Cancel/OK)
+            // If prompt input exists, focus it
+            const input = modal.querySelector('input, textarea');
+            if (input) {
+                input.focus();
+            } else if (showCancel) {
+                btnCancel.focus();
+            } else {
+                btnOk.focus();
+            }
+
+            const trapTabKey = (e) => {
+                if (e.key === 'Tab') {
+                    // Shift + Tab
+                    if (e.shiftKey) {
+                        if (document.activeElement === firstTabStop) {
+                            e.preventDefault();
+                            lastTabStop.focus();
+                        }
+                    } else {
+                        // Tab
+                        if (document.activeElement === lastTabStop) {
+                            e.preventDefault();
+                            firstTabStop.focus();
+                        }
+                    }
+                }
+                if (e.key === 'Escape') {
+                    close(false);
+                }
             };
 
-            btnCancel.onclick = () => {
+            modal.addEventListener('keydown', trapTabKey);
+            // ------------------------
+
+            const close = (result) => {
                 overlay.classList.add("is-hidden");
-                resolve(false);
+                modal.removeEventListener('keydown', trapTabKey);
+                if (previousActiveElement) previousActiveElement.focus();
+                resolve(result);
             };
+
+            btnOk.onclick = () => close(true);
+            btnCancel.onclick = () => close(false);
 
             overlay.onclick = (e) => {
-                const popup = document.getElementById("popup-modal");
-                if (!popup.contains(e.target)) {
-                    overlay.classList.add("is-hidden");
-                    resolve(showCancel ? false : true);
+                if (!modal.contains(e.target)) {
+                    close(showCancel ? false : true);
                 }
             };
         });
     },
 
     async prompt(title, placeholder = "") {
+        const input = document.createElement('input');
+        input.id = 'popup-input';
+        input.type = 'text';
+        input.placeholder = placeholder;
+
         const ok = await this.show({
             title,
-            html: `<input id="popup-input" type="text" placeholder="${placeholder}">`
+            html: input
         });
 
         if (!ok) return null;

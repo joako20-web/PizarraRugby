@@ -120,6 +120,57 @@ export const Animation = {
 
     // Eliminar métodos obsoletos: _playLoop, _interpolateBetweenFrames
 
+    // ==============================
+    // EXPORT UI HELPERS
+    // ==============================
+    _showExportOverlay() {
+        let overlay = document.getElementById('export-overlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'export-overlay';
+            overlay.className = 'popup-overlay'; // Re-use popup overlay styles for consistent look background
+            overlay.style.display = 'flex';
+            overlay.style.flexDirection = 'column';
+            overlay.style.justifyContent = 'center';
+            overlay.style.alignItems = 'center';
+            overlay.style.zIndex = '9999';
+            overlay.style.backgroundColor = 'rgba(15, 23, 42, 0.9)'; // Darker background
+
+            overlay.innerHTML = `
+                <div style="background: var(--bg-panel); padding: 2rem; border-radius: 12px; text-align: center; border: 1px solid var(--border-color); box-shadow: var(--shadow-md); max-width: 400px; width: 90%;">
+                    <h3 style="margin-top: 0; color: var(--text-primary); margin-bottom: 1rem;">Exportando Video...</h3>
+                    <div id="export-spinner" style="border: 4px solid var(--bg-hover); border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 1rem;"></div>
+                    <div id="export-progress-text" style="color: var(--text-secondary); font-size: 0.9rem;">Inicializando...</div>
+                    <div style="width: 100%; background: var(--bg-hover); height: 6px; border-radius: 3px; margin-top: 1rem; overflow: hidden;">
+                        <div id="export-progress-bar" style="width: 0%; height: 100%; background: var(--primary); transition: width 0.3s ease;"></div>
+                    </div>
+                </div>
+                <style>
+                    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+                </style>
+            `;
+            document.body.appendChild(overlay);
+        }
+        overlay.classList.remove('is-hidden');
+    },
+
+    _hideExportOverlay() {
+        const overlay = document.getElementById('export-overlay');
+        if (overlay) {
+            overlay.classList.add('is-hidden');
+            setTimeout(() => {
+                if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+            }, 300);
+        }
+    },
+
+    _updateExportProgress(msg, percent) {
+        const text = document.getElementById('export-progress-text');
+        const bar = document.getElementById('export-progress-bar');
+        if (text) text.textContent = msg;
+        if (bar && percent !== undefined) bar.style.width = `${percent}%`;
+    },
+
     async exportAdvanced(options) {
         // options: { filename, resolution, fps, quality }
 
@@ -136,6 +187,8 @@ export const Animation = {
         const btnPause = document.getElementById('pause-animation');
         if (btnPlay) btnPlay.disabled = true;
         if (btnPause) btnPause.disabled = true;
+
+        this._showExportOverlay(); // SHOW OVERLAY
 
         const fps = options.fps || 30;
         const qualityMap = {
@@ -172,7 +225,6 @@ export const Animation = {
         const offsetY = (targetHeight - logicalH * scale) / 2;
 
         // Rellenar fondo negro (para las barras)
-        // NOTA: Lo hacemos antes de aplicar transformaciones
         exportCtx.fillStyle = "black";
         exportCtx.fillRect(0, 0, targetWidth, targetHeight);
 
@@ -204,9 +256,6 @@ export const Animation = {
             fileName += extension;
         }
 
-        // Crear stream desde el canvas de exportación
-        // NOTA: captureStream(fps) funciona mejor si el canvas se actualiza regularmente.
-        // Aquí actualizaremos el canvas manualmente en un bucle.
         const stream = exportCanvas.captureStream(fps);
         const chunks = [];
 
@@ -232,57 +281,69 @@ export const Animation = {
             if (btnPlay) btnPlay.disabled = false;
             if (btnPause) btnPause.disabled = false;
 
+            this._hideExportOverlay(); // HIDE OVERLAY
             Notificacion.show(I18n.t ? I18n.t('export_success') : "Exportación completada exitosamente.");
         };
 
         rec.start();
 
-        // Helper para dibujar en el contexto de exportación
         const drawExportFrame = (frameOrA, b, t) => {
             if (b === undefined) {
-                // Single frame (Frame object needs to be pre-processed if needed by Renderer? No, Renderer handles globals if needed but we pass ctx)
-                // Renderer.drawFrame usa Utils.getCurrentFrame() ?
-                // Renderer.drawFrame dibuja 'state.frames[state.currentFrameIndex]'.
-                // Así que debemos setear state.currentFrameIndex si queremos usar drawFrame.
-                // O mejor: Renderer.drawFrame debería dibujar el frame actual global.
-                // Pero para exportación estamos iterando.
-                // Necesitamos que Renderer pueda dibujar un frame arbitrario o setear el frame global.
-                // Setear el frame global es mas facil dado como está diseñado Renderer (depende de 'state').
                 Renderer.drawFrame(exportCtx, logicalW, logicalH);
             } else {
-                // Interpolated
                 Renderer.drawInterpolatedFrame(frameOrA, b, t, exportCtx, logicalW, logicalH);
             }
         };
 
-        // Bucle de Exportación Sincronizado
-        const frameDelay = 1000 / fps; // Duración de cada frame físico del video en ms
+        // ============================================
+        // TIMING LOOP WITH DRIFT CORRECTION
+        // ============================================
+        const frameInterval = 1000 / fps;
+        let nextFrameTime = performance.now();
 
-        // 1. Pausa Inicial (1s)
+        const waitNextFrame = async () => {
+            nextFrameTime += frameInterval;
+            const now = performance.now();
+            const delay = Math.max(0, nextFrameTime - now);
+            await new Promise(r => setTimeout(r, delay));
+        };
+
+        // Estimación de frames totales para la barra de progreso
+        const pauseFramesCount = Math.ceil(fps * 1.5);
+        const totalDuration = CONFIG.INTERP_DURATION / CONFIG.PLAYBACK_SPEED;
+        const transitionFrames = Math.ceil((totalDuration / 1000) * fps);
+        const totalFramesToProcess = (pauseFramesCount * 2) + ((state.frames.length - 1) * transitionFrames);
+        let processedFrames = 0;
+
+        const updateProgress = (phase) => {
+            processedFrames++;
+            const pct = Math.min(100, Math.round((processedFrames / totalFramesToProcess) * 100));
+            this._updateExportProgress(`${phase} (${pct}%)`, pct);
+        };
+
+
+        // 1. Pausa Inicial (1.5s)
         state.currentFrameIndex = 0;
-        this.updateUI(); // Actualizar UI principal para feedback visual
+        this.updateUI();
 
-        const startPauseFrames = fps * 1.5; // 1.5 segundos
-        for (let i = 0; i < startPauseFrames; i++) {
-            drawExportFrame(state.frames[0]); // frame 0
-            await new Promise(r => setTimeout(r, frameDelay));
+        for (let i = 0; i < pauseFramesCount; i++) {
+            drawExportFrame(state.frames[0]);
+            await waitNextFrame();
+            updateProgress("Inicio...");
         }
 
         // 2. Animación
-        const totalDuration = CONFIG.INTERP_DURATION / CONFIG.PLAYBACK_SPEED;
-        const videoFramesPerTransition = (totalDuration / 1000) * fps;
-
         for (let i = 0; i < state.frames.length - 1; i++) {
             const frameA = state.frames[i];
             const frameB = state.frames[i + 1];
 
-            // Actualizar índice para elementos estáticos dependientes del index
             state.currentFrameIndex = i;
 
-            for (let f = 0; f <= videoFramesPerTransition; f++) {
-                const t = f / videoFramesPerTransition;
+            for (let f = 0; f <= transitionFrames; f++) {
+                const t = f / transitionFrames;
                 drawExportFrame(frameA, frameB, t);
-                await new Promise(r => setTimeout(r, frameDelay));
+                await waitNextFrame();
+                updateProgress(`Procesando mov. ${i + 1}/${state.frames.length - 1}`);
             }
         }
 
@@ -290,28 +351,28 @@ export const Animation = {
         state.currentFrameIndex = state.frames.length - 1;
         this.updateUI();
 
-        const endPauseFrames = fps * 1.5;
         const lastFrame = state.frames[state.frames.length - 1];
 
-        // HACK: Ocultar trayectorias para el final limpio
+        // HACK: Ocultar trayectorias
         const originalTrails = lastFrame.trailLines;
         lastFrame.trailLines = [];
 
         try {
-            for (let i = 0; i < endPauseFrames; i++) {
+            for (let i = 0; i < pauseFramesCount; i++) {
+                drawExportFrame(lastFrame); // Render directly from object or state? Renderer uses state if not passed? No, we need consistent state. 
+                // Actually drawExportFrame function above calls Renderer.drawFrame() which uses GLOBAL state if we don't pass frame object?
+                // Renderer.drawFrame implementation: drawFrame(targetCtx, w, h) -> gets Utils.getCurrentFrame().
+                // We set state.currentFrameIndex = state.frames.length - 1; so Utils.getCurrentFrame() returns lastFrame.
+                // So calling drawExportFrame(lastFrame) is redundant argument-wise but harmless.
                 drawExportFrame(lastFrame);
-                await new Promise(r => setTimeout(r, frameDelay));
+                await waitNextFrame();
+                updateProgress("Finalizando...");
             }
         } finally {
-            // Restaurar trayectorias
             lastFrame.trailLines = originalTrails;
         }
 
         rec.stop();
-
-        // Restaurar render principal
-        // Esperamos un poco para que el stop se procese? No, rec.onstop es async.
-        // Pero el render principal debe volver a la normalidad.
         Renderer.drawFrame();
     },
 
