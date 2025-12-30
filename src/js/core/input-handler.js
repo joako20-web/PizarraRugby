@@ -283,6 +283,30 @@ export const InputHandler = {
             Renderer.drawFrame();
         };
 
+        document.getElementById("toggle-field-lines-btn").onclick = () => {
+            state.showFieldLines = !state.showFieldLines;
+            const btnText = document.getElementById("toggle-field-lines-text");
+            const iconVisible = document.getElementById("icon-lines-visible");
+            const iconHidden = document.getElementById("icon-lines-hidden");
+
+            if (btnText) {
+                btnText.textContent = state.showFieldLines ? "Ocultar Líneas" : "Mostrar Líneas";
+            }
+
+            if (iconVisible && iconHidden) {
+                if (state.showFieldLines) {
+                    iconVisible.classList.remove("is-hidden");
+                    iconHidden.classList.add("is-hidden");
+                } else {
+                    iconVisible.classList.add("is-hidden");
+                    iconHidden.classList.remove("is-hidden");
+                }
+            }
+
+            Renderer.invalidateBackground();
+            Renderer.drawFrame();
+        };
+
         // --- Modes ---
         document.getElementById("mode-move").onclick = () => Store.setMode("move");
         const btnFreehand = document.getElementById("mode-freehand");

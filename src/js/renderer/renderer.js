@@ -113,68 +113,70 @@ export const Renderer = {
         const xTryLeft = marginX + inGoal;
         const xTryRight = marginX + fieldWidth - inGoal;
 
-        // Try zones
-        targetCtx.fillStyle = "#064d24";
-        targetCtx.fillRect(marginX, marginY, inGoal, fieldHeight);
-        targetCtx.fillRect(xTryRight, marginY, inGoal, fieldHeight);
+        // Try zones (only if lines are visible)
+        if (state.showFieldLines) {
+            targetCtx.fillStyle = "#064d24";
+            targetCtx.fillRect(marginX, marginY, inGoal, fieldHeight);
+            targetCtx.fillRect(xTryRight, marginY, inGoal, fieldHeight);
 
-        // Field border
-        targetCtx.strokeStyle = "#ffffff";
-        targetCtx.lineWidth = 3;
-        targetCtx.strokeRect(marginX, marginY, fieldWidth, fieldHeight);
+            // Field border
+            targetCtx.strokeStyle = "#ffffff";
+            targetCtx.lineWidth = 3;
+            targetCtx.strokeRect(marginX, marginY, fieldWidth, fieldHeight);
 
-        // Vertical lines
-        const mainField = fieldWidth - inGoal * 2;
-        const lines = {
-            xTryLeft,
-            xTryRight,
-            x5L: xTryLeft + mainField * CONFIG.FIELD_LINES.FIVE_METER,
-            x22L: xTryLeft + mainField * CONFIG.FIELD_LINES.TWENTY_TWO,
-            xMid: xTryLeft + mainField * CONFIG.FIELD_LINES.MIDFIELD,
-            x10L: xTryLeft + mainField * CONFIG.FIELD_LINES.TEN_METER_LEFT,
-            x10R: xTryLeft + mainField * CONFIG.FIELD_LINES.TEN_METER_RIGHT,
-            x22R: xTryLeft + mainField * CONFIG.FIELD_LINES.TWENTY_TWO_RIGHT,
-            x5R: xTryLeft + mainField * CONFIG.FIELD_LINES.FIVE_METER_RIGHT
-        };
+            // Vertical lines
+            const mainField = fieldWidth - inGoal * 2;
+            const lines = {
+                xTryLeft,
+                xTryRight,
+                x5L: xTryLeft + mainField * CONFIG.FIELD_LINES.FIVE_METER,
+                x22L: xTryLeft + mainField * CONFIG.FIELD_LINES.TWENTY_TWO,
+                xMid: xTryLeft + mainField * CONFIG.FIELD_LINES.MIDFIELD,
+                x10L: xTryLeft + mainField * CONFIG.FIELD_LINES.TEN_METER_LEFT,
+                x10R: xTryLeft + mainField * CONFIG.FIELD_LINES.TEN_METER_RIGHT,
+                x22R: xTryLeft + mainField * CONFIG.FIELD_LINES.TWENTY_TWO_RIGHT,
+                x5R: xTryLeft + mainField * CONFIG.FIELD_LINES.FIVE_METER_RIGHT
+            };
 
-        const drawVertical = (x, dash = [], width = 2) => {
-            targetCtx.setLineDash(dash);
-            targetCtx.lineWidth = width;
-            targetCtx.beginPath();
-            targetCtx.moveTo(x, marginY);
-            targetCtx.lineTo(x, marginY + fieldHeight);
-            targetCtx.stroke();
-        };
+            const drawVertical = (x, dash = [], width = 2) => {
+                targetCtx.setLineDash(dash);
+                targetCtx.lineWidth = width;
+                targetCtx.beginPath();
+                targetCtx.moveTo(x, marginY);
+                targetCtx.lineTo(x, marginY + fieldHeight);
+                targetCtx.stroke();
+            };
 
-        drawVertical(lines.xTryLeft, [], 3);
-        drawVertical(lines.xTryRight, [], 3);
-        drawVertical(lines.x5L, [20, 14]);
-        drawVertical(lines.x5R, [20, 14]);
-        drawVertical(lines.x22L);
-        drawVertical(lines.x22R);
-        drawVertical(lines.x10L, [14, 10]);
-        drawVertical(lines.x10R, [14, 10]);
-        drawVertical(lines.xMid, [], 3);
+            drawVertical(lines.xTryLeft, [], 3);
+            drawVertical(lines.xTryRight, [], 3);
+            drawVertical(lines.x5L, [20, 14]);
+            drawVertical(lines.x5R, [20, 14]);
+            drawVertical(lines.x22L);
+            drawVertical(lines.x22R);
+            drawVertical(lines.x10L, [14, 10]);
+            drawVertical(lines.x10R, [14, 10]);
+            drawVertical(lines.xMid, [], 3);
 
-        // Horizontal lines
-        const yLines = [
-            marginY + fieldHeight * 0.05,
-            marginY + fieldHeight * 0.25,
-            marginY + fieldHeight * 0.75,
-            marginY + fieldHeight * 0.95
-        ];
+            // Horizontal lines
+            const yLines = [
+                marginY + fieldHeight * 0.05,
+                marginY + fieldHeight * 0.25,
+                marginY + fieldHeight * 0.75,
+                marginY + fieldHeight * 0.95
+            ];
 
-        targetCtx.setLineDash([20, 14]);
-        targetCtx.lineWidth = 2;
+            targetCtx.setLineDash([20, 14]);
+            targetCtx.lineWidth = 2;
 
-        yLines.forEach(y => {
-            targetCtx.beginPath();
-            targetCtx.moveTo(xTryLeft, y);
-            targetCtx.lineTo(xTryRight, y);
-            targetCtx.stroke();
-        });
+            yLines.forEach(y => {
+                targetCtx.beginPath();
+                targetCtx.moveTo(xTryLeft, y);
+                targetCtx.lineTo(xTryRight, y);
+                targetCtx.stroke();
+            });
 
-        targetCtx.setLineDash([]);
+            targetCtx.setLineDash([]);
+        }
     },
 
     drawFullFieldVertical(targetCtx, w, h) {
@@ -202,68 +204,70 @@ export const Renderer = {
         const yTryTop = marginY + inGoal;
         const yTryBottom = marginY + fieldHeight - inGoal;
 
-        // Try zones (top and bottom)
-        targetCtx.fillStyle = "#064d24";
-        targetCtx.fillRect(marginX, marginY, fieldWidth, inGoal);
-        targetCtx.fillRect(marginX, yTryBottom, fieldWidth, inGoal);
+        // Try zones (top and bottom) - only if lines are visible
+        if (state.showFieldLines) {
+            targetCtx.fillStyle = "#064d24";
+            targetCtx.fillRect(marginX, marginY, fieldWidth, inGoal);
+            targetCtx.fillRect(marginX, yTryBottom, fieldWidth, inGoal);
 
-        // Field border
-        targetCtx.strokeStyle = "#ffffff";
-        targetCtx.lineWidth = 3;
-        targetCtx.strokeRect(marginX, marginY, fieldWidth, fieldHeight);
+            // Field border
+            targetCtx.strokeStyle = "#ffffff";
+            targetCtx.lineWidth = 3;
+            targetCtx.strokeRect(marginX, marginY, fieldWidth, fieldHeight);
 
-        // Horizontal lines (now they run across the field)
-        const mainField = fieldHeight - inGoal * 2;
-        const lines = {
-            yTryTop,
-            yTryBottom,
-            y5T: yTryTop + mainField * CONFIG.FIELD_LINES.FIVE_METER,
-            y22T: yTryTop + mainField * CONFIG.FIELD_LINES.TWENTY_TWO,
-            yMid: yTryTop + mainField * CONFIG.FIELD_LINES.MIDFIELD,
-            y10T: yTryTop + mainField * CONFIG.FIELD_LINES.TEN_METER_LEFT,
-            y10B: yTryTop + mainField * CONFIG.FIELD_LINES.TEN_METER_RIGHT,
-            y22B: yTryTop + mainField * CONFIG.FIELD_LINES.TWENTY_TWO_RIGHT,
-            y5B: yTryTop + mainField * CONFIG.FIELD_LINES.FIVE_METER_RIGHT
-        };
+            // Horizontal lines (now they run across the field)
+            const mainField = fieldHeight - inGoal * 2;
+            const lines = {
+                yTryTop,
+                yTryBottom,
+                y5T: yTryTop + mainField * CONFIG.FIELD_LINES.FIVE_METER,
+                y22T: yTryTop + mainField * CONFIG.FIELD_LINES.TWENTY_TWO,
+                yMid: yTryTop + mainField * CONFIG.FIELD_LINES.MIDFIELD,
+                y10T: yTryTop + mainField * CONFIG.FIELD_LINES.TEN_METER_LEFT,
+                y10B: yTryTop + mainField * CONFIG.FIELD_LINES.TEN_METER_RIGHT,
+                y22B: yTryTop + mainField * CONFIG.FIELD_LINES.TWENTY_TWO_RIGHT,
+                y5B: yTryTop + mainField * CONFIG.FIELD_LINES.FIVE_METER_RIGHT
+            };
 
-        const drawHorizontal = (y, dash = [], width = 2) => {
-            targetCtx.setLineDash(dash);
-            targetCtx.lineWidth = width;
-            targetCtx.beginPath();
-            targetCtx.moveTo(marginX, y);
-            targetCtx.lineTo(marginX + fieldWidth, y);
-            targetCtx.stroke();
-        };
+            const drawHorizontal = (y, dash = [], width = 2) => {
+                targetCtx.setLineDash(dash);
+                targetCtx.lineWidth = width;
+                targetCtx.beginPath();
+                targetCtx.moveTo(marginX, y);
+                targetCtx.lineTo(marginX + fieldWidth, y);
+                targetCtx.stroke();
+            };
 
-        drawHorizontal(lines.yTryTop, [], 3);
-        drawHorizontal(lines.yTryBottom, [], 3);
-        drawHorizontal(lines.y5T, [20, 14]);
-        drawHorizontal(lines.y5B, [20, 14]);
-        drawHorizontal(lines.y22T);
-        drawHorizontal(lines.y22B);
-        drawHorizontal(lines.y10T, [14, 10]);
-        drawHorizontal(lines.y10B, [14, 10]);
-        drawHorizontal(lines.yMid, [], 3);
+            drawHorizontal(lines.yTryTop, [], 3);
+            drawHorizontal(lines.yTryBottom, [], 3);
+            drawHorizontal(lines.y5T, [20, 14]);
+            drawHorizontal(lines.y5B, [20, 14]);
+            drawHorizontal(lines.y22T);
+            drawHorizontal(lines.y22B);
+            drawHorizontal(lines.y10T, [14, 10]);
+            drawHorizontal(lines.y10B, [14, 10]);
+            drawHorizontal(lines.yMid, [], 3);
 
-        // Vertical lines (now perpendicular to play direction)
-        const xLines = [
-            marginX + fieldWidth * 0.05,
-            marginX + fieldWidth * 0.25,
-            marginX + fieldWidth * 0.75,
-            marginX + fieldWidth * 0.95
-        ];
+            // Vertical lines (now perpendicular to play direction)
+            const xLines = [
+                marginX + fieldWidth * 0.05,
+                marginX + fieldWidth * 0.25,
+                marginX + fieldWidth * 0.75,
+                marginX + fieldWidth * 0.95
+            ];
 
-        targetCtx.setLineDash([20, 14]);
-        targetCtx.lineWidth = 2;
+            targetCtx.setLineDash([20, 14]);
+            targetCtx.lineWidth = 2;
 
-        xLines.forEach(x => {
-            targetCtx.beginPath();
-            targetCtx.moveTo(x, yTryTop);
-            targetCtx.lineTo(x, yTryBottom);
-            targetCtx.stroke();
-        });
+            xLines.forEach(x => {
+                targetCtx.beginPath();
+                targetCtx.moveTo(x, yTryTop);
+                targetCtx.lineTo(x, yTryBottom);
+                targetCtx.stroke();
+            });
 
-        targetCtx.setLineDash([]);
+            targetCtx.setLineDash([]);
+        }
     },
 
     drawHalfField(targetCtx, w, h) {
@@ -283,83 +287,86 @@ export const Renderer = {
         const P_40 = 40 / 50;   // 0.80
 
 
-        // Dibujo de borde completo
-        targetCtx.strokeStyle = "#ffffff";
-        targetCtx.lineWidth = 3;
-        targetCtx.strokeRect(marginX, marginY, fieldWidth, fieldHeight);
+        // Only draw field lines if showFieldLines is true
+        if (state.showFieldLines) {
+            // Dibujo de borde completo
+            targetCtx.strokeStyle = "#ffffff";
+            targetCtx.lineWidth = 3;
+            targetCtx.strokeRect(marginX, marginY, fieldWidth, fieldHeight);
 
-        // Zona de ensayo
-        const inGoalHeight = fieldHeight * 0.12; // visual, no reglamentaria
-        targetCtx.fillStyle = "#064d24";
+            // Zona de ensayo
+            const inGoalHeight = fieldHeight * 0.12; // visual, no reglamentaria
+            targetCtx.fillStyle = "#064d24";
 
-        if (cfg.halfSide === "top") {
-            targetCtx.fillRect(marginX, marginY, fieldWidth, inGoalHeight);
-        } else {
-            targetCtx.fillRect(
-                marginX,
-                marginY + fieldHeight - inGoalHeight,
-                fieldWidth,
-                inGoalHeight
-            );
-        }
-
-        const drawLine = (y, dash = [], width = 2) => {
-            targetCtx.setLineDash(dash);
-            targetCtx.lineWidth = width;
-            targetCtx.beginPath();
-            targetCtx.moveTo(marginX, y);
-            targetCtx.lineTo(marginX + fieldWidth, y);
-            targetCtx.stroke();
-        };
-
-        // Cálculo de líneas según mitad visible
-        const base = cfg.halfSide === "top"
-            ? marginY + inGoalHeight
-            : marginY + fieldHeight - inGoalHeight;
-
-        const dir = cfg.halfSide === "top" ? 1 : -1;
-
-        // Línea de ensayo
-        drawLine(base, [], 3);
-
-        // 5 m
-        drawLine(base + dir * fieldHeight * P_5, [20, 14]);
-
-        // 22 m
-        drawLine(base + dir * fieldHeight * P_22);
-
-        // 40 m
-        drawLine(base + dir * fieldHeight * P_40, [14, 10]);
-
-        // Medio campo
-        drawLine(
-            cfg.halfSide === "top"
-                ? marginY + fieldHeight
-                : marginY,
-            [],
-            3
-        );
-
-        // Líneas verticales (5 m y touch) - solo en zona jugable, no en ensayo
-        targetCtx.setLineDash([20, 14]);
-        targetCtx.lineWidth = 2;
-
-        const xLines = [0.05, 0.25, 0.75, 0.95];
-        xLines.forEach(p => {
-            const x = marginX + fieldWidth * p;
-            targetCtx.beginPath();
-            // Dibujar solo desde la línea de ensayo hasta el medio campo
             if (cfg.halfSide === "top") {
-                targetCtx.moveTo(x, marginY + inGoalHeight);
-                targetCtx.lineTo(x, marginY + fieldHeight);
+                targetCtx.fillRect(marginX, marginY, fieldWidth, inGoalHeight);
             } else {
-                targetCtx.moveTo(x, marginY);
-                targetCtx.lineTo(x, marginY + fieldHeight - inGoalHeight);
+                targetCtx.fillRect(
+                    marginX,
+                    marginY + fieldHeight - inGoalHeight,
+                    fieldWidth,
+                    inGoalHeight
+                );
             }
-            targetCtx.stroke();
-        });
 
-        targetCtx.setLineDash([]);
+            const drawLine = (y, dash = [], width = 2) => {
+                targetCtx.setLineDash(dash);
+                targetCtx.lineWidth = width;
+                targetCtx.beginPath();
+                targetCtx.moveTo(marginX, y);
+                targetCtx.lineTo(marginX + fieldWidth, y);
+                targetCtx.stroke();
+            };
+
+            // Cálculo de líneas según mitad visible
+            const base = cfg.halfSide === "top"
+                ? marginY + inGoalHeight
+                : marginY + fieldHeight - inGoalHeight;
+
+            const dir = cfg.halfSide === "top" ? 1 : -1;
+
+            // Línea de ensayo
+            drawLine(base, [], 3);
+
+            // 5 m
+            drawLine(base + dir * fieldHeight * P_5, [20, 14]);
+
+            // 22 m
+            drawLine(base + dir * fieldHeight * P_22);
+
+            // 40 m
+            drawLine(base + dir * fieldHeight * P_40, [14, 10]);
+
+            // Medio campo
+            drawLine(
+                cfg.halfSide === "top"
+                    ? marginY + fieldHeight
+                    : marginY,
+                [],
+                3
+            );
+
+            // Líneas verticales (5 m y touch) - solo en zona jugable, no en ensayo
+            targetCtx.setLineDash([20, 14]);
+            targetCtx.lineWidth = 2;
+
+            const xLines = [0.05, 0.25, 0.75, 0.95];
+            xLines.forEach(p => {
+                const x = marginX + fieldWidth * p;
+                targetCtx.beginPath();
+                // Dibujar solo desde la línea de ensayo hasta el medio campo
+                if (cfg.halfSide === "top") {
+                    targetCtx.moveTo(x, marginY + inGoalHeight);
+                    targetCtx.lineTo(x, marginY + fieldHeight);
+                } else {
+                    targetCtx.moveTo(x, marginY);
+                    targetCtx.lineTo(x, marginY + fieldHeight - inGoalHeight);
+                }
+                targetCtx.stroke();
+            });
+
+            targetCtx.setLineDash([]);
+        }
     },
 
     // === Game Elements ===

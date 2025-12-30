@@ -58,5 +58,8 @@ export const state = {
         type: "full",        // "full" or "half"
         orientation: "horizontal",  // "horizontal" or "vertical"
         halfSide: "top"      // "top" or "bottom" (only for type="half")
-    }
+    },
+
+    // Field appearance
+    showFieldLines: true  // Toggle for field lines visibility
 };
