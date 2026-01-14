@@ -67,6 +67,39 @@ export const InputHandler = {
             if (e.key === "Delete" || e.key === "Supr") {
                 if (this.callbacks.deleteSelection) this.callbacks.deleteSelection();
             }
+
+            // Ghost Preview (Shift + A)
+            if (e.shiftKey && (e.key === 'a' || e.key === 'A')) {
+                if (!state.showGhost) {
+                    state.showGhost = true;
+                    Renderer.drawFrame();
+                }
+            }
+
+            // Ghost Preview Previous (Shift + D)
+            if (e.shiftKey && (e.key === 'd' || e.key === 'D')) {
+                if (!state.showGhostPrev) {
+                    state.showGhostPrev = true;
+                    Renderer.drawFrame();
+                }
+            }
+        });
+
+        window.addEventListener("keyup", (e) => {
+            // Hide Ghost Preview when Shift or A is released
+            if (state.showGhost) {
+                if (e.key === 'Shift' || e.key === 'a' || e.key === 'A') {
+                    state.showGhost = false;
+                    Renderer.drawFrame();
+                }
+            }
+            // Hide Ghost Preview Previous when Shift or D is released
+            if (state.showGhostPrev) {
+                if (e.key === 'Shift' || e.key === 'd' || e.key === 'D') {
+                    state.showGhostPrev = false;
+                    Renderer.drawFrame();
+                }
+            }
         });
     },
 
@@ -134,41 +167,12 @@ export const InputHandler = {
         // Touch
         canvas.addEventListener("touchstart", e => { e.preventDefault(); CanvasEvents.handleMouseDown(e); }, { passive: false });
         canvas.addEventListener("touchmove", e => { e.preventDefault(); CanvasEvents.handleMouseMove(e); }, { passive: false });
-        canvas.addEventListener("touchend", e => { e.preventDefault(); CanvasEvents.handleMouseUp(e); }, { passive: false });
-        canvas.addEventListener("touchcancel", e => { e.preventDefault(); CanvasEvents.handleMouseUp(e); }, { passive: false });
+        canvas.addEventListener("touchend", e => { e.preventDefault(); CanvasEvents.handleMouseUp(); }, { passive: false });
+        canvas.addEventListener("touchcancel", e => { e.preventDefault(); CanvasEvents.handleMouseUp(); }, { passive: false });
 
-        // Keyboard
-        window.addEventListener("keydown", e => {
-            CanvasEvents.handleKeyDown(e);
-
-            // Ghost Preview (Alt+A)
-            if (e.altKey && (e.code === 'KeyA' || e.key === 'a' || e.key === 'A')) {
-                if (!state.showNextFrameGhost) {
-                    state.showNextFrameGhost = true;
-                    Renderer.drawFrame();
-                }
-            }
-        });
-
-        window.addEventListener("keyup", e => {
-            CanvasEvents.handleKeyUp(e);
-
-            // Turn off Ghost Preview on key up
-            if (e.key === 'Alt' || e.code === 'KeyA' || e.key === 'a' || e.key === 'A') {
-                if (state.showNextFrameGhost) {
-                    // Only turn off if Alt is released OR A is released.
-                    // Actually, if we release A but keep Alt, maybe we want to keep it?
-                    // User said "mientras mantengo Alt+A".
-                    // So if either is released, we stop.
-                    if (!e.altKey || (e.code === 'KeyA' || e.key === 'a' || e.key === 'A')) {
-                        state.showNextFrameGhost = false;
-                        Renderer.drawFrame();
-                    }
-                }
-            }
-        });
         // Mouse
         canvas.addEventListener("mousedown", e => CanvasEvents.handleMouseDown(e));
+        canvas.addEventListener("mousemove", e => CanvasEvents.handleMouseMove(e));
         canvas.addEventListener("mousemove", e => CanvasEvents.handleMouseMove(e));
         canvas.addEventListener("mouseup", (e) => CanvasEvents.handleMouseUp(e));
         canvas.addEventListener("dblclick", e => CanvasEvents.handleDoubleClick(e));

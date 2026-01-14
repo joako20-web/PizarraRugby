@@ -13,7 +13,7 @@ export const CONFIG = {
     // ============================================
     // ANIMACIÓN
     // ============================================
-    INTERP_DURATION: 3000,      // Duración de transición entre frames (ms)
+    INTERP_DURATION: 1600,      // Duración de transición entre frames (ms)
     INTERP_STEPS: 24,            // Pasos de interpolación
     PLAYBACK_SPEED: 1.0,         // Multiplicador de velocidad por defecto
     MAX_DELTA_TIME: 100,         // Tiempo máximo por frame (ms) para evitar saltos

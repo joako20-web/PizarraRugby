@@ -600,6 +600,93 @@ export const Renderer = {
             targetCtx.stroke();
         });
 
+        // Ghost Preview
+        if (state.showGhost && state.currentFrameIndex < state.frames.length - 1) {
+            const nextFrame = state.frames[state.currentFrameIndex + 1];
+
+            // Render Ghost Players
+            nextFrame.players.forEach(p => {
+                if (!p.visible) return;
+
+                // Position calculation (same as normal players)
+                let x = p.x;
+                let y = p.y;
+
+                // Adapt to field resize if necessary (using Renderer helper or logic similar to players)
+                // Assuming standardized coordinates or that nextFrame is already updated on resize.
+
+                // Responsive Radius Calculation
+                const isMobile = targetCtx.canvas.width <= 1024;
+                const baseScale = isMobile ? 0.6 : 1.0;
+                let radius = (state.fieldConfig.type === "full" && state.fieldConfig.orientation === "horizontal" && !isMobile)
+                    ? p.radius * 1.2
+                    : p.radius;
+                radius *= SETTINGS.PLAYER_SCALE * baseScale;
+
+                targetCtx.save();
+                targetCtx.globalAlpha = 0.3; // Ghost transparency
+
+                targetCtx.beginPath();
+                targetCtx.arc(x, y, radius, 0, Math.PI * 2);
+                targetCtx.fillStyle = p.team === "A" ? SETTINGS.TEAM_A_COLOR : SETTINGS.TEAM_B_COLOR;
+                targetCtx.fill();
+
+                // Optional: Stroke for better visibility
+                // targetCtx.strokeStyle = "white";
+                // targetCtx.lineWidth = 1;
+                // targetCtx.stroke();
+
+                if (SETTINGS.SHOW_NUMBERS) {
+                    targetCtx.fillStyle = "white";
+                    targetCtx.font = "bold 14px Arial";
+                    targetCtx.textAlign = "center";
+                    targetCtx.textBaseline = "middle";
+                    targetCtx.fillText(p.number, x, y);
+                }
+
+                targetCtx.restore();
+            });
+        }
+
+        // Ghost Preview Previous (Alt + D)
+        if (state.showGhostPrev && state.currentFrameIndex > 0) {
+            const prevFrame = state.frames[state.currentFrameIndex - 1];
+
+            // Render Ghost Players (Previous)
+            prevFrame.players.forEach(p => {
+                if (!p.visible) return;
+
+                let x = p.x;
+                let y = p.y;
+
+                // Responsive Radius
+                const isMobile = targetCtx.canvas.width <= 1024;
+                const baseScale = isMobile ? 0.6 : 1.0;
+                let radius = (state.fieldConfig.type === "full" && state.fieldConfig.orientation === "horizontal" && !isMobile)
+                    ? p.radius * 1.2
+                    : p.radius;
+                radius *= SETTINGS.PLAYER_SCALE * baseScale;
+
+                targetCtx.save();
+                targetCtx.globalAlpha = 0.3;
+
+                targetCtx.beginPath();
+                targetCtx.arc(x, y, radius, 0, Math.PI * 2);
+                targetCtx.fillStyle = p.team === "A" ? SETTINGS.TEAM_A_COLOR : SETTINGS.TEAM_B_COLOR;
+                targetCtx.fill();
+
+                if (SETTINGS.SHOW_NUMBERS) {
+                    targetCtx.fillStyle = "white";
+                    targetCtx.font = "bold 14px Arial";
+                    targetCtx.textAlign = "center";
+                    targetCtx.textBaseline = "middle";
+                    targetCtx.fillText(p.number, x, y);
+                }
+
+                targetCtx.restore();
+            });
+        }
+
         // Flechas
         f.arrows.forEach(a => {
             if (a.type === "kick") this.drawKickArrow(a, targetCtx);
@@ -626,28 +713,40 @@ export const Renderer = {
             });
         }
 
-        // Dibuja jugadores
+        // Jugadores
         f.players.forEach(p => {
-            // Pass 'false' for forceSelection because we handle it inside drawPlayer or loop
-            this.drawPlayer(targetCtx, p, f, f === Utils.getCurrentFrame() && state.selectedPlayers && state.selectedPlayers.has(p));
-        });
+            if (!p.visible) return;
 
-        // GHOST PREVIEW (Next Frame)
-        if (state.showNextFrameGhost && state.frames) {
-            const nextIndex = state.currentFrameIndex + 1;
-            if (nextIndex < state.frames.length) {
-                const nextFrame = state.frames[nextIndex];
-                targetCtx.save();
-                targetCtx.globalAlpha = 0.4; // 40% opacity
-                nextFrame.players.forEach(p => {
-                    if (p.visible) {
-                        // Draw ghost
-                        this.drawPlayer(targetCtx, p, nextFrame, false);
-                    }
-                });
-                targetCtx.restore();
+            // Responsive Radius Calculation
+            const isMobile = targetCtx.canvas.width <= 1024;
+            const baseScale = isMobile ? 0.6 : 1.0; // 60% size on mobile
+
+            // Usar fichas más grandes en campo completo horizontal (solo desktop)
+            let radius = (state.fieldConfig.type === "full" && state.fieldConfig.orientation === "horizontal" && !isMobile)
+                ? p.radius * 1.2
+                : p.radius;
+
+            radius *= SETTINGS.PLAYER_SCALE * baseScale;
+
+            targetCtx.beginPath();
+            targetCtx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+            targetCtx.fillStyle = p.team === "A" ? SETTINGS.TEAM_A_COLOR : SETTINGS.TEAM_B_COLOR;
+            targetCtx.fill();
+
+            if (state.selectedPlayers.has(p)) {
+                targetCtx.strokeStyle = "white";
+                targetCtx.lineWidth = 3;
+                targetCtx.stroke();
             }
-        }
+
+            if (SETTINGS.SHOW_NUMBERS) {
+                targetCtx.fillStyle = "white";
+                targetCtx.font = "bold 14px Arial";
+                targetCtx.textAlign = "center";
+                targetCtx.textBaseline = "middle";
+                targetCtx.fillText(p.number, p.x, p.y);
+            }
+        });
 
         // Escudos de entrenamiento
         f.trainingShields.forEach(shield => {
@@ -722,100 +821,7 @@ export const Renderer = {
         }
     },
 
-    drawPlayer(targetCtx, p, f, isSelected) {
-        // Responsive Radius Calculation
-        const isMobile = targetCtx.canvas.width <= 1024;
-        const baseScale = isMobile ? 0.6 : 1.0; // 60% size on mobile
-
-        // Usar fichas más grandes en campo completo horizontal (solo desktop)
-        let radius = (state.fieldConfig.type === "full" && state.fieldConfig.orientation === "horizontal" && !isMobile)
-            ? p.radius * 1.2
-            : p.radius;
-
-        radius *= SETTINGS.PLAYER_SCALE * baseScale;
-
-        targetCtx.beginPath();
-        targetCtx.arc(p.x, p.y, radius, 0, Math.PI * 2);
-        targetCtx.fillStyle = p.team === "A" ? SETTINGS.TEAM_A_COLOR : SETTINGS.TEAM_B_COLOR;
-        targetCtx.fill();
-
-        if (isSelected) {
-            targetCtx.strokeStyle = "white";
-            targetCtx.lineWidth = 3;
-            targetCtx.stroke();
-        }
-
-        if (SETTINGS.SHOW_NUMBERS) {
-            targetCtx.fillStyle = "white";
-            targetCtx.font = "bold 14px Arial";
-            targetCtx.textAlign = "center";
-            targetCtx.textBaseline = "middle";
-            targetCtx.fillText(p.number, p.x, p.y);
-        }
-    },
-
     // === Animation Interpolation ===
-    getPointOnArrow(arrow, t) {
-        if (arrow.type === 'kick') {
-            // Quadratic Bezier: P = (1-t)^2 * P0 + 2(1-t)t * P1 + t^2 * P2
-            // P1 (Control Point) is calculated as midpoint offset by kickArcHeight
-            const mx = (arrow.x1 + arrow.x2) / 2;
-            // Ensure state.kickArcHeight exists, default to 150 if not
-            const arcH = (state.kickArcHeight !== undefined) ? state.kickArcHeight : 150;
-            const my = (arrow.y1 + arrow.y2) / 2 - arcH;
-
-            const px0 = arrow.x1;
-            const py0 = arrow.y1;
-            const px2 = arrow.x2;
-            const py2 = arrow.y2;
-
-            const x = (1 - t) * (1 - t) * px0 + 2 * (1 - t) * t * mx + t * t * px2;
-            const y = (1 - t) * (1 - t) * py0 + 2 * (1 - t) * t * my + t * t * py2;
-            return { x, y };
-
-        } else if (arrow.points && arrow.points.length >= 2) {
-            // Multi-point (Polyline)
-            // 1. Calculate total length
-            let totalLen = 0;
-            const lengths = [];
-            for (let i = 0; i < arrow.points.length - 1; i++) {
-                const dist = Math.hypot(
-                    arrow.points[i + 1].x - arrow.points[i].x,
-                    arrow.points[i + 1].y - arrow.points[i].y
-                );
-                lengths.push(dist);
-                totalLen += dist;
-            }
-
-            if (totalLen === 0) return arrow.points[0];
-
-            // 2. Find segment corresponding to t
-            const targetDist = totalLen * t;
-            let currentDist = 0;
-
-            for (let i = 0; i < lengths.length; i++) {
-                if (currentDist + lengths[i] >= targetDist) {
-                    // Found segment i
-                    const segmentT = (targetDist - currentDist) / lengths[i];
-                    return {
-                        x: arrow.points[i].x + (arrow.points[i + 1].x - arrow.points[i].x) * segmentT,
-                        y: arrow.points[i].y + (arrow.points[i + 1].y - arrow.points[i].y) * segmentT
-                    };
-                }
-                currentDist += lengths[i];
-            }
-            // Fallback (e.g. t=1)
-            return arrow.points[arrow.points.length - 1];
-
-        } else {
-            // Legacy Linear Fallback
-            return {
-                x: arrow.x1 + (arrow.x2 - arrow.x1) * t,
-                y: arrow.y1 + (arrow.y2 - arrow.y1) * t
-            };
-        }
-    },
-
     drawInterpolatedFrame(a, b, t, targetCtx = ctx, width, height, pitchImage = null) {
         // En frames interpolados también usamos la optimización del drawPitch
         // 1. Fondo
@@ -845,86 +851,8 @@ export const Renderer = {
 
             let x, y;
             if (p1.visible && p2.visible) {
-                // PATH PRIORITY:
-                // 1. Explicitly recorded drag path (player.path)
-                // 2. Matching Arrow
-                // 3. Matching Freehand Drawing
-                // 4. Linear Interpolation
-
-                let finalPath = null;
-
-                // 1. Check Player Path
-                if (p2.path && p2.path.length > 1) {
-                    // Verify path end matches p2 (stale path check)
-                    const end = p2.path[p2.path.length - 1];
-                    const distEnd = Math.hypot(end.x - p2.x, end.y - p2.y);
-
-                    if (distEnd < 50) {
-                        const start = p2.path[0];
-                        const distStart = Math.hypot(start.x - p1.x, start.y - p1.y);
-
-                        if (distStart < 50) {
-                            // Path connects p1 -> p2 naturally
-                            finalPath = { points: p2.path, type: 'recorded' };
-                        } else {
-                            // Path starts elsewhere (e.g. multiple drags: A->B, then B->C).
-                            // We prepend p1 to ensure smooth transition A -> B -> ...
-                            finalPath = {
-                                points: [{ x: p1.x, y: p1.y }, ...p2.path],
-                                type: 'recorded'
-                            };
-                        }
-                    }
-                }
-                // Note: If we had a path but it was consumed by intermediate frame generation (frames > 1), 
-                // then p2 means the FINAL player. But in intermediate frames we deleted the path. 
-                // Wait, if we generated intermediate frames, the players in those frames (b) will NOT have 'path' set
-                // because I did 'delete pInter.path' in canvasEvents.
-                // This is correct because intermediate frames are just keyframes, so linear interp is fine 
-                // (or we could have kept the path segment? No, linear is smoother if resolution is high).
-                // So this logic mainly applies when frames=1 (drag & release without Alt).
-
-                // 2. Search Arrows
-                if (!finalPath) {
-                    finalPath = a.arrows.find(arr => {
-                        let start, end;
-                        if (arr.type === 'kick') {
-                            start = { x: arr.x1, y: arr.y1 };
-                            end = { x: arr.x2, y: arr.y2 };
-                        } else if (arr.points && arr.points.length >= 2) {
-                            start = arr.points[0];
-                            end = arr.points[arr.points.length - 1];
-                        } else {
-                            start = { x: arr.x1, y: arr.y1 };
-                            end = { x: arr.x2, y: arr.y2 };
-                        }
-                        const distStart = Math.hypot(start.x - p1.x, start.y - p1.y);
-                        const distEnd = Math.hypot(end.x - p2.x, end.y - p2.y);
-                        return distStart < 30 && distEnd < 30;
-                    });
-                }
-
-                // 3. Search Drawings (Freehand)
-                if (!finalPath && a.drawings) {
-                    finalPath = a.drawings.find(d => {
-                        if (!d.points || d.points.length < 2) return false;
-                        const start = d.points[0];
-                        const end = d.points[d.points.length - 1];
-                        const distStart = Math.hypot(start.x - p1.x, start.y - p1.y);
-                        const distEnd = Math.hypot(end.x - p2.x, end.y - p2.y);
-                        return distStart < 30 && distEnd < 30;
-                    });
-                }
-
-                if (finalPath) {
-                    const pos = this.getPointOnArrow(finalPath, t);
-                    x = pos.x;
-                    y = pos.y;
-                } else {
-                    // Default Linear Interpolation
-                    x = p1.x + (p2.x - p1.x) * t;
-                    y = p1.y + (p2.y - p1.y) * t;
-                }
+                x = p1.x + (p2.x - p1.x) * t;
+                y = p1.y + (p2.y - p1.y) * t;
             } else if (p1.visible) {
                 x = p1.x;
                 y = p1.y;

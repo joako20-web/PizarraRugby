@@ -61,5 +61,9 @@ export const state = {
     },
 
     // Field appearance
-    showFieldLines: true  // Toggle for field lines visibility
+    showFieldLines: true,  // Toggle for field lines visibility
+
+    // Ghost Preview
+    showGhost: false,
+    showGhostPrev: false
 };

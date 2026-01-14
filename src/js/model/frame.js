@@ -56,11 +56,7 @@ export const Frame = {
      */
     clone(f) {
         return {
-            players: f.players.map(p => {
-                const newP = { ...p };
-                delete newP.path; // Do not copy movement paths to new frames
-                return newP;
-            }),
+            players: f.players.map(p => ({ ...p })),
             ball: { ...f.ball },
             arrows: f.arrows.map(a => ({ ...a })),
             texts: f.texts.map(t => ({ ...t })),
