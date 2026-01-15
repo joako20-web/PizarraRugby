@@ -17,11 +17,8 @@ export const ExportUI = {
         this.fpsSelect = document.getElementById('export-fps');
         this.qualitySelect = document.getElementById('export-quality');
 
-        // Hide advanced controls container if possible, or individual elements
-        // Let's hide the parents of these controls if they exist
-        if (this.resolutionSelect) this.resolutionSelect.parentElement.style.display = 'none';
-        if (this.fpsSelect) this.fpsSelect.parentElement.style.display = 'none';
-        if (this.qualitySelect) this.qualitySelect.parentElement.style.display = 'none';
+        // Advanced controls are now visible by default
+
 
         this.cancelBtn = document.getElementById('export-cancel');
         this.confirmBtn = document.getElementById('export-confirm');
@@ -49,23 +46,37 @@ export const ExportUI = {
 
         if (this.confirmBtn) {
             this.confirmBtn.onclick = () => {
-                // Use settings or defaults
-                const s = SETTINGS.EXPORT || { RESOLUTION: '2k', FPS: 60, BITRATE: 20 };
+                // Get values from UI
+                const resolution = this.resolutionSelect ? this.resolutionSelect.value : '1920x1080';
+                const fps = this.fpsSelect ? parseInt(this.fpsSelect.value) : 30;
+                const quality = this.qualitySelect ? this.qualitySelect.value : 'high';
+                const filename = this.filenameInput.value || 'animation';
 
-                // Convert simple bitrate number to bps for exportAdvanced logic
-                // In exportAdvanced: bitrate = qualityMap[quality] || 8000000;
-                // We need to pass a "quality" string? Or modified export logic?
-                // Animation.js expects 'quality': 'standard' | 'high' | 'ultra' OR we can modify it to accept explicit bitrate.
-                // Let's modify the Animation.js call to pass bitrate directly or modify Animation.js logic.
-                // Actually exportAdvanced uses "options.quality" mapped to numbers.
-                // Let's pass the raw bitrate and update Animation.js to use it if present.
+                // Map quality to bitrate
+                let bitrate = 8000000;
+                const qualityMap = {
+                    'whatsapp': 4500000,
+                    'standard': 5000000,
+                    'high': 8000000,
+                    'ultra': 15000000,
+                    'master': 18000000
+                };
+                if (qualityMap[quality]) bitrate = qualityMap[quality];
+
+                // Update SETTINGS for next time
+                SETTINGS.EXPORT = {
+                    RESOLUTION: resolution,
+                    FPS: fps,
+                    BITRATE: bitrate / 1000000
+                };
 
                 const options = {
-                    filename: this.filenameInput.value || 'animation',
-                    resolution: s.RESOLUTION,
-                    fps: s.FPS,
-                    bitrate: s.BITRATE * 1000000 // Convert Mbps to bps
+                    filename: filename,
+                    resolution: resolution,
+                    fps: fps,
+                    bitrate: bitrate
                 };
+
                 Animation.exportAdvanced(options);
                 this.close();
             };
@@ -78,12 +89,37 @@ export const ExportUI = {
                 if (this.speedDisplay) this.speedDisplay.textContent = val + 'x';
             };
         }
+        if (this.qualitySelect) {
+            this.qualitySelect.onchange = () => {
+                if (this.qualitySelect.value === 'whatsapp') {
+                    // Force settings friendly for WhatsApp
+                    if (this.resolutionSelect) this.resolutionSelect.value = '1920x1080'; // 1080p is generally safe, 720p safer. Let's try 1080p
+                    if (this.fpsSelect) this.fpsSelect.value = '30';
+                }
+            };
+        }
     },
 
     open() {
         if (this.modal) {
             // Set default filename
             this.filenameInput.value = I18n.t ? (I18n.t('default_animation_name') || 'Animación') : 'Animación';
+
+            // Restore settings if available
+            if (SETTINGS.EXPORT) {
+                if (this.resolutionSelect) this.resolutionSelect.value = SETTINGS.EXPORT.RESOLUTION;
+                if (this.fpsSelect) this.fpsSelect.value = SETTINGS.EXPORT.FPS;
+
+                // Map bitrate back to quality string roughly
+                if (this.qualitySelect && SETTINGS.EXPORT.BITRATE) {
+                    const b = SETTINGS.EXPORT.BITRATE;
+                    if (b >= 25) this.qualitySelect.value = 'master';
+                    else if (b >= 15) this.qualitySelect.value = 'ultra';
+                    else if (b >= 8) this.qualitySelect.value = 'high';
+                    else this.qualitySelect.value = 'standard';
+                }
+            }
+
             this.modal.classList.remove('is-hidden');
         }
     },

@@ -140,6 +140,8 @@ export const es = {
     "quality_standard": "Estándar (5 Mbps)",
     "quality_high": "Alta (8 Mbps)",
     "quality_ultra": "Ultra (15 Mbps)",
+    "quality_master": "Master (18 Mbps)",
+    "quality_whatsapp": "WhatsApp (Optimizado)",
     "btn_cancel": "Cancelar",
     "btn_export": "Exportar",
     "error_no_frames_export": "No hay suficientes frames para exportar (mínimo 2).",

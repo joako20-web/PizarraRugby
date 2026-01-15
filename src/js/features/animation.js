@@ -16,6 +16,43 @@ export const Animation = {
         this.updateUI();
     },
 
+    /**
+     * Detecta si en la transición entre frameA y frameB SOLO se mueve el balón.
+     * @param {Object} frameA 
+     * @param {Object} frameB 
+     * @returns {boolean}
+     */
+    _isBallOnlyMovement(frameA, frameB) {
+        if (!frameA || !frameB) return false;
+
+        // 1. Verificar si el balón se movió
+        const ballMoved = (frameA.ball.x !== frameB.ball.x) || (frameA.ball.y !== frameB.ball.y);
+
+        // Si el balón no se movió, no es un "movimiento solo de balón" relevante para acelerar
+        // (o es estático, o se mueven jugadores). Queremos acelerar PASES.
+        if (!ballMoved) return false;
+
+        // 2. Verificar si algún jugador visible se movió
+        // Asumimos que la lista de jugadores es paralela (mismo orden)
+        for (let i = 0; i < frameA.players.length; i++) {
+            const pA = frameA.players[i];
+            const pB = frameB.players[i];
+
+            // Si el jugador no existe en B (raro) o cambia visibilidad, contamos como cambio "de escena" -> normal speed
+            if (!pB || pA.visible !== pB.visible) return false;
+
+            // Si es visible y cambió de posición
+            if (pA.visible) {
+                if (Math.abs(pA.x - pB.x) > 0.1 || Math.abs(pA.y - pB.y) > 0.1) {
+                    return false; // Se movió un jugador
+                }
+            }
+        }
+
+        // Si llegamos aquí: El balón se movió Y ningún jugador se movió.
+        return true;
+    },
+
     updateUI() {
         if (!state.frames || state.frames.length === 0) return;
 
@@ -86,18 +123,28 @@ export const Animation = {
         this.lastTime = timestamp;
 
         // Cap dt to prevent jumps (max 100ms per frame)
-        // This solves the issue where animation speeds up after a freeze
         const safeDt = Math.min(Math.max(0, dt), CONFIG.MAX_DELTA_TIME);
 
-        // Duración total de la transición entre dos frames
-        const duration = CONFIG.INTERP_DURATION / CONFIG.PLAYBACK_SPEED;
+        const frameA = state.frames[state.currentFrameIndex];
+        const frameB = state.frames[state.currentFrameIndex + 1];
+
+        // Duración base
+        let duration = CONFIG.INTERP_DURATION / CONFIG.PLAYBACK_SPEED;
+
+        // Si es solo movimiento de balón, aceleramos
+        if (this._isBallOnlyMovement(frameA, frameB)) {
+            duration = duration / CONFIG.BALL_SPEED_MULTIPLIER;
+        }
 
         // Avanzar el progreso
         this.transitionProgress += safeDt / duration;
 
         // Manejar cambio de frame
         if (this.transitionProgress >= 1) {
-            this.transitionProgress -= 1;
+            // Calcular el overshoot en milisegundos reales basados en la duración ACTUAL
+            const overshootNormalized = this.transitionProgress - 1;
+            const overshootMs = overshootNormalized * duration;
+
             state.currentFrameIndex++;
             this.updateUI();
 
@@ -108,15 +155,39 @@ export const Animation = {
                 this.stop();
                 return;
             }
+
+            // Preparar el siguiente frame para aplicar el overshoot correctamente
+            const nextFrameA = state.frames[state.currentFrameIndex];
+            const nextFrameB = state.frames[state.currentFrameIndex + 1];
+
+            // Calcular duración del SIGUIENTE frame
+            let nextDuration = CONFIG.INTERP_DURATION / CONFIG.PLAYBACK_SPEED;
+            if (this._isBallOnlyMovement(nextFrameA, nextFrameB)) {
+                nextDuration = nextDuration / CONFIG.BALL_SPEED_MULTIPLIER;
+            }
+
+            // Aplicar el overshoot normalizado a la NUEVA duración
+            // Esto evita "saltos" de tiempo (teletransportación)
+            this.transitionProgress = overshootMs / nextDuration;
         }
 
         // Renderizar interpolación
-        const frameA = state.frames[state.currentFrameIndex];
-        const frameB = state.frames[state.currentFrameIndex + 1];
+        // Nota: frameA y frameB aquí abajo deben ser los ACTUALIZADOS si cambiamos de índice?
+        // NO, porque si cambiamos de índice, el return del AnimationFrame anterior ya pintó el frame final (casi).
+        // Y el nuevo requestAnimationFrame usará los nuevos índices en la SIGUIENTE llamada?
+        // Espera, _tick llama a requestAnimationFrame AL FINAL.
+        // Si acabamos de cambiar state.currentFrameIndex, deberíamos pintar el NUEVO estado interpolado (t=0 + overshoot).
+
+        // RE-leer los frames basados en el índice actualizado
+        const currentFrameA = state.frames[state.currentFrameIndex];
+        const currentFrameB = state.frames[state.currentFrameIndex + 1];
 
         // Validar que frameB existe (por seguridad)
-        if (frameB) {
-            Renderer.drawInterpolatedFrame(frameA, frameB, this.transitionProgress);
+        if (currentFrameB) {
+            Renderer.drawInterpolatedFrame(currentFrameA, currentFrameB, this.transitionProgress);
+        } else {
+            // Si estamos en el último frame (justo antes de stop(), aunque el check arriba debería haberlo parado)
+            Renderer.drawFrame();
         }
 
         this.rafId = requestAnimationFrame(this._tick.bind(this));
@@ -201,6 +272,7 @@ export const Animation = {
             bitrate = options.bitrate;
         } else {
             const qualityMap = {
+                'whatsapp': 4500000,
                 'standard': 5000000,
                 'high': 8000000,
                 'ultra': 15000000
@@ -372,32 +444,28 @@ export const Animation = {
             const now = performance.now();
             let delay = nextFrameTime - now;
 
-            // If we are significantly behind (more than 1 frame), we shouldn't try to catch up
-            // by skipping frames, as that causes "teleporting".
-            // We also shouldn't hammer the CPU without yielding.
-            // requestAnimationFrame is the smoothest way to yield to the browser's compositor/media engine.
-
-            if (delay < 5) {
-                // If we have less than 5ms buffer (or are late), just wait for next RAF.
-                // This ensures we yield fully.
-                await new Promise(r => requestAnimationFrame(r));
+            // Decouple from VSync (requestAnimationFrame) to prevent throttling on hidden canvas
+            // and ensure consistent frame processing for MediaRecorder.
+            // We use setTimeout to yield to the event loop (MediaRecorder encoding).
+            if (delay > 0) {
+                await new Promise(r => setTimeout(r, delay));
             } else {
-                // We are ahead of time, wait precisely using timeout then RAF?
-                // Just setTimeout is fine for staying in sync with wall clock, 
-                // but RAF is better for smoothness.
-                // Let's combine: wait most of the time, then RAF.
-                if (delay > 16) {
-                    await new Promise(r => setTimeout(r, delay - 10));
-                }
-                await new Promise(r => requestAnimationFrame(r));
+                // We are behind schedule. 
+                // Yield briefly (0ms) to allow UI/Recorder updates, then proceed immediately.
+                // This prevents freezing the browser while catching up.
+                await new Promise(r => setTimeout(r, 0));
             }
         };
 
         // Estimación de frames totales para la barra de progreso
         const pauseFramesCount = Math.ceil(fps * 1.5);
         const totalDuration = CONFIG.INTERP_DURATION / CONFIG.PLAYBACK_SPEED;
-        const transitionFrames = Math.ceil((totalDuration / 1000) * fps);
-        const totalFramesToProcess = (pauseFramesCount * 2) + ((state.frames.length - 1) * transitionFrames);
+        const baseTransitionFrames = Math.ceil((totalDuration / 1000) * fps);
+
+        // Calcular total frames (aproximado, ya que varía por segmento)
+        // Lo calculamos dinámicamente o hacemos una pasada previa?
+        // Para la barra de progreso, una estimación es suficiente.
+        const totalFramesToProcess = (pauseFramesCount * 2) + ((state.frames.length - 1) * baseTransitionFrames);
         let processedFrames = 0;
 
         const updateProgress = (phase) => {
@@ -424,8 +492,18 @@ export const Animation = {
 
             state.currentFrameIndex = i;
 
-            for (let f = 0; f <= transitionFrames; f++) {
-                const t = f / transitionFrames;
+            state.currentFrameIndex = i;
+
+            // Determinar duración de este segmento
+            let currentTransitionFrames = baseTransitionFrames;
+            if (this._isBallOnlyMovement(frameA, frameB)) {
+                currentTransitionFrames = Math.ceil(baseTransitionFrames / CONFIG.BALL_SPEED_MULTIPLIER);
+                // Asegurar al menos 1 frame
+                if (currentTransitionFrames < 1) currentTransitionFrames = 1;
+            }
+
+            for (let f = 0; f <= currentTransitionFrames; f++) {
+                const t = f / currentTransitionFrames;
                 drawExportFrame(frameA, frameB, t);
                 await waitNextFrame();
                 updateProgress(`Procesando mov. ${i + 1}/${state.frames.length - 1}`);

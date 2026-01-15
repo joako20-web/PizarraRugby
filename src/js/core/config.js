@@ -17,6 +17,7 @@ export const CONFIG = {
     INTERP_STEPS: 24,            // Pasos de interpolación
     PLAYBACK_SPEED: 1.0,         // Multiplicador de velocidad por defecto
     MAX_DELTA_TIME: 100,         // Tiempo máximo por frame (ms) para evitar saltos
+    BALL_SPEED_MULTIPLIER: 2.5,  // Multiplicador de velocidad cuando solo se mueve el balón
 
     // ============================================
     // CAMPO Y MÁRGENES

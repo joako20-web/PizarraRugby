@@ -607,8 +607,13 @@ export const CanvasEvents = {
 
             if (state.dragTarget.type === "players") {
                 const f = Utils.getCurrentFrame();
-                state.dragTarget.players.forEach((pl, i) => {
-                    const st = state.dragTarget.startPositions[i];
+                const movedPlayers = state.dragTarget.players;
+                const startPositions = state.dragTarget.startPositions;
+
+                movedPlayers.forEach((pl, i) => {
+                    const st = startPositions[i];
+
+                    // 1. Trail Handling
                     // Solo añadir trail si se movió significativamente
                     if (Math.hypot(pl.x - st.x, pl.y - st.y) > 2) {
                         f.trailLines.push({
@@ -618,6 +623,30 @@ export const CanvasEvents = {
                             y2: pl.y,
                             team: pl.team
                         });
+
+                        // 2. Propagate movement to future frames
+                        // Si el jugador estaba en posición A en frames futuros, moverlo a posición B
+                        // (Hasta que encontremos un frame donde ya se haya movido a otra parte C)
+                        for (let k = state.currentFrameIndex + 1; k < state.frames.length; k++) {
+                            const nextFrame = state.frames[k];
+                            const futurePlayer = Utils.findPlayerByTeamNumber(pl.team, pl.number, nextFrame);
+
+                            if (futurePlayer) {
+                                // Verificar si está en la posición "antigua" (st)
+                                // Usamos un margen de error pequeño por float precision
+                                const dist = Math.hypot(futurePlayer.x - st.x, futurePlayer.y - st.y);
+
+                                if (dist < 1.0) { // Si está "quieto" en la posición vieja
+                                    // Mover a la nueva posición
+                                    futurePlayer.x = pl.x;
+                                    futurePlayer.y = pl.y;
+                                } else {
+                                    // El jugador ya se movió a otro lado en el futuro.
+                                    // Dejamos de propagar para respetar ese movimiento posterior.
+                                    break;
+                                }
+                            }
+                        }
                     }
                 });
             }
