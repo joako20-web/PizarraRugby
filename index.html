@@ -8,7 +8,7 @@
 
     <!-- Security Headers -->
     <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; media-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests;">
+        content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://unpkg.com; media-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests;">
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
     <meta name="referrer" content="strict-origin-when-cross-origin">
     <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), payment=()">
@@ -18,6 +18,7 @@
     <link rel="modulepreload" href="./src/js/app.js">
     <link rel="modulepreload" href="./src/js/core/state.js">
     <link rel="modulepreload" href="./src/js/renderer/renderer.js">
+    <script src="https://unpkg.com/mp4-muxer@5.1.4/build/mp4-muxer.min.js"></script>
 
     <!-- Meta Tags -->
     <meta name="description"
@@ -515,34 +516,7 @@
                     <input type="text" id="export-filename" placeholder="Animación" value="Animación">
                 </div>
 
-                <div class="form-group">
-                    <label for="export-resolution" data-i18n="lbl_resolution">Resolución</label>
-                    <select id="export-resolution">
-                        <option value="current" data-i18n="res_current">Actual (Pantalla)</option>
-                        <option value="1920x1080">Full HD (1080p)</option>
-                        <option value="2560x1440">2K (1440p)</option>
-                        <option value="3840x2160">4K (2160p)</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="export-fps" data-i18n="lbl_fps">Cuadros por segundo (FPS)</label>
-                    <select id="export-fps">
-                        <option value="30">30 FPS (Normal)</option>
-                        <option value="60">60 FPS (Fluido)</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="export-quality" data-i18n="lbl_quality">Calidad (Bitrate)</label>
-                    <select id="export-quality">
-                        <option value="standard" data-i18n="quality_standard">Estándar (5 Mbps)</option>
-                        <option value="high" data-i18n="quality_high">Alta (8 Mbps)</option>
-                        <option value="ultra" data-i18n="quality_ultra">Ultra (15 Mbps)</option>
-                        <option value="whatsapp" data-i18n="quality_whatsapp">WhatsApp (4.5 Mbps)</option>
-                        <option value="master" data-i18n="quality_master" selected>Master (25 Mbps)</option>
-                    </select>
-                </div>
+                <!-- Options are now in Global Settings (Gear Icon) -->
             </div>
             <div class="popup-modal__buttons">
                 <button id="export-cancel" class="btn btn--secondary" data-i18n="btn_cancel">Cancelar</button>

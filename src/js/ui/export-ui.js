@@ -13,11 +13,7 @@ export const ExportUI = {
         // Assuming it's in index.html, we should probably hide the advanced controls via CSS or style.display.
 
         this.filenameInput = document.getElementById('export-filename');
-        this.resolutionSelect = document.getElementById('export-resolution');
-        this.fpsSelect = document.getElementById('export-fps');
-        this.qualitySelect = document.getElementById('export-quality');
-
-        // Advanced controls are now visible by default
+        // Removed advanced controls (resolution, fps, quality) as they are now in Global Settings
 
 
         this.cancelBtn = document.getElementById('export-cancel');
@@ -47,34 +43,16 @@ export const ExportUI = {
         if (this.confirmBtn) {
             this.confirmBtn.onclick = () => {
                 // Get values from UI
-                const resolution = this.resolutionSelect ? this.resolutionSelect.value : '1920x1080';
-                const fps = this.fpsSelect ? parseInt(this.fpsSelect.value) : 30;
-                const quality = this.qualitySelect ? this.qualitySelect.value : 'high';
                 const filename = this.filenameInput.value || 'animation';
 
-                // Map quality to bitrate
-                let bitrate = 8000000;
-                const qualityMap = {
-                    'whatsapp': 4500000,
-                    'standard': 5000000,
-                    'high': 8000000,
-                    'ultra': 15000000,
-                    'master': 18000000
-                };
-                if (qualityMap[quality]) bitrate = qualityMap[quality];
-
-                // Update SETTINGS for next time
-                SETTINGS.EXPORT = {
-                    RESOLUTION: resolution,
-                    FPS: fps,
-                    BITRATE: bitrate / 1000000
-                };
+                // Get settings from Global Config
+                const exportSettings = SETTINGS.EXPORT || { RESOLUTION: '1080p', FPS: 30, BITRATE: 8 };
 
                 const options = {
                     filename: filename,
-                    resolution: resolution,
-                    fps: fps,
-                    bitrate: bitrate
+                    resolution: exportSettings.RESOLUTION,
+                    fps: exportSettings.FPS,
+                    bitrate: exportSettings.BITRATE * 1000000 // Convert Mbps to bps
                 };
 
                 Animation.exportAdvanced(options);
@@ -82,22 +60,7 @@ export const ExportUI = {
             };
         }
 
-        if (this.speedInput) {
-            this.speedInput.oninput = (e) => {
-                const val = parseFloat(e.target.value);
-                CONFIG.PLAYBACK_SPEED = val;
-                if (this.speedDisplay) this.speedDisplay.textContent = val + 'x';
-            };
-        }
-        if (this.qualitySelect) {
-            this.qualitySelect.onchange = () => {
-                if (this.qualitySelect.value === 'whatsapp') {
-                    // Force settings friendly for WhatsApp
-                    if (this.resolutionSelect) this.resolutionSelect.value = '1920x1080'; // 1080p is generally safe, 720p safer. Let's try 1080p
-                    if (this.fpsSelect) this.fpsSelect.value = '30';
-                }
-            };
-        }
+        // Removed speed/quality listeners
     },
 
     open() {
@@ -105,21 +68,7 @@ export const ExportUI = {
             // Set default filename
             this.filenameInput.value = I18n.t ? (I18n.t('default_animation_name') || 'Animación') : 'Animación';
 
-            // Restore settings if available
-            if (SETTINGS.EXPORT) {
-                if (this.resolutionSelect) this.resolutionSelect.value = SETTINGS.EXPORT.RESOLUTION;
-                if (this.fpsSelect) this.fpsSelect.value = SETTINGS.EXPORT.FPS;
-
-                // Map bitrate back to quality string roughly
-                if (this.qualitySelect && SETTINGS.EXPORT.BITRATE) {
-                    const b = SETTINGS.EXPORT.BITRATE;
-                    if (b >= 25) this.qualitySelect.value = 'master';
-                    else if (b >= 15) this.qualitySelect.value = 'ultra';
-                    else if (b >= 8) this.qualitySelect.value = 'high';
-                    else this.qualitySelect.value = 'standard';
-                }
-            }
-
+            // Note: Resolution/FPS/Bitrate are now read from SETTINGS.EXPORT at export time.
             this.modal.classList.remove('is-hidden');
         }
     },

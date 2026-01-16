@@ -61,6 +61,14 @@ export const SettingsShortcuts = {
                     <button class="btn btn--secondary bind-btn" data-action="ANIMATION_PLAY">${fmt(s.ANIMATION_PLAY)}</button>
                 </div>
                 <div class="shortcut-item">
+                    <label>Fantasmas (Sig.)</label>
+                    <button class="btn btn--secondary bind-btn" data-action="GHOST_SHOW">${fmt(s.GHOST_SHOW)}</button>
+                </div>
+                <div class="shortcut-item">
+                    <label>Fantasmas (Ant.)</label>
+                    <button class="btn btn--secondary bind-btn" data-action="GHOST_PREV">${fmt(s.GHOST_PREV)}</button>
+                </div>
+                <div class="shortcut-item">
                     <label>${I18n.t('btn_presentation')}</label>
                     <button class="btn btn--secondary bind-btn" data-action="PRESENTATION_MODE">${fmt(s.PRESENTATION_MODE)}</button>
                 </div>

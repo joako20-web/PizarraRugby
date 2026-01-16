@@ -68,16 +68,36 @@ export const InputHandler = {
                 if (this.callbacks.deleteSelection) this.callbacks.deleteSelection();
             }
 
-            // Ghost Preview (Shift + A)
-            if (e.shiftKey && (e.key === 'a' || e.key === 'A')) {
+            // Shortcutsystem handles actions, but "Hold" actions like Ghost are distinct?
+            // "Hold" actions are tricky with the current `handleShortcut` which is for triggers.
+            // AND `handleShortcut` returns early if Shift is pressed alone? No, it checks keys.
+            // But we need to know if keys MATCH.
+
+            // Let's implement a helper `isPressed(e, shortcut)`
+            const isPressed = (evt, shortcutKey) => {
+                if (!shortcutKey) return false;
+                // Normalize evt
+                let keys = [];
+                if (evt.ctrlKey) keys.push('Ctrl');
+                if (evt.altKey) keys.push('Alt');
+                if (evt.shiftKey) keys.push('Shift');
+                let main = evt.key;
+                if (main.length === 1) main = main.toUpperCase();
+                if (evt.code === 'Space') main = 'Space';
+                if (!['Control', 'Alt', 'Shift', 'Meta'].includes(evt.key)) keys.push(main);
+
+                const current = keys.join('+').toUpperCase();
+                return current === shortcutKey.toUpperCase();
+            };
+
+            if (isPressed(e, SETTINGS.SHORTCUTS.GHOST_SHOW)) {
                 if (!state.showGhost) {
                     state.showGhost = true;
                     Renderer.drawFrame();
                 }
             }
 
-            // Ghost Preview Previous (Shift + D)
-            if (e.shiftKey && (e.key === 'd' || e.key === 'D')) {
+            if (isPressed(e, SETTINGS.SHORTCUTS.GHOST_PREV)) {
                 if (!state.showGhostPrev) {
                     state.showGhostPrev = true;
                     Renderer.drawFrame();
@@ -86,19 +106,29 @@ export const InputHandler = {
         });
 
         window.addEventListener("keyup", (e) => {
-            // Hide Ghost Preview when Shift or A is released
-            if (state.showGhost) {
-                if (e.key === 'Shift' || e.key === 'a' || e.key === 'A') {
-                    state.showGhost = false;
-                    Renderer.drawFrame();
-                }
+            // Logic for Release is harder because we don't know which shortcut was active easily without state.
+            // But we can check if the KEY associated with the shortcut was released?
+            // Or simpler: If showGhost is true, checking if the released key was PART of the shortcut?
+            // The previous logic was: `if (e.key === 'Shift' || e.key === 'a' ...)`
+            // This implies ANY key of the combo releasing stops the mode.
+
+            const checkRelease = (shortcutKey) => {
+                if (!shortcutKey) return false;
+                const parts = shortcutKey.toUpperCase().split('+');
+                let key = e.key.toUpperCase();
+                if (key === 'CONTROL') key = 'CTRL';
+                // If the released key is in the shortcut definition, we stop.
+                return parts.includes(key);
+            };
+
+            if (state.showGhost && checkRelease(SETTINGS.SHORTCUTS.GHOST_SHOW)) {
+                state.showGhost = false;
+                Renderer.drawFrame();
             }
-            // Hide Ghost Preview Previous when Shift or D is released
-            if (state.showGhostPrev) {
-                if (e.key === 'Shift' || e.key === 'd' || e.key === 'D') {
-                    state.showGhostPrev = false;
-                    Renderer.drawFrame();
-                }
+
+            if (state.showGhostPrev && checkRelease(SETTINGS.SHORTCUTS.GHOST_PREV)) {
+                state.showGhostPrev = false;
+                Renderer.drawFrame();
             }
         });
     },
