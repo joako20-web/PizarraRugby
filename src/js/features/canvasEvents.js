@@ -218,6 +218,9 @@ export const CanvasEvents = {
                     };
                 }
 
+                // Detect Propagate Mode (Shift + Alt) - REMOVED (Replaced by state toggle)
+                // Visual/Feedback is now in handleMouseMove based on state.propagationMode
+
                 // Ball Carrier Logic (Sticky Ball)
                 // Check if ball is "on" any of the dragged players
                 const f = Utils.getCurrentFrame();
@@ -345,6 +348,14 @@ export const CanvasEvents = {
 
     handleMouseMove(e) {
         const pos = Utils.canvasPos(e);
+        const canvas = e.target; // or document.getElementById('canvas')
+
+        // Visual Feedback for Propagation Mode
+        if (state.propagationMode) {
+            canvas.style.cursor = 'copy'; // Indicates "Copying" movement to future
+        } else if (state.mode === "move") {
+            canvas.style.cursor = 'default';
+        }
 
         if (state.mode === "zone" && state.pendingZone) {
             Renderer.drawFrame(); // Redibujar zona pendiente si la tuviéramos interactiva
@@ -540,8 +551,54 @@ export const CanvasEvents = {
         Store.setDraggingShield(null);
 
         if (state.dragTarget) {
-            // ALT-DRAG Interpolation
-            if (e && e.altKey && state.dragTarget.type === "players") {
+            // Handle Propagation (Toggle Mode) handled in MouseUp
+            if (state.propagationMode && state.dragTarget.type === "players") {
+                const movedPlayers = state.dragTarget.players;
+                const startPositions = state.dragTarget.startPositions;
+                let propagatedCount = 0;
+
+                movedPlayers.forEach((p, i) => {
+                    const start = startPositions[i];
+                    const dx = p.x - start.x;
+                    const dy = p.y - start.y;
+
+                    if (Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1) {
+                        // Propagate delta to future frames
+                        for (let k = state.currentFrameIndex + 1; k < state.frames.length; k++) {
+                            const nextFrame = state.frames[k];
+                            const nextP = Utils.findPlayerByTeamNumber(p.team, p.number, nextFrame);
+                            if (nextP) {
+                                // Check if this player has the ball in this future frame
+                                // We check distance BEFORE moving the player in the future frame (or after, delta is same)
+                                // Let's check relation: is ball ~at the same relative position?
+                                // Simple sticky check: is distance < 25 (carrier threshold)?
+                                const ball = nextFrame.ball;
+                                const dist = Math.hypot(nextP.x - ball.x, nextP.y - ball.y);
+
+                                nextP.x += dx;
+                                nextP.y += dy;
+
+                                if (dist < 30) { // Threshold for "carrying"
+                                    ball.x += dx;
+                                    ball.y += dy;
+                                }
+                            }
+                        }
+                        propagatedCount++;
+                    }
+                });
+
+                if (propagatedCount > 0) {
+                    const msg = I18n.t('msg_propagation_count').replace('{count}', state.frames.length - 1 - state.currentFrameIndex);
+                    Notificacion.show && Notificacion.show(msg);
+                }
+                History.push();
+                state.dragTarget = null;
+                return;
+            }
+
+            // ALT-DRAG Interpolation (Only Alt, Not Shift+Alt)
+            if (e && e.altKey && !e.shiftKey && state.dragTarget.type === "players") {
                 const framesInput = await Popup.prompt(I18n.t('prompt_frames_interpolation') || "Número de frames intermedios:", "5");
                 const numFrames = parseInt(framesInput);
 

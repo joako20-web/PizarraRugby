@@ -14,6 +14,7 @@ import { Popup } from '../ui/popup.js';
 import { UI } from '../ui/ui.js';
 import { Export } from '../features/export.js';
 import { Store } from './store.js';
+import { Notificacion } from '../ui/notifications.js';
 
 export const InputHandler = {
     callbacks: {},
@@ -74,20 +75,36 @@ export const InputHandler = {
             // But we need to know if keys MATCH.
 
             // Let's implement a helper `isPressed(e, shortcut)`
+            // Helper to check if a specific shortcut is pressed, independent of key order
             const isPressed = (evt, shortcutKey) => {
                 if (!shortcutKey) return false;
-                // Normalize evt
-                let keys = [];
-                if (evt.ctrlKey) keys.push('Ctrl');
-                if (evt.altKey) keys.push('Alt');
-                if (evt.shiftKey) keys.push('Shift');
-                let main = evt.key;
-                if (main.length === 1) main = main.toUpperCase();
-                if (evt.code === 'Space') main = 'Space';
-                if (!['Control', 'Alt', 'Shift', 'Meta'].includes(evt.key)) keys.push(main);
 
-                const current = keys.join('+').toUpperCase();
-                return current === shortcutKey.toUpperCase();
+                // Helper to normalize key names
+                const normalize = (k) => {
+                    k = k.toUpperCase();
+                    if (k === 'CONTROL') return 'CTRL';
+                    return k;
+                };
+
+                const targetKeys = shortcutKey.split('+').map(normalize).sort();
+
+                let currentKeys = [];
+                if (evt.ctrlKey) currentKeys.push('CTRL');
+                if (evt.altKey) currentKeys.push('ALT');
+                if (evt.shiftKey) currentKeys.push('SHIFT');
+                if (evt.metaKey) currentKeys.push('META');
+
+                let main = evt.key.toUpperCase();
+                if (evt.code === 'Space') main = 'SPACE';
+
+                // Add main key if it's not a modifier
+                if (!['CONTROL', 'ALT', 'SHIFT', 'META'].includes(main)) {
+                    currentKeys.push(normalize(main));
+                }
+
+                currentKeys.sort();
+
+                return targetKeys.join('+') === currentKeys.join('+');
             };
 
             if (isPressed(e, SETTINGS.SHORTCUTS.GHOST_SHOW)) {
@@ -102,6 +119,14 @@ export const InputHandler = {
                     state.showGhostPrev = true;
                     Renderer.drawFrame();
                 }
+            }
+
+            if (isPressed(e, SETTINGS.SHORTCUTS.TOGGLE_PROPAGATION)) {
+                state.propagationMode = !state.propagationMode;
+                const msg = state.propagationMode ? I18n.t('msg_propagation_on') : I18n.t('msg_propagation_off');
+                if (typeof Notificacion !== 'undefined') Notificacion.show(msg);
+                else alert(msg);
+                Renderer.drawFrame(); // To update cursor if needed
             }
         });
 

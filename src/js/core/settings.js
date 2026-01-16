@@ -13,9 +13,9 @@ export const DEFAULT_SHORTCUTS = {
     FRAME_PREV: 'ArrowLeft',
     FRAME_NEXT: 'ArrowRight',
     FRAME_ADD: '+',
-    FRAME_REMOVE: '-',
     GHOST_SHOW: 'Shift+A',
-    GHOST_PREV: 'Shift+D'
+    GHOST_PREV: 'Shift+D',
+    TOGGLE_PROPAGATION: 'Alt+Shift+B'
 };
 
 export const SETTINGS = {

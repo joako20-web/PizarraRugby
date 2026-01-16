@@ -187,6 +187,12 @@ export const en = {
     "shortcut_frame_add": "Add Frame",
     "shortcut_frame_remove": "Delete Frame",
     "shortcut_section_frames": "Frames",
+    "shortcut_propagation_mode": "Propagation Mode (Toggle)",
+
+    // Notifications
+    "msg_propagation_on": "Propagation Mode: ON",
+    "msg_propagation_off": "Propagation Mode: OFF",
+    "msg_propagation_count": "Movement propagated to {count} frames.",
 
     // Settings Reset
     "settings_reset_confirm_title": "Restore Factory Defaults?",

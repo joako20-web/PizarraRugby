@@ -65,5 +65,9 @@ export const state = {
 
     // Ghost Preview
     showGhost: false,
-    showGhostPrev: false
+    showGhost: false,
+    showGhostPrev: false,
+
+    // Propagate Mode
+    propagationMode: false
 };

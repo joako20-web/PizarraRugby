@@ -72,6 +72,10 @@ export const SettingsShortcuts = {
                     <label>${I18n.t('btn_presentation')}</label>
                     <button class="btn btn--secondary bind-btn" data-action="PRESENTATION_MODE">${fmt(s.PRESENTATION_MODE)}</button>
                 </div>
+                <div class="shortcut-item">
+                    <label>${I18n.t('shortcut_propagation_mode')}</label>
+                    <button class="btn btn--secondary bind-btn" data-action="TOGGLE_PROPAGATION">${fmt(s.TOGGLE_PROPAGATION)}</button>
+                </div>
                 
                 <h4 style="margin: 15px 0 10px 0; color: #888; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px;">${I18n.t('shortcut_section_frames')}</h4>
                 
@@ -187,7 +191,9 @@ export const SettingsShortcuts = {
                                 FRAME_NEXT: I18n.t('shortcut_frame_next'),
                                 FRAME_PREV: I18n.t('shortcut_frame_prev'),
                                 FRAME_ADD: I18n.t('shortcut_frame_add'),
-                                FRAME_REMOVE: I18n.t('shortcut_frame_remove')
+                                FRAME_ADD: I18n.t('shortcut_frame_add'),
+                                FRAME_REMOVE: I18n.t('shortcut_frame_remove'),
+                                TOGGLE_PROPAGATION: I18n.t('shortcut_propagation_mode')
                             };
                             const conflictName = names[conflict] || conflict;
 

@@ -190,6 +190,12 @@ export const es = {
     "shortcut_frame_add": "Añadir Frame",
     "shortcut_frame_remove": "Eliminar Frame",
     "shortcut_section_frames": "Fotogramas",
+    "shortcut_propagation_mode": "Modo Propagación (Toggle)",
+
+    // Notifications
+    "msg_propagation_on": "Modo Propagación: ACTIVADO",
+    "msg_propagation_off": "Modo Propagación: DESACTIVADO",
+    "msg_propagation_count": "Movimiento propagado a {count} frames.",
 
     // Settings Reset
     "settings_reset_confirm_title": "¿Restaurar valores de fábrica?",
