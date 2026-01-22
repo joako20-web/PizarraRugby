@@ -21,20 +21,7 @@ import { InputHandler } from "./core/input-handler.js";
 import { Store } from "./core/store.js";
 import { Playbook } from './features/playbook.js';
 
-// CSS Imports
-import '../css/base/variables.css';
-import '../css/base/base.css';
-import '../css/layout/structure.css';
-import '../css/layout/responsive.css';
-import '../css/components/buttons.css';
-import '../css/components/panels.css';
-import '../css/components/forms.css';
-import '../css/components/settings.css';
-import '../css/components/modals.css';
-import '../css/components/toolbar.css';
-import '../css/components/floating.css';
-import '../css/features/presentation.css';
-import '../css/utilities/utils.css';
+// CSS Imports - Removed (now in main.css)
 
 function resetBoardForFieldChange() {
     // Vaciar frames

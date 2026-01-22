@@ -456,7 +456,16 @@ export const Animation = {
             lastFrame.trailLines = originalTrails;
         }
 
-        rec.stop();
+        if (rec) {
+            rec.stop();
+        } else if (mode === 'mp4' && videoEncoder && muxer) {
+            await videoEncoder.flush();
+            muxer.finalize();
+            const { buffer } = muxer.target;
+            this.downloadBlob(new Blob([buffer]), `animation_${Date.now()}`, 'mp4');
+            this.cleanupExport(exportCanvas, btnPlay, btnPause);
+        }
+
         Renderer.drawFrame();
     },
 

@@ -618,7 +618,33 @@ export const CanvasEvents = {
         }
     },
 
-    handleMouseUp() {
+    async handleMouseUp(e) {
+        const pos = Utils.canvasPos(e);
+
+        // Soltar Guía
+        if (state.draggingGuide) {
+            const gutter = 40;
+            const g = state.draggingGuide;
+
+            // Si se suelta en el gutter, eliminar la guía
+            let removed = false;
+            if (g.type === 'vertical' && pos.x < gutter) {
+                state.guides.vertical.splice(g.index, 1);
+                removed = true;
+            } else if (g.type === 'horizontal' && pos.y < gutter) {
+                state.guides.horizontal.splice(g.index, 1);
+                removed = true;
+            }
+
+            state.draggingGuide = null;
+            Renderer.drawFrame();
+            // Solo guardar histórico si hubo cambios (creación o movimiento válida, o eliminación)
+            // Si se creó y se eliminó al instante ("click en gutter"), quizás no haga falta, 
+            // pero simplifiquemos guardando siempre que se termina una interacción de guía.
+            History.push();
+            return;
+        }
+
         if (state.draggingZone) {
             state.draggingZone = false;
         }
