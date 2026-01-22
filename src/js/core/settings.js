@@ -15,6 +15,9 @@ export const DEFAULT_SHORTCUTS = {
     FRAME_ADD: '+',
     FRAME_REMOVE: '-',
     TOGGLE_GUIDES: 'Ctrl+.'
+    GHOST_SHOW: 'Shift+A',
+    GHOST_PREV: 'Shift+D',
+    TOGGLE_PROPAGATION: 'Alt+Shift+B'
 };
 
 export const SETTINGS = {
@@ -29,9 +32,9 @@ export const SETTINGS = {
 
     SHORTCUTS: { ...DEFAULT_SHORTCUTS },
     EXPORT: {
-        RESOLUTION: '2k', // 'current', '1080p', '2k', '4k'
-        FPS: 60,          // 30, 60
-        BITRATE: 20       // Mbps
+        RESOLUTION: '3840x2160', // 'current', '1920x1080', '2560x1440', '3840x2160'
+        FPS: 60,                 // 30, 60
+        BITRATE: 18              // Mbps
     },
     UI: {
         toolsPanelPosition: 'left',

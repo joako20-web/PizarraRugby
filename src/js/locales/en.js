@@ -137,6 +137,8 @@ export const en = {
     "quality_standard": "Standard (5 Mbps)",
     "quality_high": "High (8 Mbps)",
     "quality_ultra": "Ultra (15 Mbps)",
+    "quality_master": "Master (18 Mbps)",
+    "quality_whatsapp": "WhatsApp (Optimized)",
     "btn_cancel": "Cancel",
     "btn_export": "Export",
     "error_no_frames_export": "Not enough frames to export (minimum 2).",
@@ -185,6 +187,12 @@ export const en = {
     "shortcut_frame_add": "Add Frame",
     "shortcut_frame_remove": "Delete Frame",
     "shortcut_section_frames": "Frames",
+    "shortcut_propagation_mode": "Propagation Mode (Toggle)",
+
+    // Notifications
+    "msg_propagation_on": "Propagation Mode: ON",
+    "msg_propagation_off": "Propagation Mode: OFF",
+    "msg_propagation_count": "Movement propagated to {count} frames.",
 
     // Settings Reset
     "settings_reset_confirm_title": "Restore Factory Defaults?",

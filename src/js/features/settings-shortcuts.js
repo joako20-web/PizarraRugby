@@ -61,12 +61,16 @@ export const SettingsShortcuts = {
                     <button class="btn btn--secondary bind-btn" data-action="ANIMATION_PLAY">${fmt(s.ANIMATION_PLAY)}</button>
                 </div>
                 <div class="shortcut-item">
-                    <label>${I18n.t('btn_presentation')}</label>
-                    <button class="btn btn--secondary bind-btn" data-action="PRESENTATION_MODE">${fmt(s.PRESENTATION_MODE)}</button>
+                    <label>Fantasmas (Sig.)</label>
+                    <button class="btn btn--secondary bind-btn" data-action="GHOST_SHOW">${fmt(s.GHOST_SHOW)}</button>
                 </div>
                 <div class="shortcut-item">
-                    <label>${I18n.t('shortcut_toggle_guides')}</label>
-                    <button class="btn btn--secondary bind-btn" data-action="TOGGLE_GUIDES">${fmt(s.TOGGLE_GUIDES)}</button>
+                    <label>Fantasmas (Ant.)</label>
+                    <button class="btn btn--secondary bind-btn" data-action="GHOST_PREV">${fmt(s.GHOST_PREV)}</button>
+                </div>
+                <div class="shortcut-item">
+                    <label>${I18n.t('btn_presentation')}</label>
+                    <button class="btn btn--secondary bind-btn" data-action="PRESENTATION_MODE">${fmt(s.PRESENTATION_MODE)}</button>
                 </div>
                 
                 <h4 style="margin: 15px 0 10px 0; color: #888; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px;">${I18n.t('shortcut_section_frames')}</h4>
@@ -183,7 +187,9 @@ export const SettingsShortcuts = {
                                 FRAME_NEXT: I18n.t('shortcut_frame_next'),
                                 FRAME_PREV: I18n.t('shortcut_frame_prev'),
                                 FRAME_ADD: I18n.t('shortcut_frame_add'),
-                                FRAME_REMOVE: I18n.t('shortcut_frame_remove')
+                                FRAME_ADD: I18n.t('shortcut_frame_add'),
+                                FRAME_REMOVE: I18n.t('shortcut_frame_remove'),
+                                TOGGLE_PROPAGATION: I18n.t('shortcut_propagation_mode')
                             };
                             const conflictName = names[conflict] || conflict;
 

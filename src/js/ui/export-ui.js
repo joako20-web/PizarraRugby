@@ -13,15 +13,8 @@ export const ExportUI = {
         // Assuming it's in index.html, we should probably hide the advanced controls via CSS or style.display.
 
         this.filenameInput = document.getElementById('export-filename');
-        this.resolutionSelect = document.getElementById('export-resolution');
-        this.fpsSelect = document.getElementById('export-fps');
-        this.qualitySelect = document.getElementById('export-quality');
+        // Removed advanced controls (resolution, fps, quality) as they are now in Global Settings
 
-        // Hide advanced controls container if possible, or individual elements
-        // Let's hide the parents of these controls if they exist
-        if (this.resolutionSelect) this.resolutionSelect.parentElement.style.display = 'none';
-        if (this.fpsSelect) this.fpsSelect.parentElement.style.display = 'none';
-        if (this.qualitySelect) this.qualitySelect.parentElement.style.display = 'none';
 
         this.cancelBtn = document.getElementById('export-cancel');
         this.confirmBtn = document.getElementById('export-confirm');
@@ -49,41 +42,33 @@ export const ExportUI = {
 
         if (this.confirmBtn) {
             this.confirmBtn.onclick = () => {
-                // Use settings or defaults
-                const s = SETTINGS.EXPORT || { RESOLUTION: '2k', FPS: 60, BITRATE: 20 };
+                // Get values from UI
+                const filename = this.filenameInput.value || 'animation';
 
-                // Convert simple bitrate number to bps for exportAdvanced logic
-                // In exportAdvanced: bitrate = qualityMap[quality] || 8000000;
-                // We need to pass a "quality" string? Or modified export logic?
-                // Animation.js expects 'quality': 'standard' | 'high' | 'ultra' OR we can modify it to accept explicit bitrate.
-                // Let's modify the Animation.js call to pass bitrate directly or modify Animation.js logic.
-                // Actually exportAdvanced uses "options.quality" mapped to numbers.
-                // Let's pass the raw bitrate and update Animation.js to use it if present.
+                // Get settings from Global Config
+                const exportSettings = SETTINGS.EXPORT || { RESOLUTION: '1080p', FPS: 30, BITRATE: 8 };
 
                 const options = {
-                    filename: this.filenameInput.value || 'animation',
-                    resolution: s.RESOLUTION,
-                    fps: s.FPS,
-                    bitrate: s.BITRATE * 1000000 // Convert Mbps to bps
+                    filename: filename,
+                    resolution: exportSettings.RESOLUTION,
+                    fps: exportSettings.FPS,
+                    bitrate: exportSettings.BITRATE * 1000000 // Convert Mbps to bps
                 };
+
                 Animation.exportAdvanced(options);
                 this.close();
             };
         }
 
-        if (this.speedInput) {
-            this.speedInput.oninput = (e) => {
-                const val = parseFloat(e.target.value);
-                CONFIG.PLAYBACK_SPEED = val;
-                if (this.speedDisplay) this.speedDisplay.textContent = val + 'x';
-            };
-        }
+        // Removed speed/quality listeners
     },
 
     open() {
         if (this.modal) {
             // Set default filename
             this.filenameInput.value = I18n.t ? (I18n.t('default_animation_name') || 'Animación') : 'Animación';
+
+            // Note: Resolution/FPS/Bitrate are now read from SETTINGS.EXPORT at export time.
             this.modal.classList.remove('is-hidden');
         }
     },

@@ -142,6 +142,8 @@ export const es = {
     "quality_standard": "Estándar (5 Mbps)",
     "quality_high": "Alta (8 Mbps)",
     "quality_ultra": "Ultra (15 Mbps)",
+    "quality_master": "Master (18 Mbps)",
+    "quality_whatsapp": "WhatsApp (Optimizado)",
     "btn_cancel": "Cancelar",
     "btn_export": "Exportar",
     "error_no_frames_export": "No hay suficientes frames para exportar (mínimo 2).",
@@ -190,6 +192,12 @@ export const es = {
     "shortcut_frame_add": "Añadir Frame",
     "shortcut_frame_remove": "Eliminar Frame",
     "shortcut_section_frames": "Fotogramas",
+    "shortcut_propagation_mode": "Modo Propagación (Toggle)",
+
+    // Notifications
+    "msg_propagation_on": "Modo Propagación: ACTIVADO",
+    "msg_propagation_off": "Modo Propagación: DESACTIVADO",
+    "msg_propagation_count": "Movimiento propagado a {count} frames.",
 
     // Settings Reset
     "settings_reset_confirm_title": "¿Restaurar valores de fábrica?",

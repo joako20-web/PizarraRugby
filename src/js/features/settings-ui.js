@@ -194,6 +194,15 @@ export const SettingsUI = {
                     ${I18n.t('settings_export_desc')}
                 </p>
 
+
+                <div class="form-group">
+                    <label>Preset</label>
+                    <select id="set-export-preset" style="width:100%; height:40px;">
+                        <option value="custom">Personalizado</option>
+                        <option value="whatsapp">WhatsApp (Optimizado)</option>
+                    </select>
+                </div>
+
                 <div class="form-group">
                     <label>${I18n.t('settings_export_res')}</label>
                     <select id="set-export-res" style="width:100%; height:40px;">
@@ -226,9 +235,48 @@ export const SettingsUI = {
     bindExportEvents() {
         const slider = document.getElementById("set-export-bitrate");
         const val = document.getElementById("bitrate-val");
+        const preset = document.getElementById("set-export-preset");
+        const res = document.getElementById("set-export-res");
+        const fps = document.getElementById("set-export-fps");
+
         if (slider && val) {
             slider.oninput = (e) => {
                 val.textContent = e.target.value + " Mbps";
+                if (preset) preset.value = 'custom';
+            };
+        }
+
+        if (res) {
+            res.onchange = () => {
+                if (preset) preset.value = 'custom';
+            }
+        }
+
+        if (fps) {
+            fps.onchange = () => {
+                if (preset) preset.value = 'custom';
+            }
+        }
+
+        if (preset) {
+            // Check if current settings match WhatsApp (approximately) to set initial state
+            const currentRes = res ? res.value : '1080p';
+            const currentFps = fps ? fps.value : '30';
+            const currentBitrate = slider ? parseInt(slider.value) : 4;
+
+            if (currentRes === '1080p' && currentFps === '30' && currentBitrate === 4) {
+                preset.value = 'whatsapp';
+            }
+
+            preset.onchange = () => {
+                if (preset.value === 'whatsapp') {
+                    if (res) res.value = '1080p';
+                    if (fps) fps.value = '30';
+                    if (slider) {
+                        slider.value = 4;
+                        if (val) val.textContent = "4 Mbps";
+                    }
+                }
             };
         }
     },

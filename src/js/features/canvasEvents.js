@@ -8,7 +8,9 @@ import { Renderer } from '../renderer/renderer.js';
 import { Tutorial } from './tutorial.js';
 import { Scrum } from './scrum.js';
 import { History } from './history.js';
+
 import { I18n } from '../core/i18n.js';
+import { Frame } from '../model/frame.js';
 
 // ==============================
 // EVENTOS DEL CANVAS
@@ -252,6 +254,9 @@ export const CanvasEvents = {
                     };
                 }
 
+                // Detect Propagate Mode (Shift + Alt) - REMOVED (Replaced by state toggle)
+                // Visual/Feedback is now in handleMouseMove based on state.propagationMode
+
                 // Ball Carrier Logic (Sticky Ball)
                 // Check if ball is "on" any of the dragged players
                 const f = Utils.getCurrentFrame();
@@ -379,6 +384,14 @@ export const CanvasEvents = {
 
     handleMouseMove(e) {
         const pos = Utils.canvasPos(e);
+        const canvas = e.target; // or document.getElementById('canvas')
+
+        // Visual Feedback for Propagation Mode
+        if (state.propagationMode) {
+            canvas.style.cursor = 'copy'; // Indicates "Copying" movement to future
+        } else if (state.mode === "move") {
+            canvas.style.cursor = 'default';
+        }
 
         if (state.mode === "zone" && state.pendingZone) {
             Renderer.drawFrame(); // Redibujar zona pendiente si la tuviéramos interactiva
@@ -606,32 +619,7 @@ export const CanvasEvents = {
     },
 
     handleMouseUp() {
-        if (state.draggingGuide) {
-            // Eliminar guía si se suelta cerca de los bordes
-            const g = state.draggingGuide;
-            const gutter = 60; // AUMENTADO: Un poco más grande para facilitar borrado
-
-            if (g.type === "vertical") {
-                if (state.guides.vertical[g.index] < gutter) {
-                    state.guides.vertical.splice(g.index, 1);
-                }
-            } else {
-                if (state.guides.horizontal[g.index] < gutter) {
-                    state.guides.horizontal.splice(g.index, 1);
-                }
-            }
-            state.draggingGuide = null;
-            Renderer.drawFrame();
-            return;
-        }
-
         if (state.draggingZone) {
-            // draggingZone is a local flag in older code?
-            // checking grep: state.draggingZone = true (line 170)
-            // It seems 'state.draggingZone' is also a state property!
-            // I should migrate this too, or assume setSelection handles it implicitly?
-            // Logic says it handles drag state. Let's create a setter or just manually fix here for now
-            // But Store.selectEntity handles selection. Dragging logic is usually separate.
             state.draggingZone = false;
         }
 
@@ -670,14 +658,126 @@ export const CanvasEvents = {
         Store.setDraggingShield(null);
 
         if (state.dragTarget) {
-            // Push history for ANY drag action completion (ball, text, players)
-            // But only if we actually moved something?
-            // For now, simpler to just push if we had a drag target.
+            // Handle Propagation (Toggle Mode) handled in MouseUp
+            if (state.propagationMode && state.dragTarget.type === "players") {
+                const movedPlayers = state.dragTarget.players;
+                const startPositions = state.dragTarget.startPositions;
+                let propagatedCount = 0;
+
+                movedPlayers.forEach((p, i) => {
+                    const start = startPositions[i];
+                    const dx = p.x - start.x;
+                    const dy = p.y - start.y;
+
+                    if (Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1) {
+                        // Propagate delta to future frames
+                        for (let k = state.currentFrameIndex + 1; k < state.frames.length; k++) {
+                            const nextFrame = state.frames[k];
+                            const nextP = Utils.findPlayerByTeamNumber(p.team, p.number, nextFrame);
+                            if (nextP) {
+                                // Check if this player has the ball in this future frame
+                                // We check distance BEFORE moving the player in the future frame (or after, delta is same)
+                                // Let's check relation: is ball ~at the same relative position?
+                                // Simple sticky check: is distance < 25 (carrier threshold)?
+                                const ball = nextFrame.ball;
+                                const dist = Math.hypot(nextP.x - ball.x, nextP.y - ball.y);
+
+                                nextP.x += dx;
+                                nextP.y += dy;
+
+                                if (dist < 30) { // Threshold for "carrying"
+                                    ball.x += dx;
+                                    ball.y += dy;
+                                }
+                            }
+                        }
+                        propagatedCount++;
+                    }
+                });
+
+                if (propagatedCount > 0) {
+                    const msg = I18n.t('msg_propagation_count').replace('{count}', state.frames.length - 1 - state.currentFrameIndex);
+                    Notificacion.show && Notificacion.show(msg);
+                }
+                History.push();
+                state.dragTarget = null;
+                return;
+            }
+
+            // ALT-DRAG Interpolation (Only Alt, Not Shift+Alt)
+            if (e && e.altKey && !e.shiftKey && state.dragTarget.type === "players") {
+                const framesInput = await Popup.prompt(I18n.t('prompt_frames_interpolation') || "Número de frames intermedios:", "5");
+                const numFrames = parseInt(framesInput);
+
+                if (!isNaN(numFrames) && numFrames > 0) {
+                    const startFrame = Utils.getCurrentFrame();
+
+                    // 1. Create N copies of the current frame (which has the END state currently)
+                    // We will revert the 'current' frame players to START state? 
+                    // No, simpler: 
+                    // The 'current' frame is the END frame.
+                    // We want to insert N frames BEFORE it.
+                    // The players in those frames should be interpolated.
+
+                    const newFrames = [];
+                    const startPositions = state.dragTarget.startPositions;
+                    const movedPlayers = state.dragTarget.players;
+
+                    for (let k = 1; k <= numFrames; k++) {
+                        // Clone the current frame (which contains all other state: ball, arrows, etc.)
+                        // NOTE: Cloned frame has players at END positions. We must update them.
+                        const frameClone = Frame.clone(startFrame);
+
+                        // Update moved players positions
+                        movedPlayers.forEach((p, index) => {
+                            const start = startPositions[index];
+                            const endX = p.x;
+                            const endY = p.y;
+
+                            // Interpolation factor
+                            const t = k / (numFrames + 1);
+
+                            // Find corresponding player in clone
+                            const pClone = Utils.findPlayerByTeamNumber(p.team, p.number, frameClone);
+                            if (pClone) {
+                                pClone.x = start.x + (endX - start.x) * t;
+                                pClone.y = start.y + (endY - start.y) * t;
+                            }
+                        });
+
+                        // Clear trails in intermediate frames to avoid clutter? Or keep?
+                        // Usually clean trails for intermediate frames
+                        frameClone.trailLines = [];
+
+                        newFrames.push(frameClone);
+                    }
+
+                    // Insert frames BEFORE the current frame
+                    state.frames.splice(state.currentFrameIndex, 0, ...newFrames);
+
+                    // Advance current index so we stay on the "End" frame
+                    state.currentFrameIndex += numFrames;
+
+                    // Update UI
+                    if (typeof Animation !== 'undefined') Animation.updateUI();
+                    Renderer.drawFrame();
+                    History.push();
+
+                    state.dragTarget = null;
+                    return; // Skip default trail logic
+                }
+            }
+
 
             if (state.dragTarget.type === "players") {
                 const f = Utils.getCurrentFrame();
-                state.dragTarget.players.forEach((pl, i) => {
-                    const st = state.dragTarget.startPositions[i];
+                const movedPlayers = state.dragTarget.players;
+                const startPositions = state.dragTarget.startPositions;
+
+                movedPlayers.forEach((pl, i) => {
+                    const st = startPositions[i];
+
+                    // 1. Trail Handling
                     // Solo añadir trail si se movió significativamente
                     if (Math.hypot(pl.x - st.x, pl.y - st.y) > 2) {
                         f.trailLines.push({
@@ -687,6 +787,30 @@ export const CanvasEvents = {
                             y2: pl.y,
                             team: pl.team
                         });
+
+                        // 2. Propagate movement to future frames
+                        // Si el jugador estaba en posición A en frames futuros, moverlo a posición B
+                        // (Hasta que encontremos un frame donde ya se haya movido a otra parte C)
+                        for (let k = state.currentFrameIndex + 1; k < state.frames.length; k++) {
+                            const nextFrame = state.frames[k];
+                            const futurePlayer = Utils.findPlayerByTeamNumber(pl.team, pl.number, nextFrame);
+
+                            if (futurePlayer) {
+                                // Verificar si está en la posición "antigua" (st)
+                                // Usamos un margen de error pequeño por float precision
+                                const dist = Math.hypot(futurePlayer.x - st.x, futurePlayer.y - st.y);
+
+                                if (dist < 1.0) { // Si está "quieto" en la posición vieja
+                                    // Mover a la nueva posición
+                                    futurePlayer.x = pl.x;
+                                    futurePlayer.y = pl.y;
+                                } else {
+                                    // El jugador ya se movió a otro lado en el futuro.
+                                    // Dejamos de propagar para respetar ese movimiento posterior.
+                                    break;
+                                }
+                            }
+                        }
                     }
                 });
             }

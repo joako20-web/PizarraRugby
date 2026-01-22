@@ -645,6 +645,93 @@ export const Renderer = {
             targetCtx.stroke();
         });
 
+        // Ghost Preview
+        if (state.showGhost && state.currentFrameIndex < state.frames.length - 1) {
+            const nextFrame = state.frames[state.currentFrameIndex + 1];
+
+            // Render Ghost Players
+            nextFrame.players.forEach(p => {
+                if (!p.visible) return;
+
+                // Position calculation (same as normal players)
+                let x = p.x;
+                let y = p.y;
+
+                // Adapt to field resize if necessary (using Renderer helper or logic similar to players)
+                // Assuming standardized coordinates or that nextFrame is already updated on resize.
+
+                // Responsive Radius Calculation
+                const isMobile = targetCtx.canvas.width <= 1024;
+                const baseScale = isMobile ? 0.6 : 1.0;
+                let radius = (state.fieldConfig.type === "full" && state.fieldConfig.orientation === "horizontal" && !isMobile)
+                    ? p.radius * 1.2
+                    : p.radius;
+                radius *= SETTINGS.PLAYER_SCALE * baseScale;
+
+                targetCtx.save();
+                targetCtx.globalAlpha = 0.3; // Ghost transparency
+
+                targetCtx.beginPath();
+                targetCtx.arc(x, y, radius, 0, Math.PI * 2);
+                targetCtx.fillStyle = p.team === "A" ? SETTINGS.TEAM_A_COLOR : SETTINGS.TEAM_B_COLOR;
+                targetCtx.fill();
+
+                // Optional: Stroke for better visibility
+                // targetCtx.strokeStyle = "white";
+                // targetCtx.lineWidth = 1;
+                // targetCtx.stroke();
+
+                if (SETTINGS.SHOW_NUMBERS) {
+                    targetCtx.fillStyle = "white";
+                    targetCtx.font = "bold 14px Arial";
+                    targetCtx.textAlign = "center";
+                    targetCtx.textBaseline = "middle";
+                    targetCtx.fillText(p.number, x, y);
+                }
+
+                targetCtx.restore();
+            });
+        }
+
+        // Ghost Preview Previous (Alt + D)
+        if (state.showGhostPrev && state.currentFrameIndex > 0) {
+            const prevFrame = state.frames[state.currentFrameIndex - 1];
+
+            // Render Ghost Players (Previous)
+            prevFrame.players.forEach(p => {
+                if (!p.visible) return;
+
+                let x = p.x;
+                let y = p.y;
+
+                // Responsive Radius
+                const isMobile = targetCtx.canvas.width <= 1024;
+                const baseScale = isMobile ? 0.6 : 1.0;
+                let radius = (state.fieldConfig.type === "full" && state.fieldConfig.orientation === "horizontal" && !isMobile)
+                    ? p.radius * 1.2
+                    : p.radius;
+                radius *= SETTINGS.PLAYER_SCALE * baseScale;
+
+                targetCtx.save();
+                targetCtx.globalAlpha = 0.3;
+
+                targetCtx.beginPath();
+                targetCtx.arc(x, y, radius, 0, Math.PI * 2);
+                targetCtx.fillStyle = p.team === "A" ? SETTINGS.TEAM_A_COLOR : SETTINGS.TEAM_B_COLOR;
+                targetCtx.fill();
+
+                if (SETTINGS.SHOW_NUMBERS) {
+                    targetCtx.fillStyle = "white";
+                    targetCtx.font = "bold 14px Arial";
+                    targetCtx.textAlign = "center";
+                    targetCtx.textBaseline = "middle";
+                    targetCtx.fillText(p.number, x, y);
+                }
+
+                targetCtx.restore();
+            });
+        }
+
         // Flechas
         f.arrows.forEach(a => {
             if (a.type === "kick") this.drawKickArrow(a, targetCtx);

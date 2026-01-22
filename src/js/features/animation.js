@@ -4,6 +4,7 @@ import { CONFIG } from '../core/config.js';
 import { I18n } from '../core/i18n.js';
 import { canvas } from '../core/dom.js';
 import { Notificacion } from '../ui/notifications.js';
+import { VideoConverter } from '../utils/video-converter.js';
 
 export const Animation = {
     rafId: null,
@@ -14,6 +15,43 @@ export const Animation = {
         this.frameCounter = document.getElementById('frame-counter');
         this.frameBar = document.getElementById('frame-bar');
         this.updateUI();
+    },
+
+    /**
+     * Detecta si en la transición entre frameA y frameB SOLO se mueve el balón.
+     * @param {Object} frameA 
+     * @param {Object} frameB 
+     * @returns {boolean}
+     */
+    _isBallOnlyMovement(frameA, frameB) {
+        if (!frameA || !frameB) return false;
+
+        // 1. Verificar si el balón se movió
+        const ballMoved = (frameA.ball.x !== frameB.ball.x) || (frameA.ball.y !== frameB.ball.y);
+
+        // Si el balón no se movió, no es un "movimiento solo de balón" relevante para acelerar
+        // (o es estático, o se mueven jugadores). Queremos acelerar PASES.
+        if (!ballMoved) return false;
+
+        // 2. Verificar si algún jugador visible se movió
+        // Asumimos que la lista de jugadores es paralela (mismo orden)
+        for (let i = 0; i < frameA.players.length; i++) {
+            const pA = frameA.players[i];
+            const pB = frameB.players[i];
+
+            // Si el jugador no existe en B (raro) o cambia visibilidad, contamos como cambio "de escena" -> normal speed
+            if (!pB || pA.visible !== pB.visible) return false;
+
+            // Si es visible y cambió de posición
+            if (pA.visible) {
+                if (Math.abs(pA.x - pB.x) > 0.1 || Math.abs(pA.y - pB.y) > 0.1) {
+                    return false; // Se movió un jugador
+                }
+            }
+        }
+
+        // Si llegamos aquí: El balón se movió Y ningún jugador se movió.
+        return true;
     },
 
     updateUI() {
@@ -28,7 +66,6 @@ export const Animation = {
 
     play() {
         if (state.frames.length < 2) {
-            // Check if Notificacion exists, otherwise alert or console
             const msg = (typeof I18n !== 'undefined' && I18n.t) ? I18n.t('error_no_frames') : "No hay suficientes frames (mínimo 2).";
             if (typeof Notificacion !== 'undefined') Notificacion.show(msg);
             else alert(msg);
@@ -86,18 +123,28 @@ export const Animation = {
         this.lastTime = timestamp;
 
         // Cap dt to prevent jumps (max 100ms per frame)
-        // This solves the issue where animation speeds up after a freeze
         const safeDt = Math.min(Math.max(0, dt), CONFIG.MAX_DELTA_TIME);
 
-        // Duración total de la transición entre dos frames
-        const duration = CONFIG.INTERP_DURATION / CONFIG.PLAYBACK_SPEED;
+        const frameA = state.frames[state.currentFrameIndex];
+        const frameB = state.frames[state.currentFrameIndex + 1];
+
+        // Duración base
+        let duration = CONFIG.INTERP_DURATION / CONFIG.PLAYBACK_SPEED;
+
+        // Si es solo movimiento de balón, aceleramos
+        if (this._isBallOnlyMovement(frameA, frameB)) {
+            duration = duration / CONFIG.BALL_SPEED_MULTIPLIER;
+        }
 
         // Avanzar el progreso
         this.transitionProgress += safeDt / duration;
 
         // Manejar cambio de frame
         if (this.transitionProgress >= 1) {
-            this.transitionProgress -= 1;
+            // Calcular el overshoot en milisegundos reales basados en la duración ACTUAL
+            const overshootNormalized = this.transitionProgress - 1;
+            const overshootMs = overshootNormalized * duration;
+
             state.currentFrameIndex++;
             this.updateUI();
 
@@ -108,21 +155,34 @@ export const Animation = {
                 this.stop();
                 return;
             }
+
+            // Preparar el siguiente frame para aplicar el overshoot correctamente
+            const nextFrameA = state.frames[state.currentFrameIndex];
+            const nextFrameB = state.frames[state.currentFrameIndex + 1];
+
+            // Calcular duración del SIGUIENTE frame
+            let nextDuration = CONFIG.INTERP_DURATION / CONFIG.PLAYBACK_SPEED;
+            if (this._isBallOnlyMovement(nextFrameA, nextFrameB)) {
+                nextDuration = nextDuration / CONFIG.BALL_SPEED_MULTIPLIER;
+            }
+
+            // Aplicar el overshoot normalizado a la NUEVA duración
+            this.transitionProgress = overshootMs / nextDuration;
         }
 
-        // Renderizar interpolación
-        const frameA = state.frames[state.currentFrameIndex];
-        const frameB = state.frames[state.currentFrameIndex + 1];
+        // RE-leer los frames basados en el índice actualizado
+        const currentFrameA = state.frames[state.currentFrameIndex];
+        const currentFrameB = state.frames[state.currentFrameIndex + 1];
 
         // Validar que frameB existe (por seguridad)
-        if (frameB) {
-            Renderer.drawInterpolatedFrame(frameA, frameB, this.transitionProgress);
+        if (currentFrameB) {
+            Renderer.drawInterpolatedFrame(currentFrameA, currentFrameB, this.transitionProgress);
+        } else {
+            Renderer.drawFrame();
         }
 
         this.rafId = requestAnimationFrame(this._tick.bind(this));
     },
-
-    // Eliminar métodos obsoletos: _playLoop, _interpolateBetweenFrames
 
     // ==============================
     // EXPORT UI HELPERS
@@ -132,13 +192,13 @@ export const Animation = {
         if (!overlay) {
             overlay = document.createElement('div');
             overlay.id = 'export-overlay';
-            overlay.className = 'popup-overlay'; // Re-use popup overlay styles for consistent look background
+            overlay.className = 'popup-overlay';
             overlay.style.display = 'flex';
             overlay.style.flexDirection = 'column';
             overlay.style.justifyContent = 'center';
             overlay.style.alignItems = 'center';
             overlay.style.zIndex = '9999';
-            overlay.style.backgroundColor = 'rgba(15, 23, 42, 0.9)'; // Darker background
+            overlay.style.backgroundColor = 'rgba(15, 23, 42, 0.9)';
 
             overlay.innerHTML = `
                 <div style="background: var(--bg-panel); padding: 2rem; border-radius: 12px; text-align: center; border: 1px solid var(--border-color); box-shadow: var(--shadow-md); max-width: 400px; width: 90%;">
@@ -176,8 +236,6 @@ export const Animation = {
     },
 
     async exportAdvanced(options) {
-        // options: { filename, resolution, fps, quality }
-
         if (state.frames.length < 2) {
             Notificacion.show(I18n.t ? I18n.t('error_no_frames_export') : "No hay suficientes frames.");
             return;
@@ -187,6 +245,8 @@ export const Animation = {
         state.isPaused = false;
 
         // Block UI
+        const btnPlay = document.getElementById('play-animation');
+        const btnPause = document.getElementById('pause-animation');
         if (btnPlay) btnPlay.disabled = true;
         if (btnPause) btnPause.disabled = true;
 
@@ -194,50 +254,32 @@ export const Animation = {
         const originalShowGuides = state.showGuides;
         state.showGuides = false;
 
-        this._showExportOverlay(); // SHOW OVERLAY
+        this._showExportOverlay();
 
         const fps = options.fps || 30;
-
         let bitrate;
         if (options.bitrate) {
             bitrate = options.bitrate;
         } else {
-            const qualityMap = {
-                'standard': 5000000,
-                'high': 8000000,
-                'ultra': 15000000
-            };
+            const qualityMap = { 'whatsapp': 4500000, 'standard': 5000000, 'high': 8000000, 'ultra': 15000000 };
             bitrate = qualityMap[options.quality] || 8000000;
         }
 
         let targetWidth = canvas.width;
         let targetHeight = canvas.height;
-
         if (options.resolution !== 'current') {
-            if (options.resolution === '4k') {
-                targetWidth = 3840;
-                targetHeight = 2160;
-            } else if (options.resolution === '2k') {
-                targetWidth = 2560;
-                targetHeight = 1440;
-            } else if (options.resolution === '1080p') {
-                targetWidth = 1920;
-                targetHeight = 1080;
-            } else if (options.resolution.includes('x')) {
+            if (options.resolution === '4k') { targetWidth = 3840; targetHeight = 2160; }
+            else if (options.resolution === '2k') { targetWidth = 2560; targetHeight = 1440; }
+            else if (options.resolution === '1080p') { targetWidth = 1920; targetHeight = 1080; }
+            else if (options.resolution.includes('x')) {
                 const parts = options.resolution.split('x');
-                if (parts.length === 2) {
-                    targetWidth = parseInt(parts[0]);
-                    targetHeight = parseInt(parts[1]);
-                }
+                if (parts.length === 2) { targetWidth = parseInt(parts[0]); targetHeight = parseInt(parts[1]); }
             }
         }
 
-        // Crear canvas para exportación
         const exportCanvas = document.createElement('canvas');
         exportCanvas.width = targetWidth;
         exportCanvas.height = targetHeight;
-
-        // HACK: Append to DOM to prevent throttling of disconnected canvas
         exportCanvas.style.position = 'fixed';
         exportCanvas.style.left = '0';
         exportCanvas.style.top = '0';
@@ -247,222 +289,184 @@ export const Animation = {
         document.body.appendChild(exportCanvas);
 
         const exportCtx = exportCanvas.getContext('2d');
-
-        // Dimensiones lógicas (originales) para el Renderer
         const logicalW = canvas.width;
         const logicalH = canvas.height;
-
-        // Calcular escala manteniendo aspecto (Letterboxing)
         const scale = Math.min(targetWidth / logicalW, targetHeight / logicalH);
         const offsetX = (targetWidth - logicalW * scale) / 2;
         const offsetY = (targetHeight - logicalH * scale) / 2;
 
-        // Rellenar fondo negro (para las barras)
         exportCtx.fillStyle = "black";
         exportCtx.fillRect(0, 0, targetWidth, targetHeight);
-
-        // Configurar el contexto para escalar y centrar contenido
         exportCtx.translate(offsetX, offsetY);
         exportCtx.scale(scale, scale);
 
-        // Configurar grabación
-        let mimeType = "video/webm;codecs=vp9";
-        let extension = ".webm";
+        // --- SETUP ENCODER ---
+        let muxer = null;
+        let videoEncoder = null;
+        let rec = null;
+        let mode = 'legacy'; // 'mp4' (direct) or 'legacy' (recorder + convert)
 
-        if (MediaRecorder.isTypeSupported("video/mp4;codecs=h264")) {
-            mimeType = "video/mp4;codecs=h264";
-            extension = ".mp4";
-        } else if (MediaRecorder.isTypeSupported("video/mp4")) {
-            mimeType = "video/mp4";
-            extension = ".mp4";
-        } else if (MediaRecorder.isTypeSupported("video/webm;codecs=h264")) {
-            // Prefer H.264 for WebM if available (faster encoding for 4K)
-            mimeType = "video/webm;codecs=h264";
-            extension = ".webm";
-        } else if (MediaRecorder.isTypeSupported("video/webm;codecs=vp9")) {
-            mimeType = "video/webm;codecs=vp9";
-            extension = ".webm";
-        } else if (MediaRecorder.isTypeSupported("video/webm")) {
-            mimeType = "video/webm";
-            extension = ".webm";
+        // Try to load Mp4Muxer
+        let Mp4MuxerLib = window.Mp4Muxer;
+        if (!Mp4MuxerLib) {
+            try {
+                // Dynamic import
+                const module = await import('https://unpkg.com/mp4-muxer@5.1.4/build/mp4-muxer.mjs');
+                Mp4MuxerLib = module;
+            } catch (e) {
+                console.warn("Mp4Muxer dynamic import failed", e);
+            }
         }
 
-        const baseName = options.filename || 'animation';
-        let fileName = baseName;
-        if (!fileName.toLowerCase().endsWith(extension)) {
-            fileName += extension;
+        if (Mp4MuxerLib && typeof VideoEncoder !== 'undefined') {
+            try {
+                muxer = new Mp4MuxerLib.Muxer({
+                    target: new Mp4MuxerLib.ArrayBufferTarget(),
+                    video: { codec: 'avc', width: targetWidth, height: targetHeight },
+                    fastStart: 'in-memory'
+                });
+                videoEncoder = new VideoEncoder({
+                    output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
+                    error: (e) => console.error("VideoEncoder Error", e)
+                });
+                // High Profile Level 4.2 (Wide compat)
+                await videoEncoder.configure({
+                    codec: 'avc1.4d002a',
+                    width: targetWidth,
+                    height: targetHeight,
+                    bitrate: bitrate,
+                    framerate: fps
+                });
+                mode = 'mp4';
+            } catch (e) {
+                console.warn("MP4 Encoder Init Failed, switching to Legacy", e);
+                mode = 'legacy';
+                muxer = null;
+                videoEncoder = null;
+            }
         }
 
-        const stream = exportCanvas.captureStream(fps);
-        const chunks = [];
+        if (mode === 'legacy') {
+            // FALLBACK LEGACY (WEBM + Convert)
+            try {
+                rec = this.setupMediaRecorder(exportCanvas, fps, bitrate, options);
+                rec.start(1000); // Start recording 
+            } catch (e) {
+                Notificacion.show("Error fatal al iniciar grabación.");
+                this.cleanupExport(exportCanvas, btnPlay, btnPause);
+                return;
+            }
+        }
 
-        const rec = new MediaRecorder(stream, {
-            mimeType: mimeType,
-            videoBitsPerSecond: bitrate
-        });
-
-        rec.onerror = (e) => {
-            console.error("MediaRecorder Error:", e);
-            document.body.removeChild(exportCanvas);
-            this._hideExportOverlay();
-            alert("Error durante la grabación: " + (e.error ? e.error.message : "Desconocido"));
-        };
-
-        rec.ondataavailable = e => {
-            if (e.data.size > 0) chunks.push(e.data);
-        };
-
-        rec.onstop = () => {
-            document.body.removeChild(exportCanvas); // Cleanup
-
-            const blob = new Blob(chunks, { type: mimeType });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = fileName;
-            a.click();
-            URL.revokeObjectURL(url);
-
-            // Unblock UI
-            if (btnPlay) btnPlay.disabled = false;
-            if (btnPause) btnPause.disabled = false;
-
-            this._hideExportOverlay(); // HIDE OVERLAY
-            Notificacion.show(I18n.t ? I18n.t('export_success') : "Exportación completada exitosamente.");
-        };
-
-        rec.start(1000); // 1s chunks to prevent OOM
-
-        // ============================================
-        // OPTIMIZATION: Cache Static Pitch
-        // ============================================
+        // --- RENDER LOOP ---
         const pitchCacheCanvas = document.createElement('canvas');
         pitchCacheCanvas.width = targetWidth;
         pitchCacheCanvas.height = targetHeight;
         const pitchCacheCtx = pitchCacheCanvas.getContext('2d');
-
-        // Render pitch ONCE to cache
-        // We need to setup context transform similar to exportCtx
         pitchCacheCtx.fillStyle = "black";
         pitchCacheCtx.fillRect(0, 0, targetWidth, targetHeight);
         pitchCacheCtx.translate(offsetX, offsetY);
         pitchCacheCtx.scale(scale, scale);
-
         Renderer.drawPitch(pitchCacheCtx, logicalW, logicalH);
 
-        const drawExportFrame = (frameOrA, b, t) => {
-            if (b === undefined) {
-                // Single frame (pauses)
-                // We fake "interpolated" call to use our optimized cache
-                // Or we update drawFrame? drawFrame doesn't support cache arg yet.
-                // Let's us drawInterpolatedFrame with t=0? 
-                // Wait, drawInterpolatedFrame handles t=0 logic mostly.
-                Renderer.drawInterpolatedFrame(frameOrA, frameOrA, 0, exportCtx, logicalW, logicalH, pitchCacheCanvas);
-            } else {
-                Renderer.drawInterpolatedFrame(frameOrA, b, t, exportCtx, logicalW, logicalH, pitchCacheCanvas);
-            }
-        };
-
-        // ============================================
-        // TIMING LOOP WITH DRIFT CORRECTION
-        // ============================================
+        let frameCurrentTime = 0;
+        let frameEncodedCount = 0;
         const frameInterval = 1000 / fps;
         let nextFrameTime = performance.now();
 
-        const waitNextFrame = async () => {
-            nextFrameTime += frameInterval;
-            const now = performance.now();
-            let delay = nextFrameTime - now;
+        const drawExportFrame = async (frameOrA, b, t) => {
+            // 1. Draw to Canvas
+            if (b === undefined) Renderer.drawInterpolatedFrame(frameOrA, frameOrA, 0, exportCtx, logicalW, logicalH, pitchCacheCanvas);
+            else Renderer.drawInterpolatedFrame(frameOrA, b, t, exportCtx, logicalW, logicalH, pitchCacheCanvas);
 
-            // If we are significantly behind (more than 1 frame), we shouldn't try to catch up
-            // by skipping frames, as that causes "teleporting".
-            // We also shouldn't hammer the CPU without yielding.
-            // requestAnimationFrame is the smoothest way to yield to the browser's compositor/media engine.
+            // 2. Encode / Pace
+            if (mode === 'mp4' && videoEncoder) {
+                // Direct MP4 Encoding (Fast as possible)
+                const timestamp = frameCurrentTime * 1000000; // microseconds
+                const videoFrame = new VideoFrame(exportCanvas, { timestamp: timestamp });
 
-            if (delay < 5) {
-                // If we have less than 5ms buffer (or are late), just wait for next RAF.
-                // This ensures we yield fully.
-                await new Promise(r => requestAnimationFrame(r));
+                // Keyframe every 2s
+                const keyFrame = (frameEncodedCount % (fps * 2) === 0);
+                videoEncoder.encode(videoFrame, { keyFrame });
+                videoFrame.close();
+
+                frameCurrentTime += (1 / fps); // Seconds
+                frameEncodedCount++;
+
+                await new Promise(r => setTimeout(r, 0)); // Yield to UI
             } else {
-                // We are ahead of time, wait precisely using timeout then RAF?
-                // Just setTimeout is fine for staying in sync with wall clock, 
-                // but RAF is better for smoothness.
-                // Let's combine: wait most of the time, then RAF.
-                if (delay > 16) {
-                    await new Promise(r => setTimeout(r, delay - 10));
-                }
-                await new Promise(r => requestAnimationFrame(r));
+                // MediaRecorder Pacing (Real-time approx)
+                nextFrameTime += frameInterval;
+                const now = performance.now();
+                let delay = nextFrameTime - now;
+                if (delay > 0) await new Promise(r => setTimeout(r, delay));
+                else await new Promise(r => setTimeout(r, 0));
             }
         };
 
-        // Estimación de frames totales para la barra de progreso
-        const pauseFramesCount = Math.ceil(fps * 1.5);
-        const totalDuration = CONFIG.INTERP_DURATION / CONFIG.PLAYBACK_SPEED;
-        const transitionFrames = Math.ceil((totalDuration / 1000) * fps);
-        const totalFramesToProcess = (pauseFramesCount * 2) + ((state.frames.length - 1) * transitionFrames);
-        let processedFrames = 0;
-
-        const updateProgress = (phase) => {
-            processedFrames++;
-            const pct = Math.min(100, Math.round((processedFrames / totalFramesToProcess) * 100));
+        const updateProgress = (phase, k, total) => {
+            const pct = Math.min(100, Math.round((k / total) * 100));
             this._updateExportProgress(`${phase} (${pct}%)`, pct);
         };
 
+        const pauseFramesCount = Math.ceil(fps * 1.5);
+        const totalDuration = CONFIG.INTERP_DURATION / CONFIG.PLAYBACK_SPEED;
+        const baseTransitionFrames = Math.ceil((totalDuration / 1000) * fps);
+        const totalFramesToProcess = (pauseFramesCount * 2) + ((state.frames.length - 1) * baseTransitionFrames);
+        let processedFrames = 0;
 
-        // 1. Pausa Inicial (1.5s)
+        // Loop - Start Pause
         state.currentFrameIndex = 0;
-        this.updateUI();
-
         for (let i = 0; i < pauseFramesCount; i++) {
-            drawExportFrame(state.frames[0]);
-            await waitNextFrame();
-            updateProgress("Inicio...");
+            await drawExportFrame(state.frames[0]);
+            processedFrames++;
+            updateProgress("Inicio", processedFrames, totalFramesToProcess);
         }
 
-        // 2. Animación
+        // Loop - Transitions
         for (let i = 0; i < state.frames.length - 1; i++) {
             const frameA = state.frames[i];
             const frameB = state.frames[i + 1];
-
             state.currentFrameIndex = i;
-
-            for (let f = 0; f <= transitionFrames; f++) {
-                const t = f / transitionFrames;
-                drawExportFrame(frameA, frameB, t);
-                await waitNextFrame();
-                updateProgress(`Procesando mov. ${i + 1}/${state.frames.length - 1}`);
+            let currentTransitionFrames = baseTransitionFrames;
+            if (this._isBallOnlyMovement(frameA, frameB)) {
+                currentTransitionFrames = Math.ceil(baseTransitionFrames / CONFIG.BALL_SPEED_MULTIPLIER);
+                if (currentTransitionFrames < 1) currentTransitionFrames = 1;
+            }
+            for (let f = 0; f <= currentTransitionFrames; f++) {
+                const t = f / currentTransitionFrames;
+                await drawExportFrame(frameA, frameB, t);
+                processedFrames++;
+                updateProgress(`Movimiento ${i + 1}`, processedFrames, totalFramesToProcess);
             }
         }
 
-        // 3. Pausa Final (1.5s)
+        // Loop - End Pause
         state.currentFrameIndex = state.frames.length - 1;
-        this.updateUI();
-
         const lastFrame = state.frames[state.frames.length - 1];
-
-        // HACK: Ocultar trayectorias
         const originalTrails = lastFrame.trailLines;
         lastFrame.trailLines = [];
-
         try {
             for (let i = 0; i < pauseFramesCount; i++) {
-                drawExportFrame(lastFrame); // Render directly from object or state? Renderer uses state if not passed? No, we need consistent state. 
-                // Actually drawExportFrame function above calls Renderer.drawFrame() which uses GLOBAL state if we don't pass frame object?
-                // Renderer.drawFrame implementation: drawFrame(targetCtx, w, h) -> gets Utils.getCurrentFrame().
-                // We set state.currentFrameIndex = state.frames.length - 1; so Utils.getCurrentFrame() returns lastFrame.
-                // So calling drawExportFrame(lastFrame) is redundant argument-wise but harmless.
-                drawExportFrame(lastFrame);
-                await waitNextFrame();
-                updateProgress("Finalizando...");
+                await drawExportFrame(lastFrame);
+                processedFrames++;
+                updateProgress("Final", processedFrames, totalFramesToProcess);
             }
         } finally {
             lastFrame.trailLines = originalTrails;
         }
 
         rec.stop();
-
-        state.showGuides = originalShowGuides; // Restore guides
         Renderer.drawFrame();
+    },
+
+    downloadBlob(blob, title, ext) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${title}.${ext}`;
+        a.click();
+        URL.revokeObjectURL(url);
     },
 
     async exportWebM() {

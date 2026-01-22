@@ -14,6 +14,7 @@ import { Popup } from '../ui/popup.js';
 import { UI } from '../ui/ui.js';
 import { Export } from '../features/export.js';
 import { Store } from './store.js';
+import { Notificacion } from '../ui/notifications.js';
 
 export const InputHandler = {
     callbacks: {},
@@ -66,6 +67,93 @@ export const InputHandler = {
 
             if (e.key === "Delete" || e.key === "Supr") {
                 if (this.callbacks.deleteSelection) this.callbacks.deleteSelection();
+            }
+
+            // Shortcutsystem handles actions, but "Hold" actions like Ghost are distinct?
+            // "Hold" actions are tricky with the current `handleShortcut` which is for triggers.
+            // AND `handleShortcut` returns early if Shift is pressed alone? No, it checks keys.
+            // But we need to know if keys MATCH.
+
+            // Let's implement a helper `isPressed(e, shortcut)`
+            // Helper to check if a specific shortcut is pressed, independent of key order
+            const isPressed = (evt, shortcutKey) => {
+                if (!shortcutKey) return false;
+
+                // Helper to normalize key names
+                const normalize = (k) => {
+                    k = k.toUpperCase();
+                    if (k === 'CONTROL') return 'CTRL';
+                    return k;
+                };
+
+                const targetKeys = shortcutKey.split('+').map(normalize).sort();
+
+                let currentKeys = [];
+                if (evt.ctrlKey) currentKeys.push('CTRL');
+                if (evt.altKey) currentKeys.push('ALT');
+                if (evt.shiftKey) currentKeys.push('SHIFT');
+                if (evt.metaKey) currentKeys.push('META');
+
+                let main = evt.key.toUpperCase();
+                if (evt.code === 'Space') main = 'SPACE';
+
+                // Add main key if it's not a modifier
+                if (!['CONTROL', 'ALT', 'SHIFT', 'META'].includes(main)) {
+                    currentKeys.push(normalize(main));
+                }
+
+                currentKeys.sort();
+
+                return targetKeys.join('+') === currentKeys.join('+');
+            };
+
+            if (isPressed(e, SETTINGS.SHORTCUTS.GHOST_SHOW)) {
+                if (!state.showGhost) {
+                    state.showGhost = true;
+                    Renderer.drawFrame();
+                }
+            }
+
+            if (isPressed(e, SETTINGS.SHORTCUTS.GHOST_PREV)) {
+                if (!state.showGhostPrev) {
+                    state.showGhostPrev = true;
+                    Renderer.drawFrame();
+                }
+            }
+
+            if (isPressed(e, SETTINGS.SHORTCUTS.TOGGLE_PROPAGATION)) {
+                state.propagationMode = !state.propagationMode;
+                const msg = state.propagationMode ? I18n.t('msg_propagation_on') : I18n.t('msg_propagation_off');
+                if (typeof Notificacion !== 'undefined') Notificacion.show(msg);
+                else alert(msg);
+                Renderer.drawFrame(); // To update cursor if needed
+            }
+        });
+
+        window.addEventListener("keyup", (e) => {
+            // Logic for Release is harder because we don't know which shortcut was active easily without state.
+            // But we can check if the KEY associated with the shortcut was released?
+            // Or simpler: If showGhost is true, checking if the released key was PART of the shortcut?
+            // The previous logic was: `if (e.key === 'Shift' || e.key === 'a' ...)`
+            // This implies ANY key of the combo releasing stops the mode.
+
+            const checkRelease = (shortcutKey) => {
+                if (!shortcutKey) return false;
+                const parts = shortcutKey.toUpperCase().split('+');
+                let key = e.key.toUpperCase();
+                if (key === 'CONTROL') key = 'CTRL';
+                // If the released key is in the shortcut definition, we stop.
+                return parts.includes(key);
+            };
+
+            if (state.showGhost && checkRelease(SETTINGS.SHORTCUTS.GHOST_SHOW)) {
+                state.showGhost = false;
+                Renderer.drawFrame();
+            }
+
+            if (state.showGhostPrev && checkRelease(SETTINGS.SHORTCUTS.GHOST_PREV)) {
+                state.showGhostPrev = false;
+                Renderer.drawFrame();
             }
         });
     },
@@ -147,7 +235,8 @@ export const InputHandler = {
         // Mouse
         canvas.addEventListener("mousedown", e => CanvasEvents.handleMouseDown(e));
         canvas.addEventListener("mousemove", e => CanvasEvents.handleMouseMove(e));
-        canvas.addEventListener("mouseup", () => CanvasEvents.handleMouseUp());
+        canvas.addEventListener("mousemove", e => CanvasEvents.handleMouseMove(e));
+        canvas.addEventListener("mouseup", (e) => CanvasEvents.handleMouseUp(e));
         canvas.addEventListener("dblclick", e => CanvasEvents.handleDoubleClick(e));
     },
 
