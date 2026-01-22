@@ -9,9 +9,14 @@ export const Export = {
     downloadImage() {
         const f = Utils.getCurrentFrame();
 
-        // --- 1. Ocultar trayectorias ---
+        // --- 1. Ocultar trayectorias y guías ---
         const originalTrails = f.trailLines;
         f.trailLines = [];
+
+        // Save and hide guides
+        const originalShowGuides = state.showGuides;
+        state.showGuides = false;
+
         Renderer.drawFrame();
 
         // --- 2. Preparar descarga ---
@@ -26,8 +31,9 @@ export const Export = {
         link.click();
         document.body.removeChild(link);
 
-        // --- 3. Restaurar trayectorias ---
+        // --- 3. Restaurar trayectorias y guías ---
         f.trailLines = originalTrails;
+        state.showGuides = originalShowGuides;
         Renderer.drawFrame();
     }
 };

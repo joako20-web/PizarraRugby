@@ -64,7 +64,9 @@ export const es = {
     "alert_select_formation": "Seleccionar formación",
     "alert_select_formation_desc": "Por favor, selecciona una formación de la lista",
     "action_show": "Mostrar",
+    "action_show": "Mostrar",
     "action_hide": "Ocultar",
+    "shortcut_toggle_guides": "Mostrar/Ocultar Guías",
 
     // Misc UI
     "btn_reset_app": "Resetear Todo",

@@ -572,6 +572,51 @@ export const Renderer = {
         });
     },
 
+    // === Guides ===
+    drawGuides(targetCtx = ctx) {
+        if (!state.showGuides) return;
+
+        targetCtx.save();
+        targetCtx.lineWidth = 1;
+        targetCtx.strokeStyle = "#00ffff"; // Cyan
+        targetCtx.setLineDash([]); // Ensure solid line
+
+        // Vertical
+        const gutter = 60; // Coincidir con el valor de borrado
+        state.guides.vertical.forEach((x, i) => {
+            // Highlight if dragging this specific guide
+            if (state.draggingGuide && state.draggingGuide.type === 'vertical' && state.draggingGuide.index === i) {
+                targetCtx.lineWidth = 2;
+                if (x < gutter) targetCtx.strokeStyle = "#ff0000"; // Rojo si se va a borrar
+                else targetCtx.strokeStyle = "#00ffff"; // Cyan normal
+            } else {
+                targetCtx.lineWidth = 1;
+                targetCtx.strokeStyle = "#00ffff";
+            }
+            targetCtx.beginPath();
+            targetCtx.moveTo(x, 0);
+            targetCtx.lineTo(x, targetCtx.canvas.height);
+            targetCtx.stroke();
+        });
+
+        // Horizontal
+        state.guides.horizontal.forEach((y, i) => {
+            if (state.draggingGuide && state.draggingGuide.type === 'horizontal' && state.draggingGuide.index === i) {
+                targetCtx.lineWidth = 2;
+                if (y < gutter) targetCtx.strokeStyle = "#ff0000"; // Rojo si se va a borrar
+                else targetCtx.strokeStyle = "#00ffff";
+            } else {
+                targetCtx.lineWidth = 1;
+                targetCtx.strokeStyle = "#00ffff";
+            }
+            targetCtx.beginPath();
+            targetCtx.moveTo(0, y);
+            targetCtx.lineTo(targetCtx.canvas.width, y);
+            targetCtx.stroke();
+        });
+        targetCtx.restore();
+    },
+
     // === Main Render ===
     drawFrame(targetCtx = ctx, width, height) {
         // 1. Dibujar fondo (campo)
@@ -732,6 +777,9 @@ export const Renderer = {
             }
             targetCtx.stroke();
         }
+
+        // Guías
+        this.drawGuides(targetCtx);
     },
 
     // === Animation Interpolation ===

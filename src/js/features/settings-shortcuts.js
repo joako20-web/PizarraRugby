@@ -64,6 +64,10 @@ export const SettingsShortcuts = {
                     <label>${I18n.t('btn_presentation')}</label>
                     <button class="btn btn--secondary bind-btn" data-action="PRESENTATION_MODE">${fmt(s.PRESENTATION_MODE)}</button>
                 </div>
+                <div class="shortcut-item">
+                    <label>${I18n.t('shortcut_toggle_guides')}</label>
+                    <button class="btn btn--secondary bind-btn" data-action="TOGGLE_GUIDES">${fmt(s.TOGGLE_GUIDES)}</button>
+                </div>
                 
                 <h4 style="margin: 15px 0 10px 0; color: #888; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px;">${I18n.t('shortcut_section_frames')}</h4>
                 

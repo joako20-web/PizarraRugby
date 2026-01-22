@@ -122,7 +122,14 @@ export const InputHandler = {
         else if (isMatch(s.FRAME_NEXT)) { document.getElementById("next-frame")?.click(); actionTriggered = true; }
         else if (isMatch(s.FRAME_PREV)) { document.getElementById("prev-frame")?.click(); actionTriggered = true; }
         else if (isMatch(s.FRAME_ADD)) { document.getElementById("add-frame")?.click(); actionTriggered = true; }
+        else if (isMatch(s.FRAME_ADD)) { document.getElementById("add-frame")?.click(); actionTriggered = true; }
         else if (isMatch(s.FRAME_REMOVE)) { document.getElementById("delete-frame")?.click(); actionTriggered = true; }
+        else if (isMatch(s.TOGGLE_GUIDES)) {
+            state.showGuides = !state.showGuides;
+            Renderer.drawFrame();
+            // Optional: Toggle UI text elsewhere if needed
+            actionTriggered = true;
+        }
 
         if (actionTriggered) {
             e.preventDefault();

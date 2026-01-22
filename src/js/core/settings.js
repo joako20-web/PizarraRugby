@@ -13,7 +13,8 @@ export const DEFAULT_SHORTCUTS = {
     FRAME_PREV: 'ArrowLeft',
     FRAME_NEXT: 'ArrowRight',
     FRAME_ADD: '+',
-    FRAME_REMOVE: '-'
+    FRAME_REMOVE: '-',
+    TOGGLE_GUIDES: 'Ctrl+.'
 };
 
 export const SETTINGS = {

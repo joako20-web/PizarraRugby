@@ -187,10 +187,12 @@ export const Animation = {
         state.isPaused = false;
 
         // Block UI
-        const btnPlay = document.getElementById('play-animation');
-        const btnPause = document.getElementById('pause-animation');
         if (btnPlay) btnPlay.disabled = true;
         if (btnPause) btnPause.disabled = true;
+
+        // Hide guides for export
+        const originalShowGuides = state.showGuides;
+        state.showGuides = false;
 
         this._showExportOverlay(); // SHOW OVERLAY
 
@@ -458,6 +460,8 @@ export const Animation = {
         }
 
         rec.stop();
+
+        state.showGuides = originalShowGuides; // Restore guides
         Renderer.drawFrame();
     },
 

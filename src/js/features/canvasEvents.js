@@ -125,6 +125,42 @@ export const CanvasEvents = {
 
         // Modo move
         if (state.mode === "move") {
+            // 0. Guías (Creación y Movimiento)
+            if (state.showGuides) {
+                const guideHitMargin = 5;
+                let hitGuide = null;
+
+                // Revisar guías verticales existentes (prioridad sobre horizontales si coinciden)
+                // Iteramos al revés por si hay superposición, coger la última dibujada? Da igual.
+                state.guides.vertical.forEach((x, i) => {
+                    if (Math.abs(pos.x - x) < guideHitMargin) hitGuide = { type: 'vertical', index: i };
+                });
+                state.guides.horizontal.forEach((y, i) => {
+                    if (Math.abs(pos.y - y) < guideHitMargin) hitGuide = { type: 'horizontal', index: i };
+                });
+
+                if (hitGuide) {
+                    state.draggingGuide = hitGuide;
+                    Renderer.drawFrame();
+                    return;
+                }
+
+                // Crear nueva guía desde los bordes (Gutter)
+                const gutter = 40; // Increased from 20 to 40 for easier access
+                if (pos.x < gutter) {
+                    state.guides.vertical.push(pos.x);
+                    state.draggingGuide = { type: 'vertical', index: state.guides.vertical.length - 1, isNew: true };
+                    Renderer.drawFrame();
+                    return;
+                }
+                if (pos.y < gutter) {
+                    state.guides.horizontal.push(pos.y);
+                    state.draggingGuide = { type: 'horizontal', index: state.guides.horizontal.length - 1, isNew: true };
+                    Renderer.drawFrame();
+                    return;
+                }
+            }
+
             // Primero verificar si se hizo clic en un escudo
             const shield = HitTest.findShieldAt(pos.x, pos.y);
             if (shield) {
@@ -349,6 +385,18 @@ export const CanvasEvents = {
             return;
         }
 
+        // Arrastrar Guía
+        if (state.draggingGuide) {
+            const g = state.draggingGuide;
+            if (g.type === "vertical") {
+                state.guides.vertical[g.index] = pos.x;
+            } else {
+                state.guides.horizontal[g.index] = pos.y;
+            }
+            Renderer.drawFrame();
+            return;
+        }
+
         // Arrastrar zona
         if (state.draggingZone && state.selectedZone && !state.selectedZone.locked) {
             const z = state.selectedZone;
@@ -393,9 +441,68 @@ export const CanvasEvents = {
                 state.dragTarget.obj.y = pos.y - state.dragOffsetY;
             } else if (state.dragTarget.type === "players") {
                 const offsets = state.dragTarget.offsets;
+
+                // Snapping Logic
+                let snapX = null;
+                let snapY = null;
+
+                // Usamos el primer jugador (líder) o el que está bajo el mouse para el snap?
+                // Usaremos pos (mouse) para calcular el delta, pero el snap debería ser sobre la posición FINAL del jugador.
+                // Simulemos la nueva posición del primer jugador seleccionado
+                // para ver si hacemos snap.
+
+                // O mejor: Snap del jugador que coincida con una guía?
+                // Photoshop hace snap si CUALQUIER borde o centro toca la guía.
+                // Aquí haremos snap al CENTRO de los jugadores seleccionados.
+
+                // Calculamos el desplazamiento propuesto
+                // Si el snap se activa, ajustamos dx/dy para TODOS.
+
+                // Vamos a intentar hacer snap con CUALQUIERA de los jugadores seleccionados
+                // Si hay muchos, puede ser caótico. Prioricemos el primero o el más cercano a una guía.
+
+                let bestSnapX = null;
+                let bestSnapY = null;
+                let minDistX = state.snapThreshold;
+                let minDistY = state.snapThreshold;
+
                 state.dragTarget.players.forEach((pl, i) => {
-                    pl.x = pos.x - offsets[i].dx;
-                    pl.y = pos.y - offsets[i].dy;
+                    const proposedX = pos.x - offsets[i].dx;
+                    const proposedY = pos.y - offsets[i].dy;
+
+                    if (state.showGuides) {
+                        state.guides.vertical.forEach(gx => {
+                            const dist = Math.abs(proposedX - gx);
+                            if (dist < minDistX) {
+                                minDistX = dist;
+                                bestSnapX = gx - proposedX; // Ajuste necesario
+                            }
+                        });
+                        state.guides.horizontal.forEach(gy => {
+                            const dist = Math.abs(proposedY - gy);
+                            if (dist < minDistY) {
+                                minDistY = dist;
+                                bestSnapY = gy - proposedY; // Ajuste necesario
+                            }
+                        });
+                    }
+                });
+
+                // Aplicar snap si encontramos uno
+                // Esto ajusta 'pos' virtualmente.
+                // Si aplicamos offset al mov, afecta a todos.
+
+                // El offset es: pos.x - offsets[i].dx = proposedX
+                // Queremos que proposedX + bestSnapX = gx
+                // => (pos.x + bestSnapX) - offsets[i].dx = gx
+                // Por tanto, ajustamos pos.x sumándole bestSnapX
+
+                const effectivePosX = bestSnapX !== null ? pos.x + bestSnapX : pos.x;
+                const effectivePosY = bestSnapY !== null ? pos.y + bestSnapY : pos.y;
+
+                state.dragTarget.players.forEach((pl, i) => {
+                    pl.x = effectivePosX - offsets[i].dx;
+                    pl.y = effectivePosY - offsets[i].dy;
                 });
 
                 // Move Ball if carried
@@ -499,6 +606,25 @@ export const CanvasEvents = {
     },
 
     handleMouseUp() {
+        if (state.draggingGuide) {
+            // Eliminar guía si se suelta cerca de los bordes
+            const g = state.draggingGuide;
+            const gutter = 60; // AUMENTADO: Un poco más grande para facilitar borrado
+
+            if (g.type === "vertical") {
+                if (state.guides.vertical[g.index] < gutter) {
+                    state.guides.vertical.splice(g.index, 1);
+                }
+            } else {
+                if (state.guides.horizontal[g.index] < gutter) {
+                    state.guides.horizontal.splice(g.index, 1);
+                }
+            }
+            state.draggingGuide = null;
+            Renderer.drawFrame();
+            return;
+        }
+
         if (state.draggingZone) {
             // draggingZone is a local flag in older code?
             // checking grep: state.draggingZone = true (line 170)

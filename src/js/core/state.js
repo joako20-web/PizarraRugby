@@ -53,6 +53,15 @@ export const state = {
     selectedText: null,
     selectedArrow: null,
 
+    // Guías
+    guides: {
+        horizontal: [],
+        vertical: []
+    },
+    draggingGuide: null,
+    snapThreshold: 15,
+    showGuides: true,
+
     // Field configuration
     fieldConfig: {
         type: "full",        // "full" or "half"
