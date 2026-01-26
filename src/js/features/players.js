@@ -91,10 +91,12 @@ export const Players = {
             a.dataset.team = "A";
             a.dataset.number = i;
             a.onclick = (e) => this.toggle(e);
-            a.oncontextmenu = (e) => {
+            a.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 this.resetPosition("A", i);
-            };
+                return false;
+            });
             blueGrid.appendChild(a);
 
             const b = document.createElement("div");
@@ -103,10 +105,12 @@ export const Players = {
             b.dataset.team = "B";
             b.dataset.number = i;
             b.onclick = (e) => this.toggle(e);
-            b.oncontextmenu = (e) => {
+            b.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 this.resetPosition("B", i);
-            };
+                return false;
+            });
             redGrid.appendChild(b);
         }
     },
