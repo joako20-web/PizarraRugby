@@ -7,12 +7,23 @@ import { SETTINGS } from '../core/settings.js';
 export const UI = {
     updateDeleteButton() {
         const deleteBtn = document.getElementById("delete-btn");
-        const hasSelection = state.selectedShield || state.selectedZone || state.selectedText || state.selectedArrow;
+        const resetBtn = document.getElementById("reset-player-btn");
+
+        const hasSelection = state.selectedShield || state.selectedZone || state.selectedText || state.selectedArrow || (state.selectedPlayers && state.selectedPlayers.size > 0);
+        const hasPlayerSelection = state.selectedPlayers && state.selectedPlayers.size > 0;
 
         if (hasSelection) {
             deleteBtn.classList.remove("is-hidden");
         } else {
             deleteBtn.classList.add("is-hidden");
+        }
+
+        if (resetBtn) {
+            if (hasPlayerSelection) {
+                resetBtn.classList.remove("is-hidden");
+            } else {
+                resetBtn.classList.add("is-hidden");
+            }
         }
     },
 

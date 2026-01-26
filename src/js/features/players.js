@@ -3,6 +3,7 @@ import { CONFIG } from '../core/config.js';
 import { Renderer } from '../renderer/renderer.js';
 import { SETTINGS } from '../core/settings.js';
 import { I18n } from '../core/i18n.js';
+import { History } from './history.js';
 
 // ==============================
 // GESTIÓN DE JUGADORES
@@ -90,6 +91,10 @@ export const Players = {
             a.dataset.team = "A";
             a.dataset.number = i;
             a.onclick = (e) => this.toggle(e);
+            a.oncontextmenu = (e) => {
+                e.preventDefault();
+                this.resetPosition("A", i);
+            };
             blueGrid.appendChild(a);
 
             const b = document.createElement("div");
@@ -98,7 +103,25 @@ export const Players = {
             b.dataset.team = "B";
             b.dataset.number = i;
             b.onclick = (e) => this.toggle(e);
+            b.oncontextmenu = (e) => {
+                e.preventDefault();
+                this.resetPosition("B", i);
+            };
             redGrid.appendChild(b);
+        }
+    },
+
+    resetPosition(team, number) {
+        const f = Utils.getCurrentFrame();
+        const p = f.players.find(x => x.team === team && x.number === number);
+        if (p) {
+            const pos = getPlayerInitialPosition(team, number);
+            p.x = pos.x;
+            p.y = pos.y;
+            p.visible = true; // Force visible if they reset it
+            this.syncToggles();
+            Renderer.drawFrame();
+            History.push();
         }
     },
 

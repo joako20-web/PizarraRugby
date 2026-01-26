@@ -2,7 +2,7 @@ import { state } from './state.js';
 import { SETTINGS } from './settings.js';
 import { I18n } from './i18n.js';
 import { canvas } from './dom.js';
-import { Utils } from './utils.js';
+import { Utils, getPlayerInitialPosition } from './utils.js';
 import { Frame } from '../model/frame.js';
 import { Renderer } from '../renderer/renderer.js';
 import { History } from '../features/history.js';
@@ -285,6 +285,24 @@ export const InputHandler = {
             f.ball.visible = !f.ball.visible;
             Renderer.drawFrame();
         };
+
+        const resetPlayerBtn = document.getElementById("reset-player-btn");
+        if (resetPlayerBtn) {
+            resetPlayerBtn.onclick = () => {
+                const f = Utils.getCurrentFrame();
+                const playersToReset = Array.from(state.selectedPlayers);
+                if (playersToReset.length === 0) return;
+
+                playersToReset.forEach(p => {
+                    const initial = getPlayerInitialPosition(p.team, p.number);
+                    p.x = initial.x;
+                    p.y = initial.y;
+                });
+
+                Renderer.drawFrame();
+                History.push();
+            };
+        }
 
         // --- Frames ---
         document.getElementById("add-frame").onclick = () => {
